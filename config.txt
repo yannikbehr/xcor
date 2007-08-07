@@ -1,0 +1,56 @@
+[rawdata]
+# email-data: you can add as many recipient addresses 
+# as you want separated by a whitespace;
+# the senderaddress appears in the message body and
+# as the sender-address in the header;
+# before downloading the data the program prompts
+# for your imap-password
+
+smtpserver=vuwmail.staff.vuw.ac.nz
+senderaddress=yannik.behr@vuw.ac.nz
+recipient-address=autodrm@geonet.org.nz yannik.behr@physik.uni-muenchen.de
+imapserver=imap.vuw.ac.nz
+imapusername=behrya
+
+# info to create request-message-body
+month=2 
+year=2006
+message-id=Yannik any-dnc
+return-email=yannik.behr@vuw.ac.nz
+station-list=BFZ
+channel=LHZ 
+
+# directory for downloaded data
+download-dir=download/
+
+[database]
+#northland data
+#databasedir=../../../nord/aug_2003/
+#databasefile=nord-data.db
+
+#geonet data
+databasedir=/Volumes/data/yannik78/dev/test-data/seed/
+databasefile=./raw-data.db
+
+#configuration on my computer
+rdseeddir=/home/behrya/src/rdseed4.6/
+sacdir=/home/behrya/src/sac/bin/
+
+# tararuas configuration
+#rdseeddir=/usr/local/packages/hypo/bin/rdseed/
+#sacdir=/usr/local/packages/sac/bin/
+
+
+datatype=seed
+sacdirroot=../test/
+cordir=../sacroot/2005/Apr/5to100/COR/
+tmpdir=/home/behrya/dev/automation/tmp/
+
+[processing]
+upperperiod=5
+lowerperiod=100
+
+# define lower and upper index value to cut
+# traces
+lowercut=1000
+uppercut=84000

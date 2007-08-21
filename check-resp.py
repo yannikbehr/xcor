@@ -45,7 +45,15 @@ class CheckResp:
                     else:
                         try:
                             # processing the RESP-file
-                            for lines in input.readlines():
+                            alllines = input.readlines()
+                            if len(alllines) < 20:
+                                message = "corrupt response file: "+file1
+                                output.close()
+                                os.remove(tempfile)
+                                raise Exception, message
+                            
+                            for lines in alllines:
+                                
                                 if string.find(lines,'Start date')!=-1:
                                     date_resp1 = string.split(lines)
                                     date_resp2 = string.split(date_resp1[3],',')
@@ -84,6 +92,7 @@ class CheckResp:
                                     outlines.append(lines)
                         except Exception,e:
                             print "problems with processing the RESP-files ",e
+                            return
                         else:
                             try:
                                 # writing new temporary RESP-file and

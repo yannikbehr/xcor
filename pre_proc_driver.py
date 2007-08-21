@@ -51,25 +51,25 @@ except Exception:
 
 cp.read(config)
 
-if confirm('seed_db'):
+if cp.get('processing','initdb')=='1':
     seedb = seed_db.Initialize_DB(cp)
     if cp.get('database','datatype') == 'seed':
         seedb.init_stat_db()
         seedb.init_dat_strct()
 
-if confirm('sa_from_seed_mod'):
+if cp.get('processing','seed2sac')=='1':
     os.system('./sa_from_seed_mod -c '+config)
 
-if confirm('cut_trans_mod'):
+if cp.get('processing','rmresp')=='1':
     command = './cut_trans_mod '+cp.get("processing","lowercut")+' '+\
               cp.get("processing","uppercut")+' -c '+config
     os.system(command)
     
-if confirm('do_whiten'):
+if cp.get('processing','white')=='1':
     dowh = do_whiten.DoWhiten(cp)
     dowh.start()
 
-if confirm('justCOR'):
+if cp.get('processing','xcorr')=='1':
     command = './justCOR -c '+config
     os.system(command)
     

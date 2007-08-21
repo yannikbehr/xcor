@@ -35,6 +35,7 @@
 #define MAIN
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <iniparser.h>
 #include <mysac.h>
@@ -311,6 +312,8 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
   iniparser_free(d);
 }
 
+SAC_DB sdb;
+
 
 /*////////////////////////////////////////////////////////////////////////*/
 int main (int argc, char **argv)
@@ -318,13 +321,12 @@ int main (int argc, char **argv)
   FILE *ff;
   int ne, ns;
   float t1, npts;
-  SAC_DB sdb;
   dictionary *dd;
   char *tmpdir;
   char *sacdir;
   
   /* CHECK INPUT ARGUMENTS */
-  strcpy(sdb.conf,"./config.txt");
+  strncpy(sdb.conf,"./config.txt",149);
   get_args(argc,argv,&sdb);
   sscanf(argv[1],"%f",&t1);
   sscanf(argv[2],"%f",&npts);

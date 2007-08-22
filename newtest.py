@@ -165,6 +165,6 @@ class TestDir:
 
 if __name__ == '__main__':
     test = TestDir()
-    test.walk_dir('./COR', '/home/behrya/dev/FanChi/2005/Apr/5to100/COR')
+    test.walk_dir('../nord-sac2/2003/Jan/5to100', '../nord-sac/fanchi/2003/Jan/5to100')
     test.feedback()
     

@@ -19,7 +19,7 @@ hfiles = \
 ofiles = \
 	$(VPATH)/iniparser.o
 
-%.o:%.c $(hfiles)
+%.o:%.c
 	$(COMPL) -g -c  $<  
 
 all: sacseed cut justcor filter4 whiteout

@@ -1,5 +1,9 @@
 #include <iostream>
 #include <iniparser.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#define MODUS ,0711)
 
 using namespace std;
 
@@ -43,60 +47,85 @@ reading and checking commandline arguments
   }
 }
 
-int main(int na, char **arg[])
+int main(int na, char **arg)
 {
   FILE *f1,*f2,*f3;
   int N=100;
   int err[N];
   char configfile[150];
+  char *stations;
+  char *tmpdir;
+  char *rootdir;
+  char *year;
+  char *sacdir;
+  char str[200];
+  char newdir[200];
+  char yearsubdir[200];
   char name[N][6];
   char stack[12][20];
   dictionary *dd;
-  int i,j,k,ii,jj;
+  int i,j,k,ii,jj,m,mm;
 
   strncpy(configfile,"./config.txt",149);
   get_args(na,arg,&configfile[0]);
+  dd = iniparser_new(configfile);
+  stations = iniparser_getstr(dd, "data:stations");
+  tmpdir = iniparser_getstr(dd, "database:tmpdir");
+  rootdir = iniparser_getstr(dd, "database:sacdirroot");
+  year = iniparser_getstr(dd, "rawdata:year");
+  sacdir = iniparser_getstr(dd, "database:sacdir");
+  strncpy(newdir,rootdir,199);
+  strcat(newdir,year);
+  strncpy(yearsubdir,newdir,199);
+  strcat(newdir,"/STACK");
+  if(mkdir(newdir MODUS == -1)
+     printf("cannot create directory %s\n", newdir); 
+  m=0;
+  char *ptr;
+  ptr = strtok(stations, " ");
+  while(ptr != NULL) {
+    strncpy(name[m],ptr,5);
+    ptr = strtok(NULL, "\n\t ");
+    m++;
+  }
+  for(i=0;i<m;i++){
+    printf("%s\n",name[i]);
+  }
+     for(j=0;j<m-1;j++)
+    {
+      for(k=j+1;k<m;k++)
+	{
+	  f2=fopen("./do_stacking_1.csh","w");
+	  fprintf(f2,"foreach var1 (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec )\n");
+	  fprintf(f2,"cp %s/$var1/5to100/COR/COR_%s_%s.SAC %s/$var1\"_\"stack.SAC\n",yearsubdir,name[j],name[k],newdir);
+	  fprintf(f2,"end\n");
+	  fprintf(f2,"ls %s/*stack.SAC > %s/temp_stack\n",newdir,newdir);
+	  fclose(f2);
+	  system("csh ./do_stacking_1.csh");
+	  
+	  sprintf(str,"%s/temp_stack",newdir);
+	  f3=fopen(str,"r");
+	  for(ii=0;ii<12;ii++)
+	    if(fscanf(f3,"%s",stack[ii])==EOF) break;
+	  fclose(f3);
+	  cout<<"number of month "<<ii<<endl;
+	  
+	  f2=fopen("do_stacking_2.csh","w");
+	  fprintf(f2,"%ssac << END\n",sacdir);
+	  fprintf(f2,"r %s\n",stack[0]);
+	  for(jj=1;jj<ii;jj++)
+	    fprintf(f2,"addf %s\n",stack[jj]);
+	  //	  fprintf(f2,"ch b %f\n",-3000+15.930462*(err[j]-err[k]));
+	  fprintf(f2,"ch o 0\n");
+	  fprintf(f2,"w %s/COR_%s_%s.SAC\n",newdir,name[j],name[k]);
+	  fprintf(f2,"END\n");
+	  fprintf(f2,"rm %s/*_stack.SAC\n",newdir);
+	  fclose(f2);
+	  //	  system("csh do_stacking_2.csh");
+	}
+    }
 
-//  for(i=0;i<N;i++)
-//    {
-//      if(fscanf(f1,"%s %d",name[i],&err[i])==EOF) break;
-//      cout<<name[i]<<" "<<err[i]<<endl;
-//    }
-//  fclose(f1);
-//  cout<<"number of stations read "<<i<<endl;
-//  for(j=0;j<i-1;j++)
-//    {
-//      for(k=j+1;k<i;k++)
-//	{
-//	  f2=fopen("do_stacking_1.csh","w");
-//	  fprintf(f2,"foreach var1 (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec )\n");
-//	  fprintf(f2,"cp ../$var1/5to100/COR/COR_%s_%s.SAC $var1\"_\"stack.SAC\n",name[j],name[k]);
-//	  fprintf(f2,"end\n");
-//	  fprintf(f2,"ls *stack.SAC > temp_stack\n");
-//	  fclose(f2);
-//	  //	  system("csh do_stacking_1.csh");
-//	  
-//	  f3=fopen("temp_stack","r");
-//	  for(ii=0;ii<12;ii++)
-//	    if(fscanf(f3,"%s",stack[ii])==EOF) break;
-//	  fclose(f3);
-//	  cout<<"number of month "<<ii<<endl;
-//	  
-//	  f2=fopen("do_stacking_2.csh","w");
-//	  fprintf(f2,"sac << END\n");
-//	  fprintf(f2,"r %s\n",stack[0]);
-//	  for(jj=1;jj<ii;jj++)
-//	    fprintf(f2,"addf %s\n",stack[jj]);
-//	  //	  fprintf(f2,"ch b %f\n",-3000+15.930462*(err[j]-err[k]));
-//	  fprintf(f2,"ch o 0\n");
-//	  fprintf(f2,"w COR_%s_%s.SAC\n",name[j],name[k]);
-//	  fprintf(f2,"END\n");
-//	  fprintf(f2,"rm *_stack.SAC\n");
-//	  fclose(f2);
-//	  //	  system("csh do_stacking_2.csh");
-//	}
-//    }
-//
-//  cout<<name[0]<<"*"<<name[1]<<endl;
+  cout<<name[0]<<"*"<<name[1]<<endl;
+  iniparser_free(dd);
  
 }

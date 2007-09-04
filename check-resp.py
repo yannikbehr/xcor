@@ -120,6 +120,8 @@ class CheckResp:
                     elif string.find(a, 'RESP')!=-1:
                         #print a
                         self.check_resp(newsac1)
+                    elif os.path.isfile(newsac1):
+                        continue
                     else:
                         self.walk_dir(newsac1)
             except Exception, e:
@@ -127,4 +129,4 @@ class CheckResp:
 
 if __name__ == '__main__':
     test = CheckResp()
-    test.walk_dir('../nord-sac2/2003')
+    test.walk_dir('../nord-sac/fanchi/2003/Jan')

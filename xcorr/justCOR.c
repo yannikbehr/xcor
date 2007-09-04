@@ -22,6 +22,12 @@
 #include <mysac.h>
 #include <sac_db.h>
 
+/* os-dependent includes for dir-manipulation */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#define MODUS ,0711)
+
 /* Function prorotypes */
 
 void dcommon_(int *len, float *amp,float *phase);
@@ -29,12 +35,11 @@ void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int 
 void swapn(unsigned char *b, int N, int n);
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*----------------------------------------------------------------------------
+  reads sac-files fname with maximum length nmax into signal sig and \
+  header SHD
+  --------------------------------------------------------------------------*/
 SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
-     /*----------------------------------------------------------------------------
-       reads sac-files fname with maximum length nmax into signal sig and \
-       header SHD
-       ----------------------------------------------------------------------------*/
 {
   FILE *fsac;
   if((fsac=fopen(fname, "rb")) == NULL) return NULL;
@@ -76,11 +81,10 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
 
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*----------------------------------------------------------------------------
+  writes sac file with name fname from signal sig with header SHD
+  --------------------------------------------------------------------------*/
 void write_sac (char *fname, float *sig, SAC_HD *SHD)
-     /*----------------------------------------------------------------------------
-       writes sac file with name fname from signal sig with header SHD
-       ----------------------------------------------------------------------------*/
 {
   FILE *fsac;
   int i;
@@ -114,14 +118,13 @@ void write_sac (char *fname, float *sig, SAC_HD *SHD)
   fclose (fsac);
 }
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*----------------------------------------------------------------------------
+  evaluate ne, ns1, ns2 against SAC_DB values
+  ne  = number of event
+  ns1 = number of first station
+  ns2 = number of second station
+----------------------------------------------------------------------------*/
 int check_info ( SAC_DB *sdb, int ne, int ns1, int ns2 )
-     /*----------------------------------------------------------------------------
-       evaluate ne, ns1, ns2 against SAC_DB values
-       ne  = number of event
-       ns1 = number of first station
-       ns2 = number of second station
-       ----------------------------------------------------------------------------*/
 {
   if ( ne >= sdb->nev ) {
     fprintf(stderr,"cannot make correlation: too large event number\n");
@@ -150,25 +153,26 @@ int check_info ( SAC_DB *sdb, int ne, int ns1, int ns2 )
 float sig[1000000];
 SAC_HD shdamp1, shdph1, shdamp2, shdph2, shd_cor;
 
-/*--------------------------------------------------------------------------*/
-int do_cor( SAC_DB *sdb, int lag, char *cordir)
-     /*----------------------------------------------------------------------------
-       correlation in frequ.-domain
-       lag    = half length of correlation window
-       cordir = directory for correl. results
-       sdb    = SAC_DB structure with trace information
+/*----------------------------------------------------------------------------
+  correlation in frequ.-domain
+  lag    = half length of correlation window
+  cordir = directory for correl. results
+  sdb    = SAC_DB structure with trace information
 
-       calls fortran subroutines:
-       -dcommon
-       -dmultifft
-       ----------------------------------------------------------------------------*/
+  calls fortran subroutines:
+  -dcommon
+  -dmultifft
+----------------------------------------------------------------------------*/
+int do_cor( SAC_DB *sdb, int lag)
 {
   int ine, jsta1, jsta2, k;
 
   int len,ns,i; 
 
 
-  char filename[200], amp_sac[200], phase_sac[200];
+  char filename[200], amp_sac[200], phase_sac[200], cordir[200];
+  char testarr[12][200];
+  char *cutptr;
   float amp[400000], phase[400000], cor[400000];
   float seis_out[400000];
   FILE *ff;
@@ -237,10 +241,27 @@ int do_cor( SAC_DB *sdb, int lag, char *cordir)
 		  }
 
 		// move and rename cor file accordingly 
-		sprintf(filename, "%sCOR_%s_%s.SAC.prelim",
+		/* extract location for correlations */
+		/* and create COR-dir if necessary   */
+		strncpy(filename,sdb->rec[ine][jsta1].ft_fname,199);
+		cutptr=strrchr(filename,'/');
+		if(cutptr != NULL){
+		  *(cutptr) = '\0';
+		  cutptr=strrchr(filename,'/');
+		  if(cutptr != NULL){
+		    *(cutptr+1) = '\0';
+		    strncpy(cordir,filename,199);
+		    strcat(cordir,"COR");
+		    if(mkdir(cordir MODUS == -1){
+		       fprintf(stderr,"directory %s already exists \n", cordir); 
+		    }
+		  }
+		}
+		
+		sprintf(filename, "%s/COR_%s_%s.SAC.prelim",
 			cordir, sdb->st[jsta1].name, sdb->st[jsta2].name);
 
-		if(access(filename, F_OK) == 0) { // if file alread present, do this
+		if(access(filename, F_OK) == 0) { // if file already present, do this
 		  if ( !read_sac (filename, sig, &shd_cor, 1000000 ) ) {
 		    fprintf(stderr,"file %s not found\n", filename );
 		    return 0;
@@ -271,12 +292,13 @@ int do_cor( SAC_DB *sdb, int lag, char *cordir)
   }  //loop over events
   return 0;
 }
-/*c/////////////////////////////////////////////////////////////////////////*/
+
+
+/*--------------------------------------------------------------------------
+insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
+previous changes in the overall program structure makes it necessary
+--------------------------------------------------------------------------*/
 void sac_db_chng ( SAC_DB *sdb, char *pbdir )
-     /*--------------------------------------------------------------------------
-       insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
-       previous changes in the overall program structure makes it necessary
-       --------------------------------------------------------------------------*/
 
 {
   int ie, is, k, j;
@@ -307,11 +329,81 @@ void sac_db_chng ( SAC_DB *sdb, char *pbdir )
   return;
 }
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*------------------------------------------------------------------------
+function to find all 'COR'-directories and move preliminary correlations
+to final correlations
+needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
+                         stdio.h, stdlib.h
+------------------------------------------------------------------------*/
+int walk_dir(char *dirname){
+
+  DIR *dir, *dir2;
+  struct dirent *dirpointer, *dirpointer2;
+  struct stat attribut;
+  char tmp[200],oldname[200],newname[200];
+  char *cutptr;
+
+  /* open directory */
+  if((dir=opendir(dirname)) == NULL) {
+    fprintf(stderr,"ERROR in opendir ...\n");
+    return EXIT_FAILURE;
+  }
+  /* read directory and recursive call of this function to find 
+     'COR'-dirs*/
+  while((dirpointer=readdir(dir)) != NULL){
+    strncpy(tmp,dirname,199);
+    strcat(tmp,(*dirpointer).d_name);
+    if(stat(tmp, &attribut) == -1){
+      fprintf(stderr,"ERROR in stat ...\n");
+      return EXIT_FAILURE;
+    }
+
+    /* if directory entry name is 'COR' and is a directory than move
+       all preliminery correlations to final ones*/
+    if(strcmp((*dirpointer).d_name,"COR")==0 && attribut.st_mode & S_IFDIR){
+      printf("working on: %s\n",tmp);
+      if((dir2=opendir(tmp)) == NULL) {
+	fprintf(stderr,"ERROR in opendir ...\n");
+	return EXIT_FAILURE;
+      }
+      while((dirpointer2=readdir(dir2)) != NULL){
+	strncpy(oldname,tmp,199);
+	strcat(oldname,"/");
+	strcat(oldname,(*dirpointer2).d_name);
+	if(stat(oldname, &attribut) == -1){
+	  fprintf(stderr,"ERROR in stat ...\n");
+	  return EXIT_FAILURE;
+	}
+	if(attribut.st_mode & S_IFREG && strstr((*dirpointer2).d_name,".prelim") != NULL){
+	  strncpy(newname,oldname,199);
+	  cutptr = strrchr(newname,'.');
+	  *(cutptr) = '\0';
+	  printf("--> rename %s to %s\n",oldname, newname);
+	  if( (rename(oldname,newname)) < 0) {
+	    fprintf(stderr, "---->ERROR while renaming");
+	    return EXIT_FAILURE;
+	  }
+	}
+      }
+      if(closedir(dir2) == -1)
+	printf("ERROR while closing\n");
+	
+      /* else if dir-entry is directory function calls itself again */
+    }else if(attribut.st_mode & S_IFDIR && strcmp((*dirpointer).d_name,".") != 0 && strcmp((*dirpointer).d_name,"..") != 0){
+      strcat(tmp,"/");
+      walk_dir(tmp);
+    }
+  }
+  /* close directory */
+  if(closedir(dir) == -1)
+    printf("ERROR while closing %s\n", dirname);
+  return EXIT_SUCCESS;
+}
+
+/*--------------------------------------------------------------------------
+reading and checking commandline arguments
+--------------------------------------------------------------------------*/
 void get_args(int argc, char** argv, SAC_DB* sdb, char *pbdir, int *lag)
-     /*--------------------------------------------------------------------------
-       reading and checking commandline arguments
-       --------------------------------------------------------------------------*/
 {
   int i;
 
@@ -361,9 +453,8 @@ int main (int na, char **arg)
   char str[600], filename[200];
   dictionary *dd;
   char *tmpdir;
-  char *cordir;
+  char *sacdirroot;
   char pbdir[20];
-
   strcpy(sdb.conf,"./config.txt");
   strcpy(pbdir,"5to100");
   lag=3000;
@@ -372,8 +463,8 @@ int main (int na, char **arg)
 
   /* OPEN SAC DATABASE FILE AND READ IN TO MEMORY */
   dd = iniparser_new(sdb.conf);
-  cordir = iniparser_getstr(dd,"database:cordir");
   tmpdir = iniparser_getstr(dd, "database:tmpdir");
+  sacdirroot = iniparser_getstr(dd, "database:sacdirroot");
   sprintf(str,"%ssac_db.out\0", tmpdir);
 
   ff = fopen(str,"rb");
@@ -384,16 +475,11 @@ int main (int na, char **arg)
   sac_db_chng(&sdb,pbdir);
 
   /*do all the work of correlations here  */
-  do_cor(&sdb,lag,cordir);  
+  do_cor(&sdb,lag);  
   printf("correlations finished\n");
 
   /* move COR/COR_STA1_STA2.SAC.prelim to COR/COR_STA1_STA2.SAC */
-  for ( ns2 = 1; ns2 < sdb.nst; ns2++ ) for ( ns1 = 0; ns1 < ns2; ns1++ ) {
-    sprintf(filename, "%sCOR_%s_%s.SAC.prelim",cordir, sdb.st[ns1].name, sdb.st[ns2].name);
-    sprintf(str, "mv %sCOR_%s_%s.SAC.prelim %sCOR_%s_%s.SAC",
-	    cordir, sdb.st[ns1].name, sdb.st[ns2].name, cordir, sdb.st[ns1].name, sdb.st[ns2].name);
-    if(access(filename, F_OK) == 0) system(str);
-  }
+  walk_dir(sacdirroot);
 
   iniparser_free(dd);
   return 0;

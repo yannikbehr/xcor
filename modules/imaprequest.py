@@ -123,7 +123,7 @@ class mailwatcher:
 if __name__ == '__main__':
     # reading config-file
     cp = SafeConfigParser()
-    cp.read('config.txt')
+    cp.read('../nord.cfg')
 
     # checking imap-server for autodrm-mail
     mail=mailwatcher(cp)

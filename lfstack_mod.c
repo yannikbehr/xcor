@@ -96,7 +96,7 @@ int main(int na, char **arg)
       for(k=j+1;k<m;k++)
 	{
 	  f2=fopen("./do_stacking_1.csh","w");
-	  fprintf(f2,"foreach var1 (Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec )\n");
+	  fprintf(f2,"foreach var1 (Jan Feb Mar)\n");
 	  fprintf(f2,"cp %s/$var1/5to100/COR/COR_%s_%s.SAC %s/$var1\"_\"stack.SAC\n",yearsubdir,name[j],name[k],newdir);
 	  fprintf(f2,"end\n");
 	  fprintf(f2,"ls %s/*stack.SAC > %s/temp_stack\n",newdir,newdir);

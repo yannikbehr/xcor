@@ -66,7 +66,7 @@ class makerequest:
                             self.body = self.body + "CHAN_LIST " +self.chan + "\n"
                             self.body = self.body + "TIME " +str(self.year)+"/"+j+"/"+str(i)\
                                         +" 00:00:01 TO " +str(self.year)+"/"+j+"/"+str(i)\
-                                        +" 00:09:59\n"
+                                        +" 23:59:59\n"
                             self.body = self.body + "WAVEFORM SEED\nSTOP"
                         except Exception:
                             print "Cannot produce message-body!"
@@ -80,7 +80,7 @@ class makerequest:
 if __name__ == '__main__':
     # reading config-file
     cp = SafeConfigParser()
-    cp.read('config.txt')
+    cp.read('../nord.cfg')
 
     # building request mail-body and
     # sending it

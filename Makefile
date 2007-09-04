@@ -11,6 +11,7 @@
 #%.o:%.cpp
 #	g++ -g -c $<
 COMPL = gcc
+CPPOMPL = g++
 VPATH = modules
 hfiles = \
 	$(VPATH)/iniparser.h\
@@ -41,6 +42,10 @@ filter4: ./filter4_f/driver_c.c
 
 whiteout: ./white_outphamp/driver_c.c
 	cd ./white_outphamp; make
+
+stack:lfstack_mod.c module_obj $(hfiles)
+	$(CPPOMPL) -g -I modules lfstack_mod.c -o lfstack_mod $(ofiles)
+
 
 sqlite: sqlite-test.c
 	$(COMPL) -g sqlite-test.c -o sqlite-test -lsqlite

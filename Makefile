@@ -53,6 +53,14 @@ sqlite: sqlite-test.c
 
 testini: testini.c
 	$(COMPL) -g -I modules testini.c -o testini $(ofiles)
+
+initsacdb: initsac_db.c
+	$(COMPL) -g -D DEBUG -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
+
+readsacdb: read_sac_db.c
+	$(COMPL) -g -I $(VPATH) read_sac_db.c -o read_sac_db
+
+
 clean:
 	rm -r ./sacroot/
 

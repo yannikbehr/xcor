@@ -11,7 +11,7 @@ directory as 'imaprequest.py', adapt the settings and then run 'python imapreque
 it only works with imap-email-accounts and only if the autodrm-mails are
 still marked as 'unseen' or 'unread'
 """
-import getpass, imaplib, string, ftplib, os
+import getpass, imaplib, string, ftplib, os, uu
 from ConfigParser import SafeConfigParser
 
 class ftpdownload:
@@ -52,6 +52,21 @@ class ftpdownload:
                         print "Cannot retrieve file: ", error
                     else:
                         print "number of downloaded files is: ", counter
+
+    def py_uudecode(self):
+        try:
+            dirlist = os.listdir(self.dwnld)
+            seeddir = self.dwnld+'/seed'
+            os.mkdir(seeddir)
+        except OSError, err:
+            print "Cannot get dirlist or make new dir: ",err
+        else:
+            for i in dirlist:
+                infile = i
+                a = string.split(infile,'/')
+                basename = a[-1]
+                print basename
+
 
 class msg:
     def __init__(self,text):
@@ -114,14 +129,15 @@ class mailwatcher:
             return self.list
         else:
             try:
-#                ftpfile=ftpdownload(self.ftpmat, self.dwnld)
-#                ftpfile.getftp()
+                ftpfile=ftpdownload(self.ftpmat, self.dwnld)
+                ftpfile.getftp()
             except Exception, e:
                 print "Call of ftpdownload-class not successful!", e
         M.logout()
 
 
-
+            
+    
 
 
 if __name__ == '__main__':

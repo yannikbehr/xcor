@@ -11,7 +11,7 @@ directory as 'imaprequest.py', adapt the settings and then run 'python imapreque
 it only works with imap-email-accounts and only if the autodrm-mails are
 still marked as 'unseen' or 'unread'
 """
-import getpass, imaplib, string, ftplib, os, uu
+import getpass, imaplib, string, ftplib, os, uu, glob
 from ConfigParser import SafeConfigParser
 
 class ftpdownload:
@@ -56,17 +56,27 @@ class ftpdownload:
     def py_uudecode(self):
         try:
             dirlist = os.listdir(self.dwnld)
-            seeddir = self.dwnld+'/seed'
-            os.mkdir(seeddir)
         except OSError, err:
             print "Cannot get dirlist or make new dir: ",err
         else:
-            for i in dirlist:
-                infile = i
-                a = string.split(infile,'/')
-                basename = a[-1]
-                print basename
-
+            try:
+                for i in dirlist:
+                    if string.find(i,'seed') == -1:
+                        infile = open(self.dwnld+i,'r')
+                        uu.decode(infile)
+            except Exception, e:
+                print "Cannot decode data-file. ",e
+            else:
+                try:
+                    seedlist = glob.glob('*.seed')
+                    seeddir = self.dwnld+'seed'
+                    if not os.path.isdir(seeddir):
+                        os.mkdir(seeddir)
+                    for i in seedlist:
+                        print i, seeddir+'/'+i
+                        os.rename(i,seeddir+'/'+i)
+                except Exception, e:
+                    print "Cannot move seed-files"
 
 class msg:
     def __init__(self,text):
@@ -131,6 +141,7 @@ class mailwatcher:
             try:
                 ftpfile=ftpdownload(self.ftpmat, self.dwnld)
                 ftpfile.getftp()
+                ftpfile.py_uudecode()
             except Exception, e:
                 print "Call of ftpdownload-class not successful!", e
         M.logout()
@@ -143,7 +154,7 @@ class mailwatcher:
 if __name__ == '__main__':
     # reading config-file
     cp = SafeConfigParser()
-    cp.read('../nord.cfg')
+    cp.read('/Volumes/data/yannik78/upload/nord.cfg')
 
     # checking imap-server for autodrm-mail
     mail=mailwatcher(cp)

@@ -16,6 +16,8 @@ import string, sqlite, os, glob
 from ConfigParser import SafeConfigParser
 
 class Initialize_DB:
+
+
     def __init__(self,conf):
         self.cp = conf
         try:
@@ -27,6 +29,7 @@ class Initialize_DB:
             print "ERROR: One of the given directories or files doesn't exist: ", value
         self.db_file = self.cp.get('database', 'databasefile')
         self.rootdir = self.cp.get("database", "sacdirroot")
+
 
     def extr_date(self, cont):
         """extract date information from seed-filename"""
@@ -41,11 +44,12 @@ class Initialize_DB:
                 mint = mylist[2][2:4]
                 sec = mylist[2][4:6]
                 path = self.datadir+i
-                date = (path, year, month, day, hh, mint, sec, 'nothing', 'ehz')
+                date = (path, year, month, day, hh, mint, sec, 'nothing', 'lhz')
                 datelst.append(date)
             return datelst
         except Exception, e:
             print "ERROR: ", e
+
 
     def init_stat_db(self):
         """create sqlite-database with station-table and
@@ -66,7 +70,7 @@ class Initialize_DB:
                     os.system(command)
                     for line in open('rdseed.stations').readlines():
                         tmpline = string.split(line)
-                        t = (tmpline[0], float(tmpline[2]), float(tmpline[3]), float(tmpline[4]), 'BHZ')
+                        t = (tmpline[0], float(tmpline[2]), float(tmpline[3]), float(tmpline[4]), 'LHZ')
                         # append station to list if it doesn't occur yet
                         if len(stations) != 0: 
                             cmpflag = 0
@@ -79,10 +83,11 @@ class Initialize_DB:
                         else:
                             stations.append(t)
                         
-                    self.channel = 'BHZ'
+                    self.channel = 'LHZ'
                     for i in glob.glob('rdseed*'):
                         os.remove(i)
-                print stations
+                for statnum in range(0,len(stations)):
+                    print "station ", statnum," is ", stations[statnum]
                 os.chdir(curdir)
             except os.error, value:
                 print "ERROR: problems occured in system calls: ", value[0], value[1]
@@ -115,8 +120,10 @@ class Initialize_DB:
                 except Exception, e:
                     print "ERROR: in sqlite block: ", e
 
+
     def dir_walk(self, arg, dirname, names):
         print arg, dirname, names
+
 
     def init_dat_strct(self):
         """create directory tree according to information
@@ -142,7 +149,7 @@ class Initialize_DB:
                     month.append(tmpmonth)
                 year = set(year)
                 month = set(month)
-                print year, month
+                #print year, month
             except Exception, e:
                 print "ERROR: problems occured in db-read block: ", e
             else:
@@ -152,17 +159,25 @@ class Initialize_DB:
                         os.path.walk(self.rootdir, self.dir_walk, '--->')
                     else:
                         os.mkdir(self.rootdir)
-                        for i in year:
+                    for i in year:
+                        if not os.path.isdir(self.rootdir+'/'+i):
                             os.mkdir(self.rootdir+'/'+i)
-                            for j in month:
+                        else:
+                            print "directory ",self.rootdir+'/'+i," already exists!"
+                        for j in month:
+                            if not os.path.isdir(self.rootdir+i+'/'+monthdict[j]):
                                 os.mkdir(self.rootdir+i+'/'+monthdict[j])
-                                dirname = [self.rootdir+i+'/'+monthdict[j],j,i]
-                                try:
-                                    c.execute('''update seedfiles set sacdir=%s where month=%s and year=%s ''',dirname)
-                                except Exception, e:
-                                    print "ERROR: cannot update sql-table seedfiles: ",e
-                                else:
-                                    conn.commit()
+                            else:
+                                print "directory ",self.rootdir+i+'/'+monthdict[j]," already exists!"
+
+                            dirname = [self.rootdir+i+'/'+monthdict[j],j,i]
+                            try:
+                                c.execute('''update seedfiles set sacdir=%s where month=%s and year=%s ''',dirname)
+                            except Exception, e:
+                                print "ERROR: cannot update sql-table seedfiles: ",e
+                            else:
+                                conn.commit()
+                            
                         try:
                             c.execute('''update seedfiles set channel=%s''',self.channel)
                         except Exception, e:

@@ -24,11 +24,10 @@
 #include <iniparser.h>
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*--------------------------------------------------------------------------
+  reading and checking commandline arguments
+  --------------------------------------------------------------------------*/
 void get_args(int argc, char** argv, SAC_DB* sdb)
-     /*--------------------------------------------------------------------------
-       reading and checking commandline arguments
-       --------------------------------------------------------------------------*/
 {
   int i;
 
@@ -61,20 +60,22 @@ void get_args(int argc, char** argv, SAC_DB* sdb)
     }
   }
 }
-/*c/////////////////////////////////////////////////////////////////////////*/
+
+
+/*--------------------------------------------------------------------------
+  returns sign of f
+  --------------------------------------------------------------------------*/
 int isign(double f)
-     /*--------------------------------------------------------------------------
-       returns sign of f
-       --------------------------------------------------------------------------*/
 {
   if (f < 0.)     return -1;
   else            return 1;
 }
-/*c/////////////////////////////////////////////////////////////////////////*/
+
+
+/*--------------------------------------------------------------------------
+  compute nearest integer to f
+  --------------------------------------------------------------------------*/
 int nint(double f)
-     /*--------------------------------------------------------------------------
-       compute nearest integer to f
-       --------------------------------------------------------------------------*/
 {
   int i;
   double df;
@@ -85,12 +86,12 @@ int nint(double f)
   return i;
 }
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+
+/*--------------------------------------------------------------------------
+  reads sac-files fname with maximum length nmax into signal sig and \
+  header SHD
+  --------------------------------------------------------------------------*/
 SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
-     /*--------------------------------------------------------------------------
-       reads sac-files fname with maximum length nmax into signal sig and \
-       header SHD
-       --------------------------------------------------------------------------*/
 {
   FILE *fsac;
   fsac = fopen(fname, "rb");
@@ -132,11 +133,11 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
   }
 }
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+
+/*--------------------------------------------------------------------------
+  writes sac file with name fname from signal sig with header SHD
+  --------------------------------------------------------------------------*/
 void write_sac (char *fname, float *sig, SAC_HD *SHD)
-     /*--------------------------------------------------------------------------
-       writes sac file with name fname from signal sig with header SHD
-       --------------------------------------------------------------------------*/
 {
   FILE *fsac;
   int i;
@@ -169,12 +170,10 @@ void write_sac (char *fname, float *sig, SAC_HD *SHD)
 }
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*--------------------------------------------------------------------------
+  write SAC_DB structure to ascii table 'fname'
+  --------------------------------------------------------------------------*/
 void sac_db_write_to_asc ( SAC_DB *sdb, char *fname )
-     /*--------------------------------------------------------------------------
-       write SAC_DB structure to ascii table 'fname'
-       --------------------------------------------------------------------------*/
-
 {
   int ie, is;
   FILE *fi, *ff;
@@ -204,12 +203,10 @@ void sac_db_write_to_asc ( SAC_DB *sdb, char *fname )
 }
 
 
-/*////////////////////////////////////////////////////////////////////////*/
+/*--------------------------------------------------------------------------
+  converts yyyy/mm/dd into year-day
+  --------------------------------------------------------------------------*/
 int jday ( int y, int m, int d )
-     /*--------------------------------------------------------------------------
-       converts yyyy/mm/dd into year-day
-       --------------------------------------------------------------------------*/
-
 {
   int jd = 0;
   int i;
@@ -229,12 +226,11 @@ int jday ( int y, int m, int d )
 }
 
 
-/*////////////////////////////////////////////////////////////////////////*/
-double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms )
-     /*--------------------------------------------------------------------------
-       computes time in s relative to 1900
-       --------------------------------------------------------------------------*/
-{
+/*--------------------------------------------------------------------------
+  computes time in s relative to 1900
+  --------------------------------------------------------------------------*/
+double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms ){
+
   long nyday = 0, i;
 
   for ( i = 1901; i < yy; i++ )
@@ -246,11 +242,11 @@ double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms )
   return 24.*3600.*(nyday+jday) + 3600.*hh + 60.*mm + ss + 0.001*ms;
 }
 
-/*////////////////////////////////////////////////////////////////////////*/
+
+/*------------------------------------------------------------------------
+  computes arithmetic average for sig between sig[i-N/2] and sig[i+N/2]
+  --------------------------------------------------------------------------*/
 float av_sig (float *sig, int i, int N, int nwin )
-     /*------------------------------------------------------------------------
-       computes arithmetic average for sig between sig[i-N/2] and sig[i+N/2]
-       --------------------------------------------------------------------------*/
 {
   int n1, n2, j, nav = 0;
   float av = 0.;
@@ -280,6 +276,7 @@ float av_sig (float *sig, int i, int N, int nwin )
   return av;
 }
 
+
 /*/////////////////////////////////////////////////////////////////////////*/
 char str[300];
 
@@ -291,16 +288,16 @@ int nf;
 #define NPTSMAX 100000000
 
 float sig0[NPTSMAX], sig1[NPTSMAX];
+/*-------------------------------------------------------------------------
+  merge several sac files into one-day sac-files interpolating over data
+  holes
+  sta  = station name
+  chan = channel
+  t0   = date in s since 1900
+  dt   = sample rate in s
+  nrec = original number of data points in trace
+  -------------------------------------------------------------------------*/
 int merge_sac(char *sta, char *chan, double *t0, float *dt, long *nrec)
-     /*-------------------------------------------------------------------------
-       merge several sac files into one-day sac-files interpolating over data
-       holes
-       sta  = station name
-       chan = channel
-       t0   = date in s since 1900
-       dt   = sample rate in s
-       nrec = original number of data points in trace
-       -------------------------------------------------------------------------*/
 {
   FILE *fi;
   int i, n, j, N, nfirst, Nholes;
@@ -480,13 +477,11 @@ int merge_sac(char *sta, char *chan, double *t0, float *dt, long *nrec)
 }
 
 
-
-/*////////////////////////////////////////////////////////////////////////*/
+/*------------------------------------------------------------------------
+  read one-day seed-files into several sac-files and call merge_sac to 
+  merge them into one sac file
+  ------------------------------------------------------------------------*/
 void mk_one_rec (SAC_DB *sdb,char **buff)
-     /*------------------------------------------------------------------------
-       read one-day seed-files into several sac-files and call merge_sac to 
-       merge them into one sac file
-       ------------------------------------------------------------------------*/
 {
   FILE *ff;
   int ns,ne;
@@ -578,11 +573,11 @@ void mk_one_rec (SAC_DB *sdb,char **buff)
   return;
 }
 
-/*////////////////////////////////////////////////////////////////////////*/
+
+/*-------------------------------------------------------------------------
+  read in station information into SAC_DB structure
+  -------------------------------------------------------------------------*/
 void  fill_one_sta (SAC_DB *st1, char **buff)
-     /*-------------------------------------------------------------------------
-       read in station information into SAC_DB structure
-       -------------------------------------------------------------------------*/
 {
   strcpy(st1->st[st1->cntst].name,buff[0]);
   st1->st[st1->cntst].lon = atof(buff[1]);
@@ -591,11 +586,11 @@ void  fill_one_sta (SAC_DB *st1, char **buff)
   return;
 }
 
-/*////////////////////////////////////////////////////////////////////////*/
+
+/*-------------------------------------------------------------------------
+  write date and path of seed-files into SAC_DB structure       
+  -------------------------------------------------------------------------*/
 void fill_one_event (SAC_DB *ev1, char **buff )
-     /*-------------------------------------------------------------------------
-       write date and path of seed-files into SAC_DB structure       
-       -------------------------------------------------------------------------*/
 {
   ev1->ev[ev1->cntev].yy = atoi(buff[0]);
   ev1->ev[ev1->cntev].mm = atoi(buff[1]);
@@ -663,7 +658,7 @@ static int call_mk_one_rec(void *test, int argc, char **argv, char **azColName){
 SAC_DB sdb;
 char buff[300];
 
-/*////////////////////////////////////////////////////////////////////////*/
+/*========================== MAIN =================================================*/
 int main (int na, char **arg)
 {
   sqlite *db;

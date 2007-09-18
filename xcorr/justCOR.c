@@ -5,7 +5,9 @@
   -stacking correlations for one month
 
   written by Fan Chi ????
-  changed by Yannik Behr 20/7/07 for use with config-file
+  $Rev$
+  $Author$
+  $LastChangedDate$
   --------------------------------------------------------------------------*/
 
 

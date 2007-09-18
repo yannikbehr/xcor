@@ -27,8 +27,9 @@ class Initialize_DB:
                 raise Exception, (self.datadir, self.rdseed)
         except Exception, value:
             print "ERROR: One of the given directories or files doesn't exist: ", value
-        self.db_file = self.cp.get('database', 'databasefile')
+        self.db_file = self.cp.get("database", "databasefile")
         self.rootdir = self.cp.get("database", "sacdirroot")
+        self.channel = self.cp.get("processing", "channel")
 
 
     def extr_date(self, cont):
@@ -44,7 +45,7 @@ class Initialize_DB:
                 mint = mylist[2][2:4]
                 sec = mylist[2][4:6]
                 path = self.datadir+i
-                date = (path, year, month, day, hh, mint, sec, 'nothing', 'lhz')
+                date = (path, year, month, day, hh, mint, sec, 'nothing', self.channel)
                 datelst.append(date)
             return datelst
         except Exception, e:
@@ -70,7 +71,7 @@ class Initialize_DB:
                     os.system(command)
                     for line in open('rdseed.stations').readlines():
                         tmpline = string.split(line)
-                        t = (tmpline[0], float(tmpline[2]), float(tmpline[3]), float(tmpline[4]), 'LHZ')
+                        t = (tmpline[0], float(tmpline[2]), float(tmpline[3]), float(tmpline[4]), self.channel)
                         # append station to list if it doesn't occur yet
                         if len(stations) != 0: 
                             cmpflag = 0
@@ -83,7 +84,6 @@ class Initialize_DB:
                         else:
                             stations.append(t)
                         
-                    self.channel = 'LHZ'
                     for i in glob.glob('rdseed*'):
                         os.remove(i)
                 for statnum in range(0,len(stations)):
@@ -177,13 +177,6 @@ class Initialize_DB:
                                 print "ERROR: cannot update sql-table seedfiles: ",e
                             else:
                                 conn.commit()
-                            
-                        try:
-                            c.execute('''update seedfiles set channel=%s''',self.channel)
-                        except Exception, e:
-                            print "ERROR: cannot update sql-table seedfiles: ",e
-                        else:
-                            conn.commit()
                 except Exception, e:
                     print "ERROR: Cannot initialise directory tree ", e
 

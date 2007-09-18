@@ -8,27 +8,9 @@
   this can be changed in the one_rec_trans function
 
   written by Fan Chi ????
-  21/6/07 changed by Yannik Behr for use with config-file
-  22/6/07 temporary files are now written in ./tmp directory
-  $Log$
-  Revision 1.9  2007/07/30 22:37:40  behrya
-  'sac_db.out' is rewritten to disk-> makes change in samp freq effective
-
-  Revision 1.8  2007-07-20 03:20:43  behrya
-  changed indentation
-
-  Revision 1.7  2007-07-20 01:18:30  behrya
-  changed command line passing
-
-  Revision 1.6  2007-07-10 05:06:50  behrya
-  changed indentation
-
-  Revision 1.5  2007-07-09 01:36:34  behrya
-  temporary dir is read from config file
-
-  Revision 1.4  2007-07-06 04:06:29  behrya
-  added option to read in alternative config file and downsampling of 50 hz data
-
+  $Rev$
+  $Author$
+  $LastChangedDate$
   --------------------------------------------------------------------------*/
 
 
@@ -209,6 +191,7 @@ void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
 
   t2 = t1 + (n-1)*sd->rec[ne][ns].dt;
 
+  /* ATTENTION: THE FOLLOWING TEST IS HARD-WIRED TO 1s!!!! */
   t1b = sd->rec[ne][ns].t0 - sd->ev[ne].t0;
   t1e = t1b + (sd->rec[ne][ns].n-1)*sd->rec[ne][ns].dt;
 

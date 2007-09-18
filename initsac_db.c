@@ -1,7 +1,12 @@
-/* program to initialise the file 'sac_db.out' which is used by subsequent 
+/*--------------------------------------------------------------------------
+program to initialise the file 'sac_db.out' which is used by subsequent 
    processing routines; it searches a dir-structure for matching files, 
-   extracts the necessary information from the sac-header and writes them 
-   into the sac_db-structure*/
+   extracts the necessary information from the sac-header or the file name
+   and writes them into the sac_db-structure
+   $Rev$
+   $Author$
+   $LastChangedDate$
+---------------------------------------------------------------------------*/
 
 
 #include <stdio.h>
@@ -21,13 +26,15 @@
 
 #define STRING 200
 
+
+/* function prototypes */
 void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname);
 int walk_dir(char *dirname, SAC_DB *sdb);
 int search_stat(char *statname, SAC_DB *sdb);
 void month_day(int year, int yearday, int *pmonth, int *pday);
 double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms );
 void get_args(int argc, char** argv, SAC_DB *sdb, char *filename);
-void read_resp(char *resppath, SAC_DB *sdb, char *newname, char *respfile);
+void read_resp(char *resppath, SAC_DB *sdb, char *respfile);
 void count_ev(char *newname, char *tmp, char *oldname, SAC_DB *sdb);
 void print_sac_db(SAC_DB *sdb);
 
@@ -76,7 +83,7 @@ int walk_dir(char *dirname, SAC_DB *sdb){
     /* if filename has contains 'RESP' string and is regular file */
     else if(strstr((*dirpointer).d_name,"RESP") !=0 && attribut.st_mode & S_IFREG){
       count_ev(newname, tmp, oldname, sdb);
-      read_resp(tmp,sdb,newname,dirpointer->d_name);
+      read_resp(tmp,sdb,dirpointer->d_name);
 
     }
     /* else if dir-entry is directory function calls itself again */
@@ -93,7 +100,14 @@ int walk_dir(char *dirname, SAC_DB *sdb){
   }
 }
 
-
+/*------------------------------------------------------------ 
+ *  function to read sac-header information and write them 
+ *  into the corresponding fields of the SAC_DB structure
+ *
+ *  sacfile = name of sac file
+ *  sdb     = SAC_DB structure to write in
+ *  newname = dirname of sac file 
+  ------------------------------------------------------------*/
 void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   FILE *f;
   int i, index, ns;
@@ -137,7 +151,15 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
  
 }
 
-void read_resp(char *resppath, SAC_DB *sdb, char *newname, char *respfile){
+/*------------------------------------------------------
+ *function to extract station name and response file 
+ *path from file name
+ *
+ *resppath = parent dir of response file
+ *sdb      = SAC_DB structure
+ *respfile = full path of response file
+ -------------------------------------------------------*/
+void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
 
   int  i, ns, index, m=0;
   char *ptr;
@@ -162,7 +184,15 @@ void read_resp(char *resppath, SAC_DB *sdb, char *newname, char *respfile){
 
 }
 
-
+/*----------------------------------------------------
+ *function to count number of events i.e. number of
+ *days
+ *
+ *newname = current directory
+ *tmp     = full path to current file
+ *oldname = previous directory
+ *sdb     = SAC_DB structure
+ -----------------------------------------------------*/
 void count_ev(char *newname, char *tmp, char *oldname, SAC_DB *sdb){
 
   char *cutptr;
@@ -176,7 +206,15 @@ void count_ev(char *newname, char *tmp, char *oldname, SAC_DB *sdb){
   }
 }
 
-
+/*------------------------------------------------
+ *function to check if entry for station name 
+ *already exists; if not, writes station name 
+ *into SAC_DB structure; returns index of station
+ *name
+ *
+ *statname = name of station
+ *sdb      = SAC_DB structure
+ --------------------------------------------------*/
 int search_stat(char *statname, SAC_DB *sdb){
 
   int i,N,cnt=-1;
@@ -191,7 +229,10 @@ int search_stat(char *statname, SAC_DB *sdb){
   return cnt;
 }
 
-
+/*-----------------------------------------------------
+ *debug-function to print entries of SAC_DB structure 
+ *to stdout
+ -----------------------------------------------------*/
 void print_sac_db(SAC_DB *sdb){
 
   int i,j;  
@@ -223,6 +264,10 @@ void print_sac_db(SAC_DB *sdb){
 
 }
 
+
+/*---------------------------------------------------------
+ * function to convert yearday into monthday
+ ---------------------------------------------------------*/
 void month_day(int year, int yearday, int *pmonth, int *pday){
 
   static char daytab[2][13] =  {
@@ -241,7 +286,7 @@ void month_day(int year, int yearday, int *pmonth, int *pday){
 
 
 /*--------------------------------------------------------------------------
-  computes time in s relative to 1900
+ *computes time in s relative to 1900
   --------------------------------------------------------------------------*/
 double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms ){
 

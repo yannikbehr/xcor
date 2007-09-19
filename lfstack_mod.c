@@ -120,7 +120,7 @@ int main(int na, char **arg)
 	  fprintf(f2,"END\n");
 	  fprintf(f2,"rm %s/*_stack.SAC\n",newdir);
 	  fclose(f2);
-	  //	  system("csh do_stacking_2.csh");
+    	  //	    system("csh do_stacking_2.csh");
 	}
     }
 

@@ -9,11 +9,10 @@ using namespace std;
 
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
-void get_args(int argc, char** argv, char *cnffile)
 /*--------------------------------------------------------------------------
-reading and checking commandline arguments
---------------------------------------------------------------------------*/
+ *reading and checking commandline arguments
+ --------------------------------------------------------------------------*/
+void get_args(int argc, char** argv, char *cnffile)
 {
   int i;
 

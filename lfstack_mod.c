@@ -3,7 +3,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#define MODUS ,0711)
 
 using namespace std;
 
@@ -77,7 +76,8 @@ int main(int na, char **arg)
   strcat(newdir,year);
   strncpy(yearsubdir,newdir,199);
   strcat(newdir,"/STACK");
-  if(mkdir(newdir MODUS == -1)
+
+  if(mkdir(newdir ,0711) == -1)
      printf("cannot create directory %s\n", newdir); 
   m=0;
   char *ptr;

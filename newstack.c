@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #include <iniparser.h>
 #include <mysac.h>
 #include <sac_db.h>
@@ -21,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+
 
 struct corfile {
   char path[200];
@@ -65,6 +67,21 @@ void get_args(int argc, char** argv, char *configfile)
   }
 }
 
+void copy(char *in, char *out)
+{
+  FILE *fpin = fopen(in, "rb");
+  FILE *fpout = fopen(out, "wb");
+  int ch;
+
+  assert(fpin && fpout);
+
+  printf("copy %s --> %s\n",in,out);
+
+  while( (ch = getc(fpin)) != EOF)
+    putc(ch, fpout);
+  fclose(fpin);
+  fclose(fpout);
+}
 
 /*------------------------------------------------------------------------
 function to find all 'COR'-directories and move preliminary correlations
@@ -98,7 +115,6 @@ int find_correl(char *dirname, struct corfile **matrix, int row, int col)
     /* if directory entry name is 'COR' and is a directory than move
        all preliminery correlations to final ones*/
     if(strcmp((*dirpointer).d_name,"COR")==0 && attribut.st_mode & S_IFDIR){
-      printf("working on: %s\n",tmp);
       if((dir2=opendir(tmp)) == NULL) {
 	fprintf(stderr,"ERROR in opendir ...\n");
 	return EXIT_FAILURE;
@@ -135,23 +151,104 @@ int find_correl(char *dirname, struct corfile **matrix, int row, int col)
 
 void fill_matrix(char *filename, char *filepath, struct corfile **matrix, int row, int col)
 {
-  int i;
-
-  printf("-->found correl-file: %s\n",filepath);
+  int i, j;
 
   for(i=0;i<row;i++){
-    if(strcmp(matrix[i][0].stationpair,filename)==0)
-      printf("-->number of row is: %d\n",i);
-    break;
+    if(strcmp(matrix[i][0].stationpair,filename)==0){
+      for(j=0;j<col;j++){
+	if(strcmp(matrix[i][j].path,filepath)==0){
+	  break;
+	}else if(strcmp(matrix[i][j].path,"dummy")==0){
+	  strncpy(matrix[i][j].stationpair,filename,199);
+	  strncpy(matrix[i][j].path,filepath,199);
+	  break;
+	}
+      }
+    }else if(strcmp(matrix[i][0].stationpair,"dummy")==0){
+      strncpy(matrix[i][0].stationpair,filename,199);
+      strncpy(matrix[i][0].path,filepath,199);
+      break;
+    }
    }
 }
+
+
+void stack(char *rootdir, char *sacdir, struct corfile **matrix, int row, int col)
+{
+  FILE *f3, *f2;
+  int i, ii, j;
+  char newdir[200], newfile[200], command[200], str[200], buf[3];
+  char **stack;
+
+  strncpy(newdir,rootdir,199);
+  strcat(newdir,"STACK");
+  if(mkdir(newdir ,0711) == -1)
+    fprintf(stderr,"cannot create directory %s\n", newdir); 
+
+  for(i=0;i<row;i++){
+    j=0;
+    while(strcmp(matrix[i][j].path,"dummy")!=0){
+      strncpy(newfile,newdir,199);
+      strcat(newfile,"/");
+      strcat(newfile,matrix[i][j].stationpair);
+      strcat(newfile,"_stack");
+      sprintf(buf,"%d",j);
+      strcat(newfile,buf);
+      copy(matrix[i][j].path,newfile);
+      j++;
+    }
+
+  stack = (char **)malloc(j * sizeof(char *));
+  if(NULL == stack) {
+    printf("no more virtuel RAM available ... !");
+    return;
+  }
+
+  for(ii = 0; ii < j; ii++) {
+    stack[ii] = (char *)malloc(sizeof(char[200]));
+    if(NULL == stack[ii]) {
+      printf("no more storage for line %d\n",i);
+      return;
+    }
+  }
+  sprintf(command,"ls  %s/*_stack* > %s/temp_stack\n", newdir, newdir);
+  system(command);
+  
+  sprintf(str,"%s/temp_stack",newdir);
+  f3=fopen(str,"r");
+  for(ii=0;ii<j;ii++)
+    if(fscanf(f3,"%s",stack[ii])==EOF) break;
+  fclose(f3);
+  printf("number of months %d\n",ii);
+  
+  f2=fopen("do_stacking.csh","w");
+  fprintf(f2,"%ssac << END\n",sacdir);
+  fprintf(f2,"r %s\n",stack[0]);
+  for(ii=1;ii<j;ii++)
+    fprintf(f2,"addf %s\n",stack[ii]);
+  fprintf(f2,"ch o 0\n");
+  fprintf(f2,"w %s/%s\n",newdir, matrix[i][0].stationpair);
+  fprintf(f2,"END\n");
+  fprintf(f2,"rm %s/*_stack*\n",newdir);
+  fclose(f2);
+  system("csh do_stacking.csh");
+  
+  for(ii=0;ii<j;ii++)
+    free(stack[ii]);
+  free(stack);
+  
+  }
+
+}
+
+
+
 int main(int argc, char **argv)
 {
   FILE *ff;
   int row, col, i, j;
-  char configfile[200], str[200];
-  char *sacdirroot;
-  char *tmpdir;
+  char configfile[200], str[200], newdir[200];
+  char *sacdir, *tmpdir, *rootdir;
   struct corfile **matrix;
   dictionary *dd;
   static SAC_DB sdb;
@@ -160,13 +257,16 @@ int main(int argc, char **argv)
   get_args(argc,argv,configfile);
   dd = iniparser_new(configfile);
   tmpdir = iniparser_getstr(dd, "database:tmpdir");
+  rootdir = iniparser_getstr(dd, "database:sacdirroot");
+  sacdir = iniparser_getstr(dd, "database:sacdir");
+
   sprintf(str,"%ssac_db.out\0", tmpdir);
 
   ff = fopen(str,"rb");
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
 
-  row = (sdb.nst+1)*(sdb.nst)/2;
+  row = (sdb.nst)*(sdb.nst-1)/2;
   col = 25;  /* Attention: hard-wired to not more than 2 years of data  */
 
   matrix = (struct corfile **)malloc(row * sizeof(struct corfile *));
@@ -191,17 +291,21 @@ int main(int argc, char **argv)
      }
    }
 
-   /*   for(i=0;i<row;i++){
-     for(j=0;j<col;j++){
-       printf("Eintrag in Zeile %d und Spalte %d ist:\n",i,j);
-       printf("-->Path: %s, Station Pair: %s\n",matrix[i][j].path,matrix[i][j].stationpair );
-	 }
-   }
-   */
-  sacdirroot = iniparser_getstr(dd, "database:sacdirroot");
 
-  find_correl(sacdirroot,matrix, row, col);
+  find_correl(rootdir,matrix, row, col);
+  stack(rootdir,sacdir,matrix,row,col);
   iniparser_free(dd);
+
+#ifdef DEBUG
+  for(i=0;i<row;i++){
+    for(j=0;j<col;j++){
+      printf("entry in row %d and column %d is:\n",i,j);
+      printf("-->path: %s, station pair: %s\n",matrix[i][j].path,matrix[i][j].stationpair );
+    }
+  }
+  printf("Number of stations is: %d\n",sdb.nst);
+#endif
+
   for(i = 0; i < row; i++)
     free(matrix[i]);
   free(matrix);

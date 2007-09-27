@@ -5,7 +5,7 @@ hfiles = \
 ofiles = \
 	iniparser.o
 
-%.o:%.c $(hfiles)
+%.o:%.c 
 	$(COMPL) -g -c  $<  
 
 objects: $(ofiles) $(hfiles)

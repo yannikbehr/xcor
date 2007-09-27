@@ -10,15 +10,44 @@
 #
 #%.o:%.cpp
 #	g++ -g -c $<
+
+############## COMPILER #########################
 COMPL = gcc
 CPPOMPL = g++
+FC = g77
+
+############## ftan options ######################
+FTANPATH = FTAN
+
+ofilesftan = $(FTANPATH)/ftandriver.o\
+	     $(FTANPATH)/swapn.o\
+	     $(FTANPATH)/aftan4.o\
+	     $(FTANPATH)/aftan4i.o\
+	     $(FTANPATH)/ftfilt.o\
+	     $(FTANPATH)/fmax.o\
+	     $(FTANPATH)/taper.o\
+	     $(FTANPATH)/trigger.o\
+	     $(FTANPATH)/lim.o\
+	     $(FTANPATH)/spline.o\
+	     $(FTANPATH)/tapers.o\
+	     $(FTANPATH)/tgauss.o\
+	     $(FTANPATH)/dspline.o\
+	     $(FTANPATH)/pred_cur.o\
+	     $(FTANPATH)/misc.o
+
+FTANLIBS =   -L/usr/lib -L/usr/local/packages/fftw/lib -lgcc -lfftw3
+
+##################################################
+
 VPATH = modules
+
 hfiles = \
 	$(VPATH)/iniparser.h\
 	$(VPATH)/sac_db.h
 
 ofiles = \
 	$(VPATH)/iniparser.o
+
 
 options = -pg -D DEBUG
 
@@ -28,7 +57,13 @@ options = -pg -D DEBUG
 all: sacseed cut justcor filter4 whiteout
 
 sacseed: module_obj sa_from_seed_mod.c $(hfiles)
-	$(COMPL)  -g -I modules  sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
+	$(COMPL)  -g -I $(VAPTH) sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
+
+ftan:	ftan-module
+	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)
+
+ftan-module:
+	cd $(FTANPATH); make objects
 
 cut: 	module_obj cut_trans_mod.c
 	$(COMPL) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
@@ -45,8 +80,17 @@ filter4: ./filter4_f/driver_c.c
 whiteout: ./white_outphamp/driver_c.c
 	cd ./white_outphamp; make
 
-stack:lfstack_mod.c module_obj $(hfiles)
-	$(CPPOMPL) -g -I modules lfstack_mod.c -o lfstack_mod $(ofiles)
+stack:newstack.c module_obj $(hfiles)
+	$(CPPOMPL) -g -I modules newstack.c -o newstack $(ofiles)
+
+lag:new_ch_lag.c module_obj $(hfiles)
+	$(COMPL) -g -D DEBUG -I $(VPATH) new_ch_lag.c -o new_ch_lag $(ofiles)
+
+initsacdb: initsac_db.c
+	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
+
+readsacdb: read_sac_db.c
+	$(COMPL) -g -I $(VPATH) read_sac_db.c -o read_sac_db
 
 
 sqlite: sqlite-test.c
@@ -55,12 +99,6 @@ sqlite: sqlite-test.c
 
 testini: testini.c
 	$(COMPL) -g -I modules testini.c -o testini $(ofiles)
-
-initsacdb: initsac_db.c
-	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
-
-readsacdb: read_sac_db.c
-	$(COMPL) -g -I $(VPATH) read_sac_db.c -o read_sac_db
 
 
 clean:

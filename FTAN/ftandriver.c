@@ -51,7 +51,7 @@ void count_files(char *dirname, int *cnt)
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' than go on*/
-    if(strstr((*dirpointer).d_name,"_s") !=0 && attribut.st_mode & S_IFREG){
+    if(strstr((*dirpointer).d_name,"_s") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 && attribut.st_mode & S_IFREG){
       (*cnt)++;
     }
   }
@@ -88,7 +88,7 @@ void get_filelist(char *dirname, char **filelist, int cnt)
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' than go on*/
-    if(strstr((*dirpointer).d_name,"_s") !=0 && attribut.st_mode & S_IFREG){
+    if(strstr((*dirpointer).d_name,"_s") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 && attribut.st_mode & S_IFREG){
       strncpy(filelist[i],tmp,STRING-1);
       i++;
     }
@@ -157,7 +157,7 @@ int main (int argc, char **argv)
   char configfile[STRING];
   char **filelist, *sacroot;
   char  name[160];//str[160];
-  int   i;//nn
+  int   i,j;//nn
   int   sac = 1; // =1 - SAC, =0 - ftat files
   int counter=0;
   double initerror=0;
@@ -169,14 +169,22 @@ int main (int argc, char **argv)
   get_args(argc,argv,configfile);
 
   dd = iniparser_new(configfile);
-  vmin = iniparser_getdouble(dd,"FTAN:vmin",initerror);
-  vmax = iniparser_getdouble(dd,"FTAN:vmax",initerror);
-  tmin = iniparser_getdouble(dd,"FTAN:tmin",initerror);
-  tmax = iniparser_getdouble(dd,"FTAN:tmax",initerror);
-  tresh = iniparser_getdouble(dd,"FTAN:thresh",initerror);
-  ffact = iniparser_getdouble(dd,"FTAN:ffact",initerror);
-  taperl = iniparser_getdouble(dd,"FTAN:taperl",initerror);
-  snr = iniparser_getdouble(dd,"FTAN:snr",initerror);
+//  vmin = iniparser_getdouble(dd,"FTAN:vmin",initerror);
+//  vmax = iniparser_getdouble(dd,"FTAN:vmax",initerror);
+//  tmin = iniparser_getdouble(dd,"FTAN:tmin",initerror);
+//  tmax = iniparser_getdouble(dd,"FTAN:tmax",initerror);
+//  tresh = iniparser_getdouble(dd,"FTAN:thresh",initerror);
+//  ffact = iniparser_getdouble(dd,"FTAN:ffact",initerror);
+//  taperl = iniparser_getdouble(dd,"FTAN:taperl",initerror);
+//  snr = iniparser_getdouble(dd,"FTAN:snr",initerror);
+  vmin = 1.5;
+  vmax = 5;
+  tmin = 5;
+  tmax = 50;
+  tresh = 10;
+  ffact = 1;
+  taperl = 1;
+  snr = 0.1;
   printf("FTAN parameters:\n");
   printf("--> vmin = %lf, vmax = %lf\n",vmin,vmax);
   printf("--> tmin = %lf, tmax = %lf\n",tmin,tmax);
@@ -210,8 +218,9 @@ int main (int argc, char **argv)
     printf("%s\n",filelist[i]);
   }
 
-  for(i=0;i<counter;i++){
-    strncpy(name,filelist[i],159);
+  for(j=0;j<counter;j++){
+    strncpy(name,filelist[j],159);
+    printf("working on: %s\n",name);
     /*
      *   read SAC or ascii data 
      */
@@ -284,65 +293,4 @@ int main (int argc, char **argv)
   return 0;
 }
 
-
-
-
-
-
-/* ====================================================================
- * Parameters for aftan4 function:
- * Input parameters:
- * n       - number of input samples, (int)
- * sei     - input array length of n, (float)
- * t0      - time shift of SAC file in seconds, (double)
- * dt      - sampling rate in seconds, (double)
- * delta   - distance, km (double)
- * vmin    - minimal group velocity, km/s (double)
- * vmax    - maximal value of the group velocity, km/s (double)
- * tmin    - minimal period, s (double)
- * tmax    - maximal period, s (double)
- * tresh   - treshold, usually = 10, (double)
- * ffact   - factor to automatic filter parameter, (double)
- * perc    - minimal length of of output segment vs freq. range, % (double)
- * npoints - max number points in jump, (int)
- * taperl  - factor for the left end seismogram tapering,
- *           taper = taperl*tmax,    (double)
- * nfin    - starting number of frequencies, nfin <= 100, (int)
- * snr     - phase match filter parameter, spectra ratio to
- *           determine cutting point    (double)
- * npred   - length of prediction table
- * pred    - prediction table: pred[0][] - periods in sec,
- *                             pred[1][] - pedicted velocity, km/s
- * ==========================================================
- * Output parameters are placed in 2-D arrays arr1 and arr2,
- * arr1 contains preliminary results and arr2 - final.
- * ==========================================================
- * nfout1 - output number of frequencies for arr1, (int)
- * arr1   - the first nfout1 raws contain preliminary data,
- *          (double arr1[n][5], n >= nfout1)
- *          arr1[:,0] -  central periods, s (double)
- *          arr1[:,1] -  apparent periods, s (double)
- *          arr1[:,2] -  group velocities, km/s (double)
- *          arr1[:,3] -  amplitudes, Db (double)
- *          arr1[:,4] -  discrimination function, (double)
- *          arr1[:,5] -  signal/noise ratio, Db (double)
- *          arr1[:,6] -  maximum half width, s (double)
- * nfout2 - output number of frequencies for arr2, (int)
- *          If nfout2 == 0, no final result.
- * arr2   - the first nfout2 raws contains final data,
- *          (double arr2[n][5], n >= nfout2)
- *          arr2[:,0] -  central periods, s (double)
- *          arr2[:,1] -  apparent periods, s (double)
- *          arr2[:,2] -  group velocities, km/s (double)
- *          arr2[:,3] -  amplitudes, Db (double)
- *          arr2[:,4] -  signal/noise ratio, Db (double)
- *          arr2[:,5] -  maximum half width, s (double)
- *          tamp      -  time to the beginning of ampo table, s (double)
- *          nrow      -  number of rows in array ampo, (int)
- *          ncol      -  number of columns in array ampo, (int)
- *          ampo      -  Ftan amplitude array, Db, (double [100][32768])
- * ierr   - completion status, =0 - O.K.,           (int)
- *                             =1 - some problems occures
- *                             =2 - no final results
- */
 

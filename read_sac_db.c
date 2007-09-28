@@ -63,6 +63,8 @@ void print_sac_db(SAC_DB *sdb){
     for(j=0;j<sdb->nst;j++){
       printf("event number: %d   station number: %d\n", i,j);
       printf("--> station name       :%s\n", sdb->st[j].name);
+      printf("--> station latitude   :%f\n", sdb->st[j].lat);
+      printf("--> station longitude  :%f\n", sdb->st[j].lon);
       printf("--> eventname          :%s\n", sdb->ev[i].name);
       printf("--> channel name       :%s\n", sdb->rec[i][j].chan);
       printf("--> sample interval    :%f\n", sdb->rec[i][j].dt);

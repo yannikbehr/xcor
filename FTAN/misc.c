@@ -128,21 +128,21 @@ void printres(double dt,int nfout1,double arr1[100][7],int nfout2,
   strcat(name2,pref);
   strcat(name2,"_AMP");
  
-  /*
-    if(ii==0)
+
+  if(ii==0)
     {
-    if((out = fopen(name2,"w")) == NULL) {
-    printf("Can not open file %s.\n",name2);
-    exit(1);
+      if((out = fopen(name2,"w")) == NULL) {
+	printf("Can not open file %s.\n",name2);
+	exit(1);
+      }
     }
-    }
-    else out = fopen(name2,"a");
-    for(i = 0; i < nrow; ++i)
+  else out = fopen(name2,"a");
+  for(i = 0; i < nrow; ++i)
     for(j = 0; j < ncol; ++j)
-    fprintf(out,"%8.3lf %8.3lf %15.6e\n", arr2[i][0],(delta/(tamp+j*dt)),ampo[i][j]);
+      fprintf(out,"%8.3lf %8.3lf %15.6e\n", arr2[i][0],(delta/(tamp+j*dt)),ampo[i][j]);
 
-    // fprintf(out,"%8.3lf %8.3lf %15.6e\n", (double)(i+1),tamp+j*dt,ampo[i][j]);
+  // fprintf(out,"%8.3lf %8.3lf %15.6e\n", (double)(i+1),tamp+j*dt,ampo[i][j]);
 
-    fclose(out);
-  */  
+  fclose(out);
+  
 }

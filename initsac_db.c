@@ -128,6 +128,8 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   index = search_stat(shd.kstnm,sdb);
   if(index == -1){
     ns = sdb->nst;
+    sdb->st[sdb->nst].lat = shd.stla;
+    sdb->st[sdb->nst].lon = shd.stlo;
     strncpy(sdb->st[sdb->nst++].name,shd.kstnm,9);
   }else{
    ns = index;
@@ -161,9 +163,12 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
  -------------------------------------------------------*/
 void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
 
+  FILE *f;
   int  i, ns, index, m=0;
   char *ptr;
   char name[6][8];
+  char sacfile[STRING],dirname[STRING];
+  SAC_HD shd;
 
   ptr = strtok(respfile, ".");
   while(ptr != NULL) {
@@ -175,6 +180,26 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
   index = search_stat(name[2],sdb);
   if(index == -1){
     ns = sdb->nst;
+    ptr = NULL;
+    strncpy(dirname,resppath,STRING-1);
+    ptr = strrchr(dirname,'/');
+    *(ptr+1) = '\0';
+    strncpy(sacfile,dirname,STRING-1);
+    strcat(sacfile,name[2]);
+    strcat(sacfile,".");
+    strcat(sacfile,name[4]);
+    strcat(sacfile,".SAC");
+      
+    f = fopen(sacfile,"rb");
+    if(NULL == f) {
+      printf("fatal error!couldn't find %s\n",sacfile);
+      exit(1);
+    }else{
+      fread(&shd, sizeof(SAC_HD),1,f);
+      fclose(f);
+    }
+    sdb->st[sdb->nst].lat = shd.stla;
+    sdb->st[sdb->nst].lon = shd.stlo;
     strncpy(sdb->st[sdb->nst++].name,name[2],9);
   }else{
    ns = index;
@@ -244,6 +269,8 @@ void print_sac_db(SAC_DB *sdb){
     for(j=0;j<sdb->nst;j++){
       printf("event number: %d   station number: %d\n", i,j);
       printf("--> station name       :%s\n", sdb->st[j].name);
+      printf("--> station latitude   :%f\n", sdb->st[j].lat);
+      printf("--> station longitude  :%f\n", sdb->st[j].lon);
       printf("--> eventname          :%s\n", sdb->ev[i].name);
       printf("--> channel name       :%s\n", sdb->rec[i][j].chan);
       printf("--> sample interval    :%f\n", sdb->rec[i][j].dt);

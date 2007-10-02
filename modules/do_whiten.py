@@ -71,8 +71,13 @@ class DoWhiten:
             print "ERROR in dir_walk function: ",e
 
     def start(self):
-        os.path.walk(self.sacdir,self.dir_walk,0)
-
+        try:
+            os.path.walk(self.sacdir,self.dir_walk,0)
+        except Exception,e:
+            print "problems in function 'start' of 'do_whiten.py'"
+            return 1
+        else:
+            return 0
 
 
 

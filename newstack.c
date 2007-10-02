@@ -227,6 +227,7 @@ void stack(char *rootdir, char *sacdir, struct corfile **matrix, int row, int co
   for(ii=1;ii<j;ii++)
     fprintf(f2,"addf %s\n",stack[ii]);
   fprintf(f2,"ch o 0\n");
+  fprintf(f2,"ch mag %d\n",j);
   fprintf(f2,"w %s/%s\n",newdir, matrix[i][0].stationpair);
   fprintf(f2,"END\n");
   fprintf(f2,"rm %s/*_stack*\n",newdir);

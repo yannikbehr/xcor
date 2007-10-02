@@ -29,6 +29,48 @@ struct corfile {
   char stationpair[200];
 } COR_FILE;
 
+
+SAC_HD *read_sac_header(char *fname, SAC_HD *SHD)
+{
+ FILE *fsac;
+/*..........................................................................*/
+        if((fsac = fopen(fname, "rb")) == NULL) {
+          printf("could not open sac file to write\n");
+          exit(1);
+        }
+
+        if ( !fsac )
+        {
+          /*fprintf(stderr,"file %s not find\n", fname);*/
+         return NULL;
+        }
+
+        if ( !SHD ) SHD = &SAC_HEADER;
+
+         fread(SHD,sizeof(SAC_HD),1,fsac);
+
+	 fclose (fsac);
+   /*-------------  calcule de t0  ----------------*/
+   {
+        int eh, em ,i;
+        float fes;
+        char koo[9];
+
+        for ( i = 0; i < 8; i++ ) koo[i] = SHD->ko[i];
+        koo[8] = '\0';
+
+        SHD->o = SHD->b + SHD->nzhour*3600. + SHD->nzmin*60 +
+         SHD->nzsec + SHD->nzmsec*.001;
+
+        sscanf(koo,"%d%*[^0123456789]%d%*[^.0123456789]%g",&eh,&em,&fes);
+
+        SHD->o  -= (eh*3600. + em*60. + fes);
+   /*-------------------------------------------*/}
+
+        return SHD;
+}
+
+
 void fill_matrix(char *filename, char *filepath, struct corfile **matrix, int row, int col);
 
 /*--------------------------------------------------------------------------
@@ -176,9 +218,11 @@ void fill_matrix(char *filename, char *filepath, struct corfile **matrix, int ro
 void stack(char *rootdir, char *sacdir, struct corfile **matrix, int row, int col)
 {
   FILE *f3, *f2;
+  float stackcnt;
   int i, ii, j;
   char newdir[200], newfile[200], command[200], str[200], buf[3];
   char **stack;
+  static SAC_HD shd;
 
   strncpy(newdir,rootdir,199);
   strcat(newdir,"STACK");
@@ -224,10 +268,21 @@ void stack(char *rootdir, char *sacdir, struct corfile **matrix, int row, int co
   f2=fopen("do_stacking.csh","w");
   fprintf(f2,"%ssac << END\n",sacdir);
   fprintf(f2,"r %s\n",stack[0]);
-  for(ii=1;ii<j;ii++)
+  if( read_sac_header(stack[0],&shd)==NULL){
+    fprintf(stderr,"file %s not found\n", stack[0]);
+    return;
+  }
+  stackcnt = shd.unused1;
+  for(ii=1;ii<j;ii++){
     fprintf(f2,"addf %s\n",stack[ii]);
+    if( read_sac_header(stack[ii],&shd)==NULL){
+      fprintf(stderr,"file %s not found\n", stack[0]);
+      return;
+    }
+    stackcnt = stackcnt+shd.unused1;
+  }
+  fprintf(f2,"ch mag %f\n",stackcnt);
   fprintf(f2,"ch o 0\n");
-  fprintf(f2,"ch mag %d\n",j);
   fprintf(f2,"w %s/%s\n",newdir, matrix[i][0].stationpair);
   fprintf(f2,"END\n");
   fprintf(f2,"rm %s/*_stack*\n",newdir);

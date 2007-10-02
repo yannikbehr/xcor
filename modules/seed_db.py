@@ -180,6 +180,21 @@ class Initialize_DB:
                 except Exception, e:
                     print "ERROR: Cannot initialise directory tree ", e
 
+
+    def start_seed_db(self):
+        try:
+            self.init_stat_db()
+        except Exception,e:
+            print "problems with function 'init_stat_db' in 'seed_db.py'", e
+            return 1
+        else:
+            try:
+                self.init_dat_strct()
+            except Exception,e:
+                print "problems with function 'init_dat_strct' in 'seed_db.py'", e
+                return 1
+            else:
+                return 0
         
     
 if __name__ == '__main__':
@@ -187,6 +202,4 @@ if __name__ == '__main__':
     cp.read('config.txt')
     new = Initialize_DB(cp)
     if cp.get('database','datatype') == 'seed':
-        new.init_stat_db()
-        new.init_dat_strct()
-        
+        new.start_seed_db()

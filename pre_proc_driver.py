@@ -105,6 +105,6 @@ elif err!=0:
     print "system call of 'new_ch_lag' returned non-Null value"
     exit
 
-if err!=0:
+if cp.get('processing','ftan')=='1' and err!=0:
     print "system call of 'ftandriver' returned non-Null value"
     exit

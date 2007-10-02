@@ -119,7 +119,7 @@ int one_pair(char *name1, char *staname1, char *staname2 )
   fprintf(fp1, "addf %s_p\n", fname);
   fprintf(fp1, "ch o 0\n");
   fprintf(fp1, "div 2\nw %s_s\n", fname);
-  fprintf(fp1, "END\n\n");
+  fprintf(fp1, "END\n");
 
   fclose(fp1);
   system("csh change.csh");
@@ -207,7 +207,6 @@ void chlag(char *rootdir)
       while(ptr != NULL){
 	strncpy(name[m],ptr,7);
 	ptr = strtok(NULL,"_");
-	printf("pointer zeigt auf %s\n",name[m]);
 	m++;
       }
       if ( !one_pair(tmp,name[1],name[2]) ) continue;

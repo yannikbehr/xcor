@@ -270,6 +270,7 @@ int do_cor( SAC_DB *sdb, int lag)
 		  }
 		  // add new correlation to previous one
 		  for(k = 0; k < (2*lag+1); k++) sig[k] += cor[k];
+		  shd_cor.unused1 = shd_cor.unused1+1;
 		  write_sac (filename, sig, &shd_cor );
 		}
 	 
@@ -283,6 +284,7 @@ int do_cor( SAC_DB *sdb, int lag)
 		  shdamp1.stlo =  sdb->st[jsta2].lon;
 		  shdamp1.npts =  2*lag+1;
 		  shdamp1.b    = -(lag)*shdamp1.delta;
+		  shdamp1.unused1 = 0;
 		  write_sac (filename, cor, &shdamp1);
 		}
 	      }   //loop over check

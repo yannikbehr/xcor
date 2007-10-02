@@ -51,25 +51,60 @@ except Exception:
 
 cp.read(config)
 
+err = 0
 if cp.get('processing','initdb')=='1':
     seedb = seed_db.Initialize_DB(cp)
     if cp.get('database','datatype') == 'seed':
-        seedb.init_stat_db()
-        seedb.init_dat_strct()
-
-if cp.get('processing','seed2sac')=='1':
-    os.system('./sa_from_seed_mod -c '+config)
-
-if cp.get('processing','rmresp')=='1':
+        err = seedb.start_seed_db()
+if cp.get('processing','seed2sac')=='1' and err==0:
+    err = os.system('./sa_from_seed_mod -c '+config)
+elif err!=0:
+    print "call of 'seed_db.py' returned non-Null value"
+    exit
+    
+if cp.get('processing','rmresp')=='1' and err==0:
     command = './cut_trans_mod '+cp.get("processing","lowercut")+' '+\
               cp.get("processing","uppercut")+' -c '+config
-    os.system(command)
-    
-if cp.get('processing','white')=='1':
-    dowh = do_whiten.DoWhiten(cp)
-    dowh.start()
+    err = os.system(command)
+elif err!=0:
+    print "system call of 'sa_from_seed_mod' returned non-Null value"
+    exit
 
-if cp.get('processing','xcorr')=='1':
+if cp.get('processing','white')=='1' and err==0:
+    dowh = do_whiten.DoWhiten(cp)
+    err = dowh.start()
+elif err!=0:
+    print "system call of 'cut_trans_mod' returned non-Null value"
+    exit
+
+if cp.get('processing','xcorr')=='1'and err==0:
     command = './justCOR -c '+config
-    os.system(command)
-    
+    err = os.system(command)
+elif err!=0:
+    print "call of 'do_whiten.py' returned non-Null value"
+    exit
+
+if cp.get('processing','stack')=='1' and err==0:
+    command = './newstack -c '+config
+    err = os.system(command)
+elif err!=0:
+    print "system call of 'justCOR' returned non-Null value"
+    exit
+
+if cp.get('processing','sym')=='1' and err==0:
+    command = './new_ch_lag -c '+config
+    err = os.system(command)
+elif err!=0:
+    print "system call of 'newstack' returned non-Null value"
+    exit
+
+if cp.get('processing','ftan')=='1' and err==0:
+    command = './ftandriver -c '+config
+    err = os.system(command)
+elif err!=0:
+    print "system call of 'new_ch_lag' returned non-Null value"
+    exit
+
+if err!=0:
+    print "system call of 'ftandriver' returned non-Null value"
+    exit

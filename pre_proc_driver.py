@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """program to combine modules written for the pre-processing of
 continous data before the cross-correlation\n
 $Log$

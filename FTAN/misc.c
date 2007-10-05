@@ -108,15 +108,15 @@ void printres(double dt,int nfout1,double arr1[100][7],int nfout2,
 	fprintf(out,"%4d %10.4lf %10.4lf %12.4lf %12.4lf %8.3lf\n",
 		i,arr2[i][0],arr2[i][1],arr2[i][2],arr2[i][3],
 		arr2[i][4]);
-      if(ii==1 && arr2[i][1]<20 && arr2[i][1] > 11)
+      if(ii==1 && arr2[i][1]<20 && arr2[i][1] > 12)
 	fprintf(out,"%4d %10.4lf %10.4lf %12.4lf %12.4lf %8.3lf\n",
 		i,arr2[i][0],arr2[i][1],arr2[i][2],arr2[i][3],
 		arr2[i][4]);
-      if(ii==2 && arr2[i][1]<27 && arr2[i][1] > 19 )
+      if(ii==2 && arr2[i][1]<27 && arr2[i][1] > 20 )
 	fprintf(out,"%4d %10.4lf %10.4lf %12.4lf %12.4lf %8.3lf\n",
 		i,arr2[i][0],arr2[i][1],arr2[i][2],arr2[i][3],
 		arr2[i][4]);
-      if(ii==3 && arr2[i][1] > 26)
+      if(ii==3 && arr2[i][1] > 27)
 	fprintf(out,"%4d %10.4lf %10.4lf %12.4lf %12.4lf %8.3lf\n",
 		i,arr2[i][0],arr2[i][1],arr2[i][2],arr2[i][3],
 		arr2[i][4]);

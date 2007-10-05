@@ -76,12 +76,12 @@ void fill_matrix(char *filename, char *filepath, struct corfile **matrix, int ro
 /*--------------------------------------------------------------------------
 reading and checking commandline arguments
 --------------------------------------------------------------------------*/
-void get_args(int argc, char** argv, char *configfile)
+void get_args(int argc, char** argv, char *configfile, char *altrootdir)
 {
   int i;
 
-  if (argc>3){
-    fprintf(stderr,"USAGE: %s [-c alt/config.file]\n", argv[0]);
+  if (argc>5){
+    fprintf(stderr,"USAGE: %s [-c alt/config.file -r alt/root/dir]\n", argv[0]);
     exit(1);
   }
   /* Start at i = 1 to skip the command name. */
@@ -99,7 +99,10 @@ void get_args(int argc, char** argv, char *configfile)
       case 'c':	strncpy(configfile,argv[++i],199);
 	break;
 
-      case 'h':	printf("USAGE: %s [-c alt/config.file]\n", argv[0]);
+      case 'r':	strncpy(altrootdir,argv[++i],199);
+	break;
+
+      case 'h':	printf("USAGE: %s [-c alt/config.file -r alt/root/dir]\n", argv[0]);
 	exit(0);
 	break;
 
@@ -109,6 +112,12 @@ void get_args(int argc, char** argv, char *configfile)
   }
 }
 
+
+/*-------------------------------------------------------
+ copy routine
+ in = src-file
+ out = destination-file
+ -------------------------------------------------------*/
 void copy(char *in, char *out)
 {
   FILE *fpin = fopen(in, "rb");
@@ -130,6 +139,10 @@ function to find all 'COR'-directories and move preliminary correlations
 to final correlations
 needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
                          stdio.h, stdlib.h
+dirname = root dir to start searching
+matrix  = 2-D array to store the correlation-file paths
+row     = number of station pairs
+col     = number of correlations for each station pair
 ------------------------------------------------------------------------*/
 int find_correl(char *dirname, struct corfile **matrix, int row, int col)
 {
@@ -191,6 +204,14 @@ int find_correl(char *dirname, struct corfile **matrix, int row, int col)
 
 
 
+/*------------------------------------------------------------------------
+function to fill the 2-D array that holds the correlation-file paths
+filename = the file's basename
+filepath = the full path of the file
+matrix   = 2-D array to store the correlation-file paths
+row      = number of station pairs
+col      = number of correlations for each station pair
+------------------------------------------------------------------------*/
 void fill_matrix(char *filename, char *filepath, struct corfile **matrix, int row, int col)
 {
   int i, j;
@@ -215,6 +236,14 @@ void fill_matrix(char *filename, char *filepath, struct corfile **matrix, int ro
 }
 
 
+/*--------------------------------------------------------------------
+stacking of the found correlation-files
+rootdir = dir that holds the 'STACK' directory
+sacdir  = path to sac executables
+matrix   = 2-D array that stores the correlation-file paths
+row      = number of station pairs
+col      = number of correlations for each station pair
+---------------------------------------------------------------------*/
 void stack(char *rootdir, char *sacdir, struct corfile **matrix, int row, int col)
 {
   FILE *f3, *f2;
@@ -266,7 +295,7 @@ void stack(char *rootdir, char *sacdir, struct corfile **matrix, int row, int co
   printf("number of months %d\n",ii);
   
   f2=fopen("do_stacking.csh","w");
-  fprintf(f2,"%ssac << END\n",sacdir);
+  fprintf(f2,"%ssac << END >/dev/null\n",sacdir);
   fprintf(f2,"r %s\n",stack[0]);
   if( read_sac_header(stack[0],&shd)==NULL){
     fprintf(stderr,"file %s not found\n", stack[0]);
@@ -305,17 +334,22 @@ int main(int argc, char **argv)
   int row, col, i, j;
   char configfile[200], str[200], newdir[200];
   char *sacdir, *tmpdir, *rootdir;
+  char altrootdir[200];
   struct corfile **matrix;
   dictionary *dd;
   static SAC_DB sdb;
 
   strncpy(configfile,"./config.txt",199);
-  get_args(argc,argv,configfile);
+  strncpy(altrootdir,"dummy",199);
+  get_args(argc,argv,configfile,altrootdir);
   dd = iniparser_new(configfile);
   tmpdir = iniparser_getstr(dd, "database:tmpdir");
-  rootdir = iniparser_getstr(dd, "database:sacdirroot");
   sacdir = iniparser_getstr(dd, "database:sacdir");
-
+  if(strcmp(altrootdir,"dummy")==0){
+    rootdir = iniparser_getstr(dd, "database:sacdirroot");
+  }else{
+    rootdir=&altrootdir[0];
+  }
   sprintf(str,"%ssac_db.out\0", tmpdir);
 
   ff = fopen(str,"rb");

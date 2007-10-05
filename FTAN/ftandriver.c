@@ -16,7 +16,7 @@
 
 #define STRING 200
 
-void get_args(int argc, char **argv, char *configfile);
+void get_args(int argc, char **argv, char *configfile,char *altsacroot);
 void get_filelist(char *dirname, char **filelist, int cnt);
 void count_files(char *dirname, int *cnt);
 
@@ -51,7 +51,9 @@ void count_files(char *dirname, int *cnt)
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' than go on*/
-    if(strstr((*dirpointer).d_name,"_s") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 && attribut.st_mode & S_IFREG){
+    if(strstr((*dirpointer).d_name,"_n") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 
+       && strstr((*dirpointer).d_name,"AMP") ==0 
+       && attribut.st_mode & S_IFREG){
       (*cnt)++;
     }
   }
@@ -88,7 +90,10 @@ void get_filelist(char *dirname, char **filelist, int cnt)
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' than go on*/
-    if(strstr((*dirpointer).d_name,"_s") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 && attribut.st_mode & S_IFREG){
+    if(strstr((*dirpointer).d_name,"_n") !=0 
+       && strstr((*dirpointer).d_name,"DISP") ==0 
+       && strstr((*dirpointer).d_name,"AMP") ==0 
+       && attribut.st_mode & S_IFREG){
       strncpy(filelist[i],tmp,STRING-1);
       i++;
     }
@@ -104,12 +109,12 @@ void get_filelist(char *dirname, char **filelist, int cnt)
 /*--------------------------------------------------------------------------
   reading and checking commandline arguments
   --------------------------------------------------------------------------*/
-void get_args(int argc, char **argv, char *configfile)
+void get_args(int argc, char **argv, char *configfile, char *altsacroot)
 {
   int i;
 
-  if (argc > 3){
-    fprintf(stderr,"USAGE: %s [ -c path/to/alt/configfile]\n", argv[0]);
+  if (argc > 5){
+    fprintf(stderr,"USAGE: %s [ -c path/to/alt/configfile -r alt/sac/root]\n", argv[0]);
     exit(1);
   }
   /* Start at i = 1 to skip the command name. */
@@ -127,8 +132,11 @@ void get_args(int argc, char **argv, char *configfile)
       case 'c':	strncpy(configfile,argv[++i],STRING-1);
 	break;
 
+      case 'r':	strncpy(altsacroot,argv[++i],STRING-1);
+	break;
+
       case 'h': 
-	printf("USAGE: %s [-c path/to/alt/configfile]\n", argv[0]);
+	printf("USAGE: %s [-c path/to/alt/configfile -r alt/sac/root]\n", argv[0]);
 	printf("-------------------------------\n");
 	printf("c-wrapper for FTAN-fortran routines\n");
 	
@@ -156,7 +164,7 @@ int main (int argc, char **argv)
   static int npred_1;
   char configfile[STRING];
   char **filelist, *sacroot;
-  char  name[160];//str[160];
+  char  name[160], altsacroot[STRING];//str[160];
   int   i,j;//nn
   int   sac = 1; // =1 - SAC, =0 - ftat files
   int counter=0;
@@ -166,25 +174,18 @@ int main (int argc, char **argv)
 
   // input command line arguments treatment
   strncpy(configfile,"./config.txt",STRING-1);
-  get_args(argc,argv,configfile);
+  strncpy(altsacroot,"dummy",STRING-1);
+  get_args(argc,argv,configfile,altsacroot);
 
   dd = iniparser_new(configfile);
-//  vmin = iniparser_getdouble(dd,"FTAN:vmin",initerror);
-//  vmax = iniparser_getdouble(dd,"FTAN:vmax",initerror);
-//  tmin = iniparser_getdouble(dd,"FTAN:tmin",initerror);
-//  tmax = iniparser_getdouble(dd,"FTAN:tmax",initerror);
-//  tresh = iniparser_getdouble(dd,"FTAN:thresh",initerror);
-//  ffact = iniparser_getdouble(dd,"FTAN:ffact",initerror);
-//  taperl = iniparser_getdouble(dd,"FTAN:taperl",initerror);
-//  snr = iniparser_getdouble(dd,"FTAN:snr",initerror);
-  vmin = 1.5;
-  vmax = 5;
-  tmin = 5;
-  tmax = 50;
-  tresh = 10;
-  ffact = 1;
-  taperl = 1;
-  snr = 0.1;
+  vmin = iniparser_getdouble(dd,"FTAN:vmin",initerror);
+  vmax = iniparser_getdouble(dd,"FTAN:vmax",initerror);
+  tmin = iniparser_getdouble(dd,"FTAN:tmin",initerror);
+  tmax = iniparser_getdouble(dd,"FTAN:tmax",initerror);
+  tresh = iniparser_getdouble(dd,"FTAN:thresh",initerror);
+  ffact = iniparser_getdouble(dd,"FTAN:ffact",initerror);
+  taperl = iniparser_getdouble(dd,"FTAN:taperl",initerror);
+  snr = iniparser_getdouble(dd,"FTAN:snr",initerror);
   printf("FTAN parameters:\n");
   printf("--> vmin = %lf, vmax = %lf\n",vmin,vmax);
   printf("--> tmin = %lf, tmax = %lf\n",tmin,tmax);
@@ -193,7 +194,11 @@ int main (int argc, char **argv)
   printf("--> taper length = %lf\n",taperl);
   printf("--> SNR = %lf\n",snr);
 
-  sacroot = iniparser_getstr(dd,"database:sacdirroot");
+  if(strcmp(altsacroot,"dummy")==0){
+    sacroot = iniparser_getstr(dd,"database:sacdirroot");
+  }else{
+    sacroot=&altsacroot[0];
+  }
   strcat(sacroot,"STACK/");
   count_files(sacroot,&counter);
   printf("number of files is: %d\n",counter);
@@ -253,11 +258,11 @@ int main (int argc, char **argv)
 	    tmin=15;
 	    tmax=35;
 	  }
-	else
-	  {
-	    tmin=20;
-	    tmax=50;
-	  }
+//	else
+//	  {
+//	    tmin=20;
+//	    tmax=50;
+//	  }
    
 	/* FTAN with phase match filter. First Iteration. */
       

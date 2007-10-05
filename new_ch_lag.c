@@ -1,3 +1,12 @@
+/*--------------------------------------------------------------------------
+  Program to divide stacks of cross-correlations into positive, negative and
+  symmetric part
+
+  $Rev$
+  $Author$
+  $LastChangedDate$
+  --------------------------------------------------------------------------*/
+
 #define MAIN
 
 #include <stdio.h>
@@ -57,9 +66,7 @@ SAC_HD *read_sac_header(char *fname, SAC_HD *SHD)
 /*-----------------------------------------------------------
  *one_pair is the main routine to run the other subroutines.  
  ------------------------------------------------------------*/
-/*--------------------------------------------------------------*/
-int one_pair(char *name1, char *staname1, char *staname2 )
-/*--------------------------------------------------------------*/
+int one_pair(char *name1, char *staname1, char *staname2, char *sacdir)
 {
   float b, dist, dt, tmax, Umin = 1.;
   float Evla, Evlo, Stla, Stlo;
@@ -96,7 +103,7 @@ int one_pair(char *name1, char *staname1, char *staname2 )
   printf("sta1 %s sta2 %s\n", staname1, staname2);
   printf("sta1len %d sta2len %d\n", strlen(staname1), strlen(staname2));
 
-  fprintf(fp1, "sac << END\n");
+  fprintf(fp1,"%ssac << END >/dev/null\n",sacdir);
   fprintf(fp1, "r %s\n", fname);
   fprintf(fp1, "ch kevnm %s\n", staname1);
   fprintf(fp1, "ch kstnm %s\n", staname2);
@@ -123,6 +130,7 @@ int one_pair(char *name1, char *staname1, char *staname2 )
 
   fclose(fp1);
   system("csh change.csh");
+  system("rm change.csh");
 
   return 1;
 }
@@ -131,12 +139,12 @@ int one_pair(char *name1, char *staname1, char *staname2 )
 /*--------------------------------------------------------------------------
   reading and checking commandline arguments
   --------------------------------------------------------------------------*/
-void get_args(int argc, char** argv, SAC_DB *sdb){
+void get_args(int argc, char** argv, SAC_DB *sdb, char *altrootdir){
 
   int i;
 
   if (argc > 5){
-    fprintf(stderr,"USAGE: %s [ -c path/to/alt/configfile]\n", argv[0]);
+    fprintf(stderr,"USAGE: %s [ -c path/to/alt/configfile -r alt/root/dir]\n", argv[0]);
     exit(1);
   }
   /* Start at i = 1 to skip the command name. */
@@ -154,8 +162,11 @@ void get_args(int argc, char** argv, SAC_DB *sdb){
       case 'c':	strncpy(sdb->conf,argv[++i],149);
 	break;
 
+      case 'r':	strncpy(altrootdir,argv[++i],199);
+	break;
+
       case 'h': 
-	printf("USAGE: %s [-c path/to/alt/configfile]\n", argv[0]);
+	printf("USAGE: %s [-c path/to/alt/configfile -r alt/root/dir]\n", argv[0]);
 	printf("-------------------------------\n");
 	printf("program to devide correlations\n");
 	printf("in positiv, negativ and symmetric part\n");
@@ -171,7 +182,7 @@ void get_args(int argc, char** argv, SAC_DB *sdb){
 }
 
 
-void chlag(char *rootdir)
+void chlag(char *rootdir,char *sacdir)
 {
   DIR *dir;
   struct dirent *dirpointer;
@@ -209,7 +220,7 @@ void chlag(char *rootdir)
 	ptr = strtok(NULL,"_");
 	m++;
       }
-      if ( !one_pair(tmp,name[1],name[2]) ) continue;
+      if ( !one_pair(tmp,name[1],name[2],sacdir) ) continue;
       
     }
   }
@@ -228,18 +239,24 @@ int main (int argc, char **argv)
   int N, j, cnt;
   int ns1 = 0, ns2 = 4, n = 0, len = 0, i;
   char filename[29], fname[29], shortname[26];
-  char staname1[8], staname2[8], dump[500];
+  char staname1[8], staname2[8], dump[500], altrootdir[200];
   char ch, ch1;
-  char *rootdir;
+  char *rootdir, *sacdir;
   dictionary *dd;
 
   strncpy(sdb.conf,"./config.txt",149);
-  get_args(argc,argv,&sdb);
+  strncpy(altrootdir,"dummy",199);
+  get_args(argc,argv,&sdb,altrootdir);
 
   dd = iniparser_new(sdb.conf);
-  rootdir = iniparser_getstr(dd, "database:sacdirroot");
+  sacdir = iniparser_getstr(dd, "database:sacdir");
+  if(strcmp(altrootdir,"dummy")==0){
+    rootdir = iniparser_getstr(dd, "database:sacdirroot");
+  }else{
+    rootdir = &altrootdir[0];
+  }
   strcat(rootdir,"STACK");
 
-  chlag(rootdir);
+  chlag(rootdir,sacdir);
   iniparser_free(dd);
 }

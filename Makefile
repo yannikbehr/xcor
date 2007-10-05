@@ -80,10 +80,10 @@ filter4: ./filter4_f/driver_c.c
 whiteout: ./white_outphamp/driver_c.c
 	cd ./white_outphamp; make
 
-stack:newstack.c module_obj $(hfiles)
-	$(CPPOMPL) -g -I modules newstack.c -o newstack $(ofiles)
+stack:  newstack.c module_obj $(hfiles)
+	$(CPPOMPL) -g -D DEBUG -I modules newstack.c -o newstack $(ofiles)
 
-lag:new_ch_lag.c module_obj $(hfiles)
+lag:    new_ch_lag.c module_obj $(hfiles)
 	$(COMPL) -g -D DEBUG -I $(VPATH) new_ch_lag.c -o new_ch_lag $(ofiles)
 
 initsacdb: initsac_db.c
@@ -96,19 +96,12 @@ readsacdb: read_sac_db.c
 sqlite: sqlite-test.c
 	$(COMPL) -g sqlite-test.c -o sqlite-test -lsqlite
 
-
-testini: testini.c
-	$(COMPL) -g -I modules testini.c -o testini $(ofiles)
-
-
 clean:
 	rm -r ./sacroot/
 
 run:
 	./sa_from_seed_mod
 
-runcut:
-	./cut_trans_mod 1000 84000
 tilde: 
 	rm -f $(VPATH)/*~ ; rm -f *~; rm rdseed.err_log.*
 
@@ -116,3 +109,5 @@ ofiles:
 	rm -f $(VPATH)/*.o
 
 
+cowsay:
+	./cowsay-3.03/bin/bin/cowsay this is the modified version of Fan Chi\'s correlation software

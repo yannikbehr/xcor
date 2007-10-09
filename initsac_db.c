@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------
-program to initialise the file 'sac_db.out' which is used by subsequent 
-   processing routines; it searches a dir-structure for matching files, 
-   extracts the necessary information from the sac-header or the file name
-   and writes them into the sac_db-structure
-   $Rev$
-   $Author$
-   $LastChangedDate$
----------------------------------------------------------------------------*/
+  program to initialise the file 'sac_db.out' which is used by subsequent 
+  processing routines; it searches a dir-structure for matching files, 
+  extracts the necessary information from the sac-header or the file name
+  and writes them into the sac_db-structure
+  $Rev$
+  $Author$
+  $LastChangedDate$
+  ---------------------------------------------------------------------------*/
 
 
 #include <stdio.h>
@@ -35,6 +35,7 @@ void month_day(int year, int yearday, int *pmonth, int *pday);
 double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms );
 void get_args(int argc, char** argv, SAC_DB *sdb, char *filename);
 void read_resp(char *resppath, SAC_DB *sdb, char *respfile);
+void sort_sac_db(SAC_DB *sdb);
 void count_ev(char *newname, char *tmp, char *oldname, SAC_DB *sdb);
 void print_sac_db(SAC_DB *sdb);
 
@@ -257,6 +258,37 @@ int search_stat(char *statname, SAC_DB *sdb){
 }
 
 /*-----------------------------------------------------
+ *sort sdb-entries according to the date
+ -----------------------------------------------------*/
+void sort_sac_db(SAC_DB *sdb){
+
+  int i,j,value,index;  
+  static SAC_DB buff;
+
+  for(i=0;i<sdb->nev;i++){
+    value=i;
+    for(index=i+1;index<=sdb->nev;index++){
+      for(j=0;j<sdb->nst;j++){
+	if(sdb->rec[index][j].t0<sdb->rec[value][j].t0 && sdb->rec[index][j].t0 !=0){
+	  value=index;
+	}
+      }
+    }
+    if(value != i){
+      for(j=0;j<sdb->nst;j++){
+	buff.rec[1][j]=sdb->rec[value][j];
+	sdb->rec[value][j]=sdb->rec[i][j];
+	sdb->rec[i][j]=buff.rec[1][j];
+      }
+      buff.ev[1]=sdb->ev[value];
+      sdb->ev[value]=sdb->ev[i];
+      sdb->ev[i]=buff.ev[1];
+    }
+  }
+}
+
+
+/*-----------------------------------------------------
  *debug-function to print entries of SAC_DB structure 
  *to stdout
  -----------------------------------------------------*/
@@ -413,6 +445,8 @@ int main (int argc, char **argv){
 #ifdef DEBUG
   print_sac_db(&sdb);
 #endif
+
+  sort_sac_db(&sdb);
 
   ff = fopen(filename,"wb");
   fwrite(&sdb, sizeof(SAC_DB), 1, ff );

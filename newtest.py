@@ -3,7 +3,7 @@ of Fan Chis Code
 \n18/6/2007"""
 import sys
 sys.path.append('./modules')
-import  os, os.path, string, pysacio
+import  os, os.path, string, pysacio, filecmp
 from numpy import *
 class TestDir:
     """ class to compare dir-structure of automated procedure
@@ -15,6 +15,7 @@ class TestDir:
         self.diff = []
         
     def check_sac_head(self, file1, file2):
+        """compare only sac-header and the length of the traces"""
         try:
             [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
             [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
@@ -51,6 +52,7 @@ class TestDir:
                 print "sac-files ", file1, " and ", file2, " are not identical: ", e
 
     def check_sac_trace(self, file1, file2):
+        """compare sac-traces and some parts of the header"""
         try:
             [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
             [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
@@ -116,6 +118,8 @@ class TestDir:
 
     def walk_dir(self, sac1, sac2):
         try:
+            print "------------------------------------------" \
+                  "-------------------------------------------------"
             print "checking: ", sac1, sac2
             os.path.isdir(sac1)
             os.path.isdir(sac2)
@@ -123,45 +127,36 @@ class TestDir:
             print "ERROR: one or both directories don't exist: ", e
         else:
             try:
-                list1 = os.listdir(sac1)
-                list2 = os.listdir(sac2)
-                if len(list1) != len(list2):
-                    self.diff.append(sac1)
-                    self.diff.append(sac2)
-                    self.count = self.count+1
-                    tmplist = list1 + list2
-                    whatsnew = []
-                    for item in tmplist:
-                        if item not in list1 or item not in list2:
-                            whatsnew.append(item)
-                    print whatsnew
-                    raise Exception, "contents list not of equal length"
-                for q,a in zip(list1, list2):
-                    if q == a:
-                        newsac1 = sac1+'/'+q
-                        newsac2 = sac2+'/'+a
-                        if string.find(q, 'SAC')!=-1:                        
-                            self.check_sac_trace(newsac1, newsac2)
-                        elif string.find(q, 'RESP')!=-1:
-                            self.check_resp(newsac1, newsac2)
-                        else:
-                            self.walk_dir(newsac1, newsac2)
+                d = filecmp.dircmp(sac1,sac2,ignore=['5to100'])
+                d.report()
+                for i in d.common:
+                    newsac1 = sac1+'/'+i
+                    newsac2 = sac2+'/'+i
+                    print "working on:",i
+                    if string.find(i, 'SAC')!=-1:                        
+                        self.check_sac_trace(newsac1, newsac2)
+                    elif string.find(i, 'RESP')!=-1:
+                        self.check_resp(newsac1, newsac2)
+                    elif os.path.isdir(newsac1):
+                        self.walk_dir(newsac1, newsac2)
                     else:
-                        self.diff.append(q)
-                        self.diff.append(a)
-                        self.count = self.count+1
-                        raise Exception, (q,a)
+                        pass
+                    
             except Exception, e:
-                print "ERROR in comparing lists", e
+                print "ERROR in comparing lists:", e
 
                 
             
 
     def feedback(self):
         if self.count != 0:
+            print "------------------------------------------ SUMMARY " \
+                  "-------------------------------------------------"
             print "differences occured in: ", self.diff
         else:
-            print "directories are identical!"
+            print "------------------------------------------ SUMMARY " \
+                  "-------------------------------------------------"
+            print "no differences found!"
 
 if __name__ == '__main__':
     test = TestDir()

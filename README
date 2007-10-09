@@ -1,0 +1,102 @@
+------------------------------------------------------------
+PRE-PROCESSING
+------------------------------------------------------------
+The general concept is to bring the available raw-data in 
+the following directory-structure:
+
+                  data-rootdir
+                       |
+      ----------------------------------
+      |                                |
+    year1                            year2
+      |                                |
+  -------------------      -----------------------
+  |        |        |      |          |          |
+ Jan      Feb      Mar... Jan        Feb        Mar...
+           |                          |           
+      -----------               --------------  
+      |    |    |               |     |      |   
+     day1 day2 day3...        day1   day2   day3...
+           |                          |       
+      station1.SAC                station1.SAC
+      RESP.station1               RESP.station1
+      station2.SAC                station2.SAC
+      RESP.station2...            RESP.station2...
+
+The python-script 'seed_db.py' , called by the python-wrapper 
+'proc-driver.py', stores the paths of seed files found in 
+one directory plus some information from these seed files 
+in a sqlite-database file. This database file is used by the 
+C-program 'sa_from_seed_mod' to convert the seed files into 
+SAC files and write them into the structure mentioned above. 
+
+If the raw-data is distributed among different directories 
+it might be necessary to repeat this step several times. 
+
+The next step is to check if the response-files are correct 
+i.e. if they exist and if they have the right date. If not, 
+this has to be corrected manually. To check the response 
+files the python-script 'check-resp.py' can be executed.
+
+If the raw-data structure above is a patchwork from several 
+different sources a new sac_db.out file has to be created. 
+This file is crucial for the rest of the processing as it 
+contains the paths of the SAC files and several other 
+information on the data and the processing that is needed 
+for subsequent steps. 
+
+'sac_db.out' can be created by the C-program 'initsacdb'. It 
+scans the directory-structure above for SAC-files and 
+constructs the new 'sac_db.out' file from the information 
+found. The resulting binary file can be written to stdout 
+with the C-program 'read_sac_db'.  
+
+These last two steps are not part of the proc-driver script 
+yet. 
+
+
+
+The C-program 'cut_trans_mod' removes the instrument-response 
+and cuts the trace, at the moment, between -3000 and + 3000 
+seconds.
+
+The python-script 'do_whiten.py' calls the fortran-programs 
+'filter4' and 'whiten_phamp' which apply a time-normalisation 
+as well as a spectral whitening. 
+
+------------------------------------------------------------
+X-CORRELATION
+------------------------------------------------------------
+
+The correlation is done by the C-program 'justCOR' and the 
+results are stacked by the C-program 'newstack'. 'new_ch_lag' 
+divides the correlation-results into symmetric, causal and 
+anticausal parts and finally 'ftandriver' is a C-wrapper for 
+the fortran code 'FTAN'. 
+
+
+------------------------------------------------------------
+COMMENTS
+------------------------------------------------------------
+The code is far from being cleaned up as I am still testing 
+and adding things all the time. All C-programs should accept 
+the commandline option '-h' to get a short output how to 
+execute the program in case one wants to execute it 
+separately. 
+
+I did a few tests today and it seems to me that the order, 
+in which the correlations of one month are calculated, has 
+an influence on the result. Sounds strange, I know. I have 
+no explanation for that. 
+
+The 'make all' command has to be extended to the new 
+programs but the separate 'make' commands should work.
+
+Sorry, that it is still so messy. I you want to, we can go 
+through that the next time we meet. As soon as the code 
+works I will invest a few hours to clean it up and make the 
+programs and comments a bit more consistent. 
+
+And the last comment: as I wrote in my email, almost all of 
+the programs get several parameters from the config-file 
+'nord.cfg'. 

@@ -1,9 +1,21 @@
+/*--------------------------------------------------------------------------
+  program to print ascii version of sac_db structure to stout
+  $Rev:$
+  $Author:$
+  $LastChangedDate:$
+  --------------------------------------------------------------------------*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <mysac.h>
+
+#ifdef OLDSACDB
+#include <sac_db_old.h>
+#else
 #include <sac_db.h>
+#endif
 
 #define STRING 200
 
@@ -52,6 +64,9 @@ void get_args(int argc, char** argv, char *filename){
   }
 }
 
+/*--------------------------------------------------------------------------
+  print sac_db structure to stdout
+  --------------------------------------------------------------------------*/
 void print_sac_db(SAC_DB *sdb){
 
   int i,j;  
@@ -59,7 +74,7 @@ void print_sac_db(SAC_DB *sdb){
   for(i=0;i<sdb->nst;i++){
     printf("station number %d is %s\n",i,sdb->st[i].name);
   }
-  for(i=0;i<=sdb->cntev;i++){
+  for(i=0;i<=sdb->nev;i++){
     for(j=0;j<sdb->nst;j++){
       printf("event number: %d   station number: %d\n", i,j);
       printf("--> station name       :%s\n", sdb->st[j].name);
@@ -91,6 +106,7 @@ int main(int argc, char **argv){
   char filename[STRING];
   static SAC_DB sdb;
   int i;
+
 
   strncpy(filename,"./sac_db.out",STRING-1);
   get_args(argc,argv,filename);

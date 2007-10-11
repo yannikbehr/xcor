@@ -317,6 +317,7 @@ void stack(char *rootdir, char *sacdir, struct corfile **matrix, int row, int co
   fprintf(f2,"rm %s/*_stack*\n",newdir);
   fclose(f2);
   system("csh do_stacking.csh");
+  system("rm do_stacking.csh");
   
   for(ii=0;ii<j;ii++)
     free(stack[ii]);

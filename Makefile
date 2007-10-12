@@ -90,7 +90,7 @@ initsacdb: initsac_db.c
 	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
 readsacdb: read_sac_db.c
-	$(COMPL) -g -I $(VPATH) read_sac_db.c -o read_sac_db
+	$(COMPL) -g  -I $(VPATH) read_sac_db.c -o read_sac_db
 
 
 sqlite: sqlite-test.c

@@ -51,7 +51,7 @@ void count_files(char *dirname, int *cnt)
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' than go on*/
-    if(strstr((*dirpointer).d_name,"_n") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 
+    if(strstr((*dirpointer).d_name,"_s") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 
        && strstr((*dirpointer).d_name,"AMP") ==0 
        && attribut.st_mode & S_IFREG){
       (*cnt)++;
@@ -90,7 +90,7 @@ void get_filelist(char *dirname, char **filelist, int cnt)
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' than go on*/
-    if(strstr((*dirpointer).d_name,"_n") !=0 
+    if(strstr((*dirpointer).d_name,"_s") !=0 
        && strstr((*dirpointer).d_name,"DISP") ==0 
        && strstr((*dirpointer).d_name,"AMP") ==0 
        && attribut.st_mode & S_IFREG){
@@ -258,11 +258,11 @@ int main (int argc, char **argv)
 	    tmin=15;
 	    tmax=35;
 	  }
-//	else
-//	  {
-//	    tmin=20;
-//	    tmax=50;
-//	  }
+	else
+	  {
+	    tmin=20;
+	    tmax=50;
+	  }
    
 	/* FTAN with phase match filter. First Iteration. */
       

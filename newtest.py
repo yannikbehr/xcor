@@ -14,6 +14,50 @@ class TestDir:
         self.count = 0
         self.diff = []
         
+    def check_cor(self,dir1, dir2):
+        """compare correlation results"""
+        list1 = os.listdir(dir1)
+        list2 = os.listdir(dir2)
+        for file1 in list1:
+            for file2 in list2:
+                stations = []
+                base1 = os.path.basename(file1)
+                base2 = os.path.basename(file2)
+                trunk1 = string.split(base1,'.')
+                trunk2 = string.split(base2,'.')
+                tmparr1 = string.split(trunk1[0],'_')
+                tmparr2 = string.split(trunk2[0],'_')
+                stations.append(tmparr1[1])
+                stations.append(tmparr1[2])
+                stations.append(tmparr2[1])
+                stations.append(tmparr2[2])
+                for i in range(0,len(stations)):
+                    if stations[i] == 'OUZV':
+                        stations[i] = 'OUZ'
+                    elif stations[i] == 'WCZV':
+                        stations[i] = 'WCZ'
+                        
+                if stations[0] == stations[2] and stations[1] == stations[3] or \
+                   stations[0] == stations[3] and stations[1] == stations[2]:
+                    print "comparing: ", file1, file2
+                    file1 = dir1+'/'+file1
+                    file2 = dir2+'/'+file2
+                    try:
+                        [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
+                        [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
+                        if ok1==0:
+                            raise Exception, file1
+                        elif ok2==0:
+                            raise Exception, file2
+                    except Exception, e:
+                        print "Cannot read in sac-file ", e
+                    else:
+                        if stations[0]==stations[3]:
+                            seis1.reverse()
+                        if not all(seis1==seis2):
+                            message = "seismic traces are not identical"
+                            print message
+
     def check_sac_head(self, file1, file2):
         """compare only sac-header and the length of the traces"""
         try:
@@ -133,10 +177,14 @@ class TestDir:
                     newsac1 = sac1+'/'+i
                     newsac2 = sac2+'/'+i
                     print "working on:",i
-                    if string.find(i, 'SAC')!=-1:                        
+                    if string.find(i, 'SAC')!=-1:
                         self.check_sac_trace(newsac1, newsac2)
                     elif string.find(i, 'RESP')!=-1:
                         self.check_resp(newsac1, newsac2)
+                    elif string.find(i, 'COR')!=-1 and os.path.isdir(newsac1):
+                        print "------------------------------------------ CORFILE " \
+                              "-------------------------------------------------"
+                        self.check_cor(newsac1, newsac2)
                     elif os.path.isdir(newsac1):
                         self.walk_dir(newsac1, newsac2)
                     else:
@@ -160,6 +208,6 @@ class TestDir:
 
 if __name__ == '__main__':
     test = TestDir()
-    test.walk_dir('../nord-sac2/2003/Jan/5to100', '../nord-sac/fanchi/2003/Jan/5to100')
+    test.walk_dir('/home/behrya/dev/disp-monthly/Jan-Feb-Mar-03/STACK', '../nord-sac/fanchi/2003/STACK')
     test.feedback()
     

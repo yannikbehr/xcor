@@ -10,9 +10,6 @@
   $LastChangedDate$
   --------------------------------------------------------------------------*/
 
-
-
-
 #define MAIN
 
 #include <stdio.h>
@@ -31,10 +28,16 @@
 #define MODUS ,0711)
 
 /* Function prorotypes */
-
 void dcommon_(int *len, float *amp,float *phase);
 void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int *ns);
 void swapn(unsigned char *b, int N, int n);
+SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax);
+void write_sac (char *fname, float *sig, SAC_HD *SHD);
+int check_info ( SAC_DB *sdb, int ne, int ns1, int ns2 );
+int do_cor( SAC_DB *sdb, int lag);
+void sac_db_chng ( SAC_DB *sdb, char *pbdir );
+int walk_dir(char *dirname);
+void get_args(int argc, char** argv, SAC_DB* sdb, char *pbdir, int *lag);
 
 
 /*----------------------------------------------------------------------------
@@ -173,7 +176,7 @@ int do_cor( SAC_DB *sdb, int lag)
 
 
   char filename[200], amp_sac[200], phase_sac[200], cordir[200];
-  char testarr[12][200];
+  char testfilename[200],testdir[]="./testcor_auto/",testfilebuff[200];
   char *cutptr;
   float amp[400000], phase[400000], cor[400000];
   float seis_out[400000];
@@ -255,13 +258,25 @@ int do_cor( SAC_DB *sdb, int lag)
 		    strncpy(cordir,filename,199);
 		    strcat(cordir,"COR");
 		    if(mkdir(cordir MODUS == -1){
-		       fprintf(stderr,"directory %s already exists \n", cordir); 
+		       printf("directory %s already exists \n", cordir); 
 		    }
 		  }
 		}
 		
 		sprintf(filename, "%s/COR_%s_%s.SAC.prelim",
 			cordir, sdb->st[jsta1].name, sdb->st[jsta2].name);
+//		strncpy(testfilename,testdir,199);
+//		sprintf(testfilebuff,"COR_%s_%s.SAC_test.%d",sdb->st[jsta1].name, sdb->st[jsta2].name, sdb->ev[ine].jday);
+//		strcat(testfilename,testfilebuff);
+//		shdamp1.delta = sdb->rec[ine][jsta1].dt;
+//		shdamp1.evla =  sdb->st[jsta1].lat;
+//		shdamp1.evlo =  sdb->st[jsta1].lon;
+//		shdamp1.stla =  sdb->st[jsta2].lat;
+//		shdamp1.stlo =  sdb->st[jsta2].lon;
+//		shdamp1.npts =  2*lag+1;
+//		shdamp1.b    = -(lag)*shdamp1.delta;
+//		shdamp1.unused1 = jsta1+jsta2;
+//		write_sac (testfilename, cor, &shdamp1);
 
 		if(access(filename, F_OK) == 0) { // if file already present, do this
 		  if ( !read_sac (filename, sig, &shd_cor, 1000000 ) ) {
@@ -339,8 +354,8 @@ to final correlations
 needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
                          stdio.h, stdlib.h
 ------------------------------------------------------------------------*/
-int walk_dir(char *dirname){
-
+int walk_dir(char *dirname)
+{
   DIR *dir, *dir2;
   struct dirent *dirpointer, *dirpointer2;
   struct stat attribut;

@@ -32,7 +32,7 @@ ofilesftan = $(FTANPATH)/ftandriver.o\
 	     $(FTANPATH)/pred_cur.o\
 	     $(FTANPATH)/misc.o
 
-FTANLIBS =   -L/usr/lib -L/usr/local/packages/fftw/lib -lgcc -lfftw3
+FTANLIBS =   -L/usr/lib -L/usr/local/packages/fftw/lib -L/usr/lib/gcc/darwin/3.3-fast -lgcc -lfftw3
 
 ##################################################
 
@@ -60,7 +60,7 @@ ftan:	ftan-module
 	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)
 
 ftan-module:
-	cd $(FTANPATH); make objects
+	cd $(FTANPATH); make -f MacMakefile objects
 
 cut: 	module_obj cut_trans_mod.c
 	$(COMPL) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
@@ -69,13 +69,13 @@ justcor: ./xcorr/justCOR.c
 	cd ./xcorr; make; make install
 
 module_obj:
-	cd $(VPATH); make objects
+	cd $(VPATH); make -f MacMakefile objects
 
 filter4: ./filter4_f/driver_c.c
-	cd filter4_f; make
+	cd filter4_f; make -f MacMakefile
 
 whiteout: ./white_outphamp/driver_c.c
-	cd ./white_outphamp; make
+	cd ./white_outphamp; make -f MacMakefile
 
 stack:  newstack.c module_obj $(hfiles)
 	$(CPPOMPL) -g -D DEBUG -I modules newstack.c -o newstack $(ofiles)
@@ -99,8 +99,17 @@ clean:
 	cd ..; cd ./filter4_f; make clean; cd ..; cd ./xcorr; make clean; \
 	cd ..; cd ./modules; make clean; cd ..; cd ./FTAN; make clean; cd ..
 
+
+
+run:
+	./sa_from_seed_mod
+
 tilde: 
 	rm -f $(VPATH)/*~ ; rm -f *~; rm rdseed.err_log.*
+
+ofiles: 
+	rm -f $(VPATH)/*.o
+
 
 cowsay:
 	./cowsay-3.03/bin/bin/cowsay this is the modified version of Fan Chi\'s correlation software

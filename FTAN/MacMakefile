@@ -9,7 +9,8 @@ CFLAGS = $(DBG) $(cflags)
 
 FC = g77
 
-CC = gcc
+CC = gcc-3.3			#on Mac OS Darwin
+#CC = gcc			#on Linux (Debian Etch)
 
 DBG =
 

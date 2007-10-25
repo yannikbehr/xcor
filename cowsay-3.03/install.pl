@@ -1,2 +1,2 @@
-s,%BANGPERL%,!/usr/bin/perl,;
-s,%PREFIX%,/home/behrya/dev/auto/cowsay-3.03/bin,;
+s,%BANGPERL%,!/usr/local/bin/perl,;
+s,%PREFIX%,/usr/local,;

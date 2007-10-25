@@ -149,8 +149,8 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   sdb->ev[sdb->cntev].ms = 0;
   sdb->ev[sdb->cntev].ms = 10.*sdb->ev[sdb->cntev].ms;
   sdb->ev[sdb->cntev].t0 = abs_time ( shd.nzyear,shd.nzjday,0,0,0,0 );
-  //  sdb->rec[sdb->cntev][ns].dt = (double)shd.delta;
-  sdb->rec[sdb->cntev][ns].dt = 1.0;
+  sdb->rec[sdb->cntev][ns].dt = (double)shd.delta;
+  //  sdb->rec[sdb->cntev][ns].dt = 1.0;
   sdb->rec[sdb->cntev][ns].n  = shd.npts;
   sdb->rec[sdb->cntev][ns].t0 = abs_time ( shd.nzyear,shd.nzjday,shd.nzhour,shd.nzmin,shd.nzsec,shd.nzmsec );
  

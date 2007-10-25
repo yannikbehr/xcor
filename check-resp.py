@@ -129,4 +129,4 @@ class CheckResp:
 
 if __name__ == '__main__':
     test = CheckResp()
-    test.walk_dir('/home/behrya/dev/nord-sac2/')
+    test.walk_dir('/home/behrya/dev/nord-sac/fanchi/2003/Mar/')

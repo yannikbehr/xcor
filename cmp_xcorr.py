@@ -1,12 +1,21 @@
+"""script to test COR-directory; problem: different order of stations
+==> as correlations are only calculated once for each station pair
+    results might differ concerning file name and can be time reversed\n
+$Rev:$
+$Author:$
+$LastChangedDate:$
+"""
+
+
 import sys
 sys.path.append('./modules')
 import  os, os.path, string, pysacio, filecmp
 from numpy import *
 
-dir1st = '/home/behrya/dev/nord-sac/fanchi/2003/STACK/SAC/'
-dir2nd = '/home/behrya/dev/disp-monthly/Jan-Feb-Mar-03/STACK/'
-#dir1st = '/home/behrya/dev/nord-sac2/2003/Feb/5to100/COR/'
-#dir2nd = '/home/behrya/dev/nord-sac/fanchi/2003/Feb/5to100/COR/'
+#dir1st = '/home/behrya/dev/nord-sac/fanchi/2003/STACK/SAC/'
+#dir2nd = '/home/behrya/dev/disp-monthly/Jan-Feb-Mar-03/STACK/'
+dir1st = '/home/behrya/dev/test-auto/UNSORTEDCOR/stacks/'
+dir2nd = '/home/behrya/dev/test-auto/SORTEDCOR/stacks/'
 #dir1 = '/home/behrya/dev/auto/testcor_auto/'
 #dir2 = '/home/behrya/dev/auto/testcor_auto_nosort/'
 

@@ -3,6 +3,7 @@
   -reads in sac_db.out file
   -correlation of .am and .ph files in frequ.-domain
   -stacking correlations for one month
+  -reads variable 'sacdirroot' from config file
 
   written by Fan Chi ????
   $Rev$
@@ -176,7 +177,6 @@ int do_cor( SAC_DB *sdb, int lag)
 
 
   char filename[200], amp_sac[200], phase_sac[200], cordir[200];
-  char testfilename[200],testdir[]="./testcor_auto/",testfilebuff[200];
   char *cutptr;
   float amp[400000], phase[400000], cor[400000];
   float seis_out[400000];
@@ -265,18 +265,6 @@ int do_cor( SAC_DB *sdb, int lag)
 		
 		sprintf(filename, "%s/COR_%s_%s.SAC.prelim",
 			cordir, sdb->st[jsta1].name, sdb->st[jsta2].name);
-//		strncpy(testfilename,testdir,199);
-//		sprintf(testfilebuff,"COR_%s_%s.SAC_test.%d",sdb->st[jsta1].name, sdb->st[jsta2].name, sdb->ev[ine].jday);
-//		strcat(testfilename,testfilebuff);
-//		shdamp1.delta = sdb->rec[ine][jsta1].dt;
-//		shdamp1.evla =  sdb->st[jsta1].lat;
-//		shdamp1.evlo =  sdb->st[jsta1].lon;
-//		shdamp1.stla =  sdb->st[jsta2].lat;
-//		shdamp1.stlo =  sdb->st[jsta2].lon;
-//		shdamp1.npts =  2*lag+1;
-//		shdamp1.b    = -(lag)*shdamp1.delta;
-//		shdamp1.unused1 = jsta1+jsta2;
-//		write_sac (testfilename, cor, &shdamp1);
 
 		if(access(filename, F_OK) == 0) { // if file already present, do this
 		  if ( !read_sac (filename, sig, &shd_cor, 1000000 ) ) {

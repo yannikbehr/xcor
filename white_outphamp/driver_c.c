@@ -226,7 +226,7 @@ int main (int argc, char **argv)
     fprintf(ff,"END\n");
     fclose(ff);
     system("sh sac_one_cor");
-    //    system("rm sac_one_cor");
+    system("rm sac_one_cor a1.avg");
 
     // end of running average
 
@@ -264,6 +264,7 @@ int main (int argc, char **argv)
     shd1.iftype = IXY;
     write_sac(nameamp,seis_outamp, &shd1 );
     write_sac(nameph, seis_outph,  &shd1 );
+    system("rm smooth.sac");
     
 
 

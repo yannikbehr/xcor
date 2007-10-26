@@ -35,11 +35,10 @@ void get_args(int argc, char** argv, SAC_DB* sdb);
 
 char str[300];
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*--------------------------------------------------------------------------
+  reading and checking commandline arguments
+  --------------------------------------------------------------------------*/
 void get_args(int argc, char** argv, SAC_DB* sdb)
-     /*--------------------------------------------------------------------------
-       reading and checking commandline arguments
-       --------------------------------------------------------------------------*/
 {
   int i;
 
@@ -59,7 +58,7 @@ void get_args(int argc, char** argv, SAC_DB* sdb)
 
       switch (argv[i][1]) {
 
-      case 'c':	strcpy(sdb->conf,argv[++i]);
+      case 'c':	strncpy(sdb->conf,argv[++i],149);
 	break;
 
       case 'h':	    fprintf(stderr,"USAGE: %s [-c alt/config.file]\n", argv[0]);
@@ -72,12 +71,13 @@ void get_args(int argc, char** argv, SAC_DB* sdb)
     }
   }
 }
-/*c/////////////////////////////////////////////////////////////////////////*/
+
+
+/*--------------------------------------------------------------------------
+  reads sac-files fname with maximum length nmax into signal sig and \
+  header SHD
+  --------------------------------------------------------------------------*/
 SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
-     /*--------------------------------------------------------------------------
-       reads sac-files fname with maximum length nmax into signal sig and \
-       header SHD
-       --------------------------------------------------------------------------*/
 {
   FILE *fsac;
 
@@ -126,11 +126,10 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
 }
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*--------------------------------------------------------------------------
+  writes sac file with name fname from signal sig with header SHD 
+  --------------------------------------------------------------------------*/
 void write_sac (char *fname, float *sig, SAC_HD *SHD)
-     /*--------------------------------------------------------------------------
-       writes sac file with name fname from signal sig with header SHD 
-       --------------------------------------------------------------------------*/
 {
   FILE *fsac;
   int i;
@@ -166,17 +165,16 @@ void write_sac (char *fname, float *sig, SAC_HD *SHD)
 }
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*--------------------------------------------------------------------------
+  cuts signal "s1.sac" from one_rec_trans between borders given
+  by commandline arguments
+  ne = number of event
+  ns = number of station
+  sd = SAC_DB structure written by sa_from_seed_mod
+  t1 = lower boundary [s]
+  n  = number of samples between lower and upper boundary
+  --------------------------------------------------------------------------*/
 void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
-     /*--------------------------------------------------------------------------
-       cuts signal "s1.sac" from one_rec_trans between borders given
-       by commandline arguments
-       ne = number of event
-       ns = number of station
-       sd = SAC_DB structure written by sa_from_seed_mod
-       t1 = lower boundary [s]
-       n  = number of samples between lower and upper boundary
-       --------------------------------------------------------------------------*/
 {
   float sig1[200000]; 
   double t1b, t1e, t2b, t2e, t2;
@@ -227,15 +225,14 @@ void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
 }
 
 
-/*c/////////////////////////////////////////////////////////////////////////*/
+/*--------------------------------------------------------------------------
+  remove mean, trend and instrument response 
+  ne = number of event
+  ns = number of station
+  sd = SAC_DB structure written by sa_from_seed_mod
+  sacdir = pointer to dir of sac-binaries
+  ---------------------------------------------------------------------------*/
 void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
-     /*--------------------------------------------------------------------------
-       remove mean, trend and instrument response 
-       ne = number of event
-       ns = number of station
-       sd = SAC_DB structure written by sa_from_seed_mod
-       sacdir = pointer to dir of sac-binaries
-       ---------------------------------------------------------------------------*/
 {
   FILE *ff;
   float fl1, fl2, fl3, fl4;

@@ -72,7 +72,7 @@ elif err!=0:
     exit
 
 if cp.get('processing','white')=='1' and err==0:
-    dowh = do_whiten.DoWhiten(cp)
+    dowh = do_whiten.DoWhiten(cp, config)
     err = dowh.start()
 elif err!=0:
     print "system call of 'cut_trans_mod' returned non-Null value"

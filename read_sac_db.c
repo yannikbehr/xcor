@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------
   program to print ascii version of sac_db structure to stout
-  $Rev:$
-  $Author:$
-  $LastChangedDate:$
+  $Rev$
+  $Author$
+  $LastChangedDate$
   --------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -74,7 +74,7 @@ void print_sac_db(SAC_DB *sdb){
   for(i=0;i<sdb->nst;i++){
     printf("station number %d is %s\n",i,sdb->st[i].name);
   }
-  for(i=0;i<=sdb->nev;i++){
+  for(i=0;i<sdb->nev;i++){
     for(j=0;j<sdb->nst;j++){
       printf("event number: %d   station number: %d\n", i,j);
       printf("--> station name       :%s\n", sdb->st[j].name);

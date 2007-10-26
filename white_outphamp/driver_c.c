@@ -1,3 +1,12 @@
+/*--------------------------------------------------------------------------
+  driver program to call fortran filter routines; do spectral whitening and
+  time normalization
+
+  written by Fan Chi ????
+  $Rev:$
+  $Author:$
+  $LastChangedDate:$
+  --------------------------------------------------------------------------*/
 #define MAIN
 
 #include <stdio.h>
@@ -5,10 +14,10 @@
 #include <string.h>
 #include <math.h>
 #include <mysac.h>
+#include <iniparser.h>
 
 
 /* Function prorotypes */
-
 
 void filter4_(double *f1,double *f2,double *f3,double *f4,int *npow,
               double *dt,int *n, float seis_in[],float seis_out[],
@@ -16,18 +25,54 @@ void filter4_(double *f1,double *f2,double *f3,double *f4,int *npow,
               float seis_outph[],int *ns,double *dom);
 
 void swapn(unsigned char *b, int N, int n);
+void get_args(int argc, char** argv, char *configfile);
+SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax);
+void write_sac (char *fname, float *sig, SAC_HD *SHD);
 
+/*--------------------------------------------------------------------------
+  reading and checking commandline arguments
+  --------------------------------------------------------------------------*/
+void get_args(int argc, char** argv, char *configfile){
 
+  int i;
 
+  if (argc>4){
+    fprintf(stderr,"USAGE: %s parameter file [-c alt/config.file]\n",argv[0]);
+    exit(1);
+  }
+  /* Start at i = 1 to skip the command name. */
 
-/*c/////////////////////////////////////////////////////////////////////////*/
-/*--------------------------------------------------------------------------*/
-SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
-     /*----------------------------------------------------------------------------
-       ----------------------------------------------------------------------------*/
-{
+  for (i = 1; i < argc; i++) {
+
+    /* Check for a switch (leading "-"). */
+
+    if (argv[i][0] == '-') {
+
+      /* Use the next character to decide what to do. */
+
+      switch (argv[i][1]) {
+
+      case 'c':	strncpy(configfile,argv[++i],199);
+	break;
+
+      case 'h':	printf("USAGE: %s parameter file [-c alt/config.file]\n",argv[0]);
+	exit(0);
+	break;
+
+      default:	fprintf(stderr,"Unknown switch %s\n", argv[i]);
+	exit(1);
+      }
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------
+  reads sac-files fname with maximum length nmax into signal sig and \
+  header SHD
+  --------------------------------------------------------------------------*/
+SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
+
   FILE *fsac;
-  /*..........................................................................*/
   fsac = fopen(fname, "rb");
   if ( !fsac )
     {
@@ -71,15 +116,14 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
   return SHD;
 }
 
-/*c/////////////////////////////////////////////////////////////////////////*/
-/*--------------------------------------------------------------------------*/
-void write_sac (char *fname, float *sig, SAC_HD *SHD)
-     /*----------------------------------------------------------------------------
-       ----------------------------------------------------------------------------*/
-{
+/*--------------------------------------------------------------------------
+  writes sac file with name fname from signal sig with header SHD 
+  --------------------------------------------------------------------------*/
+void write_sac (char *fname, float *sig, SAC_HD *SHD){
+
   FILE *fsac;
   int i;
-  /*..........................................................................*/
+
   fsac = fopen(fname, "wb");
 
   if ( !SHD ) SHD = &SAC_HEADER;
@@ -127,15 +171,15 @@ int main (int argc, char **argv)
   static float seis_outamp[400000],seis_outph[400000];
   double t1,t2,t3,t4;
   char  name[160], name1[160], name_test[160];
-  char  nameamp[160],nameph[160];
+  char  nameamp[160], nameph[160], configfile[200];
+  char *sacdir;
+  dictionary *dd;
   FILE  *in, *ff;
   int   i, j, nn;
 
+  strncpy(configfile,"./config.txt",199);
+  get_args(argc,argv,configfile);
 
-  if (argc != 2) {
-    fprintf(stderr,"USAGE: %s parameter_file \n", argv[0]);
-    exit(1);
-  }
   // open and read parameter file param.dat
   if((in = fopen(argv[1],"r")) == NULL) {
     printf("Can not find file %s.\n",argv[1]);
@@ -158,9 +202,12 @@ int main (int argc, char **argv)
     name[j] = '\0';
 
     // do running average before whitening
+    dd = iniparser_new(configfile);
+    sacdir = iniparser_getstr(dd, "database:sacdir");
+
 
     ff = fopen("sac_one_cor","w");
-    fprintf(ff,"/home/behrya/src/sac/bin/sac << END\n");
+    fprintf(ff,"%ssac << END >/dev/null\n",sacdir);
     fprintf(ff,"r %s\n",name_test);
     // ./test2/%s ./test3/%s\n", name,name,name);
     fprintf(ff,"abs\n");
@@ -179,6 +226,7 @@ int main (int argc, char **argv)
     fprintf(ff,"END\n");
     fclose(ff);
     system("sh sac_one_cor");
+    //    system("rm sac_one_cor");
 
     // end of running average
 
@@ -221,5 +269,6 @@ int main (int argc, char **argv)
 
   }
 
+  iniparser_free(dd);
   return 0;
 }

@@ -11,13 +11,14 @@ from ConfigParser import SafeConfigParser
 
 class DoWhiten:
 
-    def __init__(self, conf):
+    def __init__(self, conf, cnffile):
         self.sacdir = conf.get("database", "sacdirroot")
+        self.sacbin = conf.get("database", "sacdir")
         self.tmpdir = conf.get("database", "tmpdir")
         self.upperp = conf.get("processing", "upperperiod")
         self.lowerp = conf.get("processing", "lowerperiod")
         self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-
+	self.cnffilename = cnffile
     def create_dir_struct(self, dirname, i):
         bpfile = self.upperp+'to'+self.lowerp
         try:
@@ -54,8 +55,8 @@ class DoWhiten:
                         map(shutil.copy, srclist, targetlist)
                         command_test = './filter4_f/filter4 '+self.tmpdir+'param_test.dat'
                         os.system(command_test)
-                        command = './white_outphamp/whiten_phamp '+self.tmpdir+'param.dat'
-                        os.system(command)
+                        command = './white_outphamp/whiten_phamp '+self.tmpdir+'param.dat'+' -c '+self.cnffilename
+			os.system(command)
                         os.system('rm -r '+dirname+'/'+i+'/'+bpfile+'/'+j+'/test')
             except os.error, e:
                 print "Cannot create directory: ", e[1]
@@ -83,7 +84,8 @@ class DoWhiten:
 
 if __name__ == '__main__':
     cp = SafeConfigParser()
-    cp.read('config.txt')
+    config = 'config.txt' 
+    cp.read(config)
     
-    test = DoWhiten(cp)
+    test = DoWhiten(cp,config)
     test.start()

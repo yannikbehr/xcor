@@ -20,7 +20,8 @@ CC = gcc
 
 FOBJS = whiten_phamp.o
 
-COBJS = driver_c.o swapn.o 
+COBJS = driver_c.o swapn.o $(VPATH)/iniparser.o
+
 
 
 #%.o:%.c 
@@ -29,8 +30,11 @@ COBJS = driver_c.o swapn.o
 #	$(FC) $(FFLAGS) $(LDLIBS) $<
 # 
 
-$(BIN) : $(FOBJS) $(COBJS)
+$(BIN) : $(FOBJS) $(COBJS) module_obj
 	$(FC) $(FFLAGS) $(FOBJS) $(COBJS) $(ofiles) -o $(BIN) $(LDLIBS) 
+
+module_obj:
+	cd $(VPATH); make objects
 
 clean ::
 	rm -f $(BIN) core $(FOBJS) $(COBJS)

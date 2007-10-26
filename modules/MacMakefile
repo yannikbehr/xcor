@@ -1,5 +1,5 @@
-COMPL = gcc-3.3 		#on Max Os darwin
-#COMPL = gcc			#on Linux (Debian Etch)
+COMPL = gcc-3.3
+
 hfiles = \
 	iniparser.h
 

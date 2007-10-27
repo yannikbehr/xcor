@@ -259,4 +259,6 @@ int main (int argc, char **argv)
 
   chlag(rootdir,sacdir);
   iniparser_free(dd);
+
+  return 0;
 }

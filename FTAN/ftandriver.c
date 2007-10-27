@@ -294,6 +294,11 @@ int main (int argc, char **argv)
 	  }
       }
   }
+
+  for(i = 0; i < counter; i++)
+    free(filelist[i]);
+  free(filelist);
+
   iniparser_free(dd);
   return 0;
 }

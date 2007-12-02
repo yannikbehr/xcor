@@ -1,25 +1,9 @@
 #!/usr/bin/python
 """program to combine modules written for the pre-processing of
 continous data before the cross-correlation\n
-$Log$
-Revision 1.7  2007/07/30 22:38:35  behrya
-'config' variable added
-
-Revision 1.6  2007-07-20 03:26:15  behrya
-'justCOR' added
-
-Revision 1.5  2007-07-05 05:43:28  behrya
-*** empty log message ***
-
-Revision 1.4  2007-07-05 05:26:29  behrya
-added option '-c' for alternative config file
-
-Revision 1.3  2007-07-05 01:47:41  behrya
-nothing new
-
-Revision 1.2  2007-07-03 02:32:29  behrya
-changed dir structure and removed some temporary files
-
+$Rev:$
+$Author:$
+$LastChangedDate:$
 """
 import sys
 sys.path.append('./modules')

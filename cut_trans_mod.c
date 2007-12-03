@@ -323,6 +323,7 @@ int main (int argc, char **argv)
     fprintf(stderr,"sac_db.out file not found\n");
     exit(1);
   }
+
   fread(&sdb, sizeof(SAC_DB), 1, ff);
   fclose(ff);
   sacdir = iniparser_getstr(dd, "database:sacdir");

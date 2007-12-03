@@ -1,9 +1,9 @@
 #!/usr/bin/python
 """program to combine modules written for the pre-processing of
 continous data before the cross-correlation\n
-$Rev:$
-$Author:$
-$LastChangedDate:$
+$Rev$
+$Author$
+$LastChangedDate$
 """
 import sys
 sys.path.append('./modules')
@@ -37,10 +37,17 @@ except Exception:
 cp.read(config)
 
 err = 0
-if cp.get('processing','initdb')=='1':
+if cp.get('processing','initsacdb')=='1':
+    err = os.system('./initsac_db -c '+config)
+
+if cp.get('processing','initdb')=='1' and err==0:
     seedb = seed_db.Initialize_DB(cp)
     if cp.get('database','datatype') == 'seed':
         err = seedb.start_seed_db()
+elif err!=0:
+    print "call of 'initsacdb' returned non-Null value"
+    exit
+    
 if cp.get('processing','seed2sac')=='1' and err==0:
     err = os.system('./sa_from_seed_mod -c '+config)
 elif err!=0:

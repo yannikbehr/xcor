@@ -399,7 +399,7 @@ void get_args(int argc, char** argv, SAC_DB *sdb, char *filename){
 	printf("file by scanning directory structure\n");
 	printf("under path/to/directory/ for existing\n");
 	printf("*.SAC files and writing their header\n");
-	printf("properties into the sac_db structure.\n");
+	printf("properties into a sac_db structure.\n");
 	
 	exit(0);
 	break;
@@ -417,19 +417,25 @@ int main (int argc, char **argv){
   FILE *ff;
   int N, i, j;
   char filename[STRING];
-  char *dirname;
+  char *dirname, *tmpdir;
   static SAC_DB sdb;
   dictionary *dd;
 
   strncpy(sdb.conf,"./config.txt",149);
-  strncpy(filename,"./sac_db.out",STRING-1);
+  strncpy(filename,"./dummy.out",STRING-1);
   get_args(argc,argv,&sdb,filename);
 
   /*opening config file*/
   dd = iniparser_new(sdb.conf);
   dirname = iniparser_getstr(dd, "database:sacdirroot");
 
+  if(!strcmp(filename,"./dummy.out")){
+    tmpdir = iniparser_getstr(dd, "database:tmpdir");
+    strncpy(filename,tmpdir,STRING-1);
+    strcat(filename,"sac_db.out");
+  }
 
+  /* setting initial values */
   sdb.nev = 0;
   sdb.nst = 0;
   sdb.cntev = -1;
@@ -439,15 +445,17 @@ int main (int argc, char **argv){
     strncpy(sdb.st[i].name,"init",9);
   }
 
-
+  /* searching for SAC-files */
   walk_dir(dirname, &sdb);
   sdb.nev = sdb.cntev+1;
 #ifdef DEBUG
   print_sac_db(&sdb);
 #endif
 
+  /* sorting SAC-files according to their date */
   sort_sac_db(&sdb);
 
+  /* writing sac_db structure to file */
   ff = fopen(filename,"wb");
   fwrite(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);

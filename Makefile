@@ -1,9 +1,9 @@
 # every .o file depends on the .cpp file with the same 
 # filename; the following line says what to do with 
 # the .cpp files; $< means the first dependency
-#$Rev:$
-#$Author:$
-#$LastChangedDate:$
+#$Rev$
+#$Author$
+#$LastChangedDate$
 
 #%.o:%.cpp
 #	g++ -g -c $<
@@ -104,3 +104,6 @@ tilde:
 
 cowsay:
 	./cowsay-3.03/bin/bin/cowsay this is the modified version of Fan Chi\'s correlation software
+
+test:
+	python test_modules.py -c testdata/cut_trans_mod_test.cfg

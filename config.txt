@@ -24,11 +24,6 @@ channel=LHZ
 download-dir=download/
 
 [database]
-#northland data
-#databasedir=../../../nord/aug_2003/
-#databasefile=nord-data.db
-
-#geonet data
 databasedir=/Volumes/data/yannik78/dev/test-data/seed/
 databasefile=./raw-data.db
 
@@ -47,6 +42,11 @@ cordir=../sacroot/2005/Apr/5to100/COR/
 tmpdir=/home/behrya/dev/automation/tmp/
 
 [processing]
+
+#define channel (sample frequency)
+channel=BHZ
+
+#define frequency range for correlations
 upperperiod=5
 lowerperiod=100
 
@@ -54,3 +54,25 @@ lowerperiod=100
 # traces
 lowercut=1000
 uppercut=84000
+
+#processing-steps
+initsacdb=1
+initdb=0
+seed2sac=0
+rmresp=0
+white=0
+xcorr=0
+stack=0
+sym=0
+ftan=0
+
+
+[FTAN]
+vmin=1.5 	#minimal group velocity, km/s
+vmax=5  	#maximal value of the group velocity, km/s
+tmin=5   	#minimal period, s
+tmax=50  	#maximal period, s
+thresh=10	#treshold, usualy = 10
+ffact=1  	#factor to automatic filter parameter, usualy =1
+taperl=1 	#factor for the left end seismogram tapering,taper = taperl*tmax
+snr=0.1  	#signal-to-noise ratio

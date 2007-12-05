@@ -51,10 +51,10 @@ options = -pg -D DEBUG
 %.o:%.c
 	$(COMPL) -g -c  $<  
 
-all: cut justcor filter4 whiteout ftan stack lag initsacdb readsacdb
+all: cut justcor filter4 whiteout ftan stack lag initsacdb readsacdb sacseed
 
 sacseed: module_obj sa_from_seed_mod.c $(hfiles)
-	$(COMPL)  -g -I $(VAPTH) sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
+	$(COMPL)  -g -I $(VPATH) sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
 
 ftan:	ftan-module
 	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)

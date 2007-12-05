@@ -49,7 +49,7 @@ class Initialize_DB:
                 datelst.append(date)
             return datelst
         except Exception, e:
-            print "ERROR: ", e
+            print "ERROR: in function 'extr_date'", e
 
 
     def init_stat_db(self):

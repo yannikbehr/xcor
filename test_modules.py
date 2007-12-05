@@ -1,15 +1,15 @@
 """perform tests for each processing step\n
 $Rev:$
-$Author:$
+$Author$
 $LastChangedDate:$
 """
 
-import sys, os.path, os, optparse, string
+import sys, os.path, os, optparse, string, shutil
 from ConfigParser import SafeConfigParser
 from numpy import *
 
 sys.path.append('./modules')
-import pysacio
+import pysacio, seed_db
 
 cmdargs = []
 if len(sys.argv) < 2:
@@ -27,6 +27,8 @@ else:
     else:
         cp = SafeConfigParser()
         cp.read(options.configfile)
+
+        # TESTING CUT_TRANS_MOD
         if cp.get('processing','rmresp')=='1':
             print "--------------------------------------"
             print "TESTING: cut_trans_mod"
@@ -93,3 +95,39 @@ else:
                             os.remove(tmpdir+"sac_bp_respcor")
                             print "--------------------------------------"
                             
+
+        # TESTING SA_FROM_SEED_MOD
+        if cp.get('processing','initdb')=='1':
+            print "--------------------------------------"
+            print "TESTING: sa_from_seed_mod"
+            print "--------------------------------------"
+            err = 0
+            print "-->creating sqlite database file"
+            try:
+                seedb = seed_db.Initialize_DB(cp)
+                if cp.get('database','datatype') == 'seed':
+                    sqlitefile = cp.get('database','databasefile')
+                    sacdir = cp.get('database','sacdirroot')
+                    if os.path.isfile(sqlitefile):
+                        os.remove(sqlitefile)
+                    if os.path.isdir(sacdir):
+                        shutil.rmtree(sacdir)
+                    err = seedb.start_seed_db()
+                if err != 0:
+                    raise Exception
+            except Exception:
+                print "ERROR: creating sqlite database file not succesful!"
+                sys.exit(1)
+            else:
+                try:
+                    print "-->running sa_from_seed_mod"
+                    err = os.system('./sa_from_seed_mod -c '+options.configfile)
+                    if err != 0:
+                        raise Exception
+                except Exception:
+                    print "ERROR: executing sa_from_seed_mod not succesful!"
+                    sys.exit(1)
+                else:
+                    print "-->testing cut_trans_mod was succesful"
+                    print "--------------------------------------"
+

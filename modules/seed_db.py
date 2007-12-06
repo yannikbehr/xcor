@@ -66,6 +66,13 @@ class Initialize_DB:
                 curdir = os.getcwd()
                 os.chdir(self.datadir)
                 stations = []
+                # delete .svn directory from contents!!!
+                for j in range(0,len(contents)):
+                    print j
+                    if contents[j] == '.svn':
+                        del contents[j]
+                        break
+
                 for i in contents:
                     command = self.rdseed + ' -Sf '+i
                     os.system(command)

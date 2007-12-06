@@ -28,7 +28,88 @@ else:
         cp = SafeConfigParser()
         cp.read(options.configfile)
 
-        # TESTING CUT_TRANS_MOD
+############################# TESTING SA_FROM_SEED_MOD ###############################
+        if cp.get('processing','initdb')=='1':
+            print "--------------------------------------"
+            print "TESTING: sa_from_seed_mod"
+            print "--------------------------------------"
+            err = 0
+            print "-->creating sqlite database file"
+            try:
+                seedb = seed_db.Initialize_DB(cp)
+                if cp.get('database','datatype') == 'seed':
+                    sqlitefile = cp.get('database','databasefile')
+                    sacdir = cp.get('database','sacdirroot')
+                    if os.path.isfile(sqlitefile):
+                        os.remove(sqlitefile)
+                    if os.path.isdir(sacdir):
+                        shutil.rmtree(sacdir)
+                    err = seedb.start_seed_db()
+                if err != 0:
+                    raise Exception
+            except Exception:
+                print "ERROR: creating sqlite database file not succesful!"
+                sys.exit(1)
+            else:
+                try:
+                    print "-->running sa_from_seed_mod"
+                    err = os.system('./sa_from_seed_mod -c '+options.configfile+' >/dev/null')
+                    if err != 0:
+                        raise Exception
+                except Exception:
+                    print "ERROR: executing sa_from_seed_mod not succesful!"
+                    sys.exit(1)
+                else:
+                    try:
+                        print "-->comparing results with fanchi's"
+                        file1 = "./testdata/test/2003/Jan/2003_1_2_0_0_0/MATA.BHZ.SAC"
+                        file2 = "./testdata/test/2003/Jan/2003_1_2_0_0_0/TIKO.BHZ.SAC"
+                        fcmp1 = "./testdata/fanchi/Jan/2003_1_2_0_0_0/MATA.BHZ.SAC"
+                        fcmp2 = "./testdata/fanchi/Jan/2003_1_2_0_0_0/TIKO.BHZ.SAC"
+                        [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
+                        [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
+                        [hf3,hi3,hs3,refseis1,ok3] = pysacio.ReadSacFile(fcmp1)
+                        [hf4,hi4,hs4,refseis2,ok4] = pysacio.ReadSacFile(fcmp2)
+                        if ok1==0:
+                            raise Exception, file1
+                        elif ok2==0:
+                            raise Exception, file2
+                        elif ok3==0:
+                            raise Exception, fcmp1
+                        elif ok4==0:
+                            raise Exception, fcmp2
+                    except Exception, e:
+                        print "ERROR: cannot read in sac-file ", e
+                    else:
+                        try:
+                            if not all(seis1==refseis1):
+                                raise Exception
+                            if not all(seis2==refseis2):
+                                raise Exception
+                        except Exception:
+                            print "ERROR: test failed"
+                            print "       either results are not identical or"
+                            print "       test didn't work"
+                        else:
+                            print "--------------------------------------"
+                            print "-->testing cut_trans_mod was succesful"
+                            # cleaning up
+                            tmpdir = cp.get('database','tmpdir')
+                            if os.path.isfile(sqlitefile):
+                                os.remove(sqlitefile)
+                            if os.path.isdir(sacdir):
+                                shutil.rmtree(sacdir)
+                            if os.path.isfile(tmpdir+'event_station.tbl'):
+                                os.remove(tmpdir+'event_station.tbl')
+                            if os.path.isfile(tmpdir+'from_seed'):
+                                os.remove(tmpdir+'from_seed')
+                            if os.path.isfile(tmpdir+'seed_test.db'):
+                                os.remove(tmpdir+'seed_test.db')
+                            if os.path.isfile(tmpdir+'sac_db.out'):
+                                os.remove(tmpdir+'sac_db.out')
+                            print "--------------------------------------"
+
+############################### TESTING CUT_TRANS_MOD ##############################
         if cp.get('processing','rmresp')=='1':
             print "--------------------------------------"
             print "TESTING: cut_trans_mod"
@@ -95,39 +176,4 @@ else:
                             os.remove(tmpdir+"sac_bp_respcor")
                             print "--------------------------------------"
                             
-
-        # TESTING SA_FROM_SEED_MOD
-        if cp.get('processing','initdb')=='1':
-            print "--------------------------------------"
-            print "TESTING: sa_from_seed_mod"
-            print "--------------------------------------"
-            err = 0
-            print "-->creating sqlite database file"
-            try:
-                seedb = seed_db.Initialize_DB(cp)
-                if cp.get('database','datatype') == 'seed':
-                    sqlitefile = cp.get('database','databasefile')
-                    sacdir = cp.get('database','sacdirroot')
-                    if os.path.isfile(sqlitefile):
-                        os.remove(sqlitefile)
-                    if os.path.isdir(sacdir):
-                        shutil.rmtree(sacdir)
-                    err = seedb.start_seed_db()
-                if err != 0:
-                    raise Exception
-            except Exception:
-                print "ERROR: creating sqlite database file not succesful!"
-                sys.exit(1)
-            else:
-                try:
-                    print "-->running sa_from_seed_mod"
-                    err = os.system('./sa_from_seed_mod -c '+options.configfile)
-                    if err != 0:
-                        raise Exception
-                except Exception:
-                    print "ERROR: executing sa_from_seed_mod not succesful!"
-                    sys.exit(1)
-                else:
-                    print "-->testing cut_trans_mod was succesful"
-                    print "--------------------------------------"
 

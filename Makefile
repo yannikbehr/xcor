@@ -106,4 +106,5 @@ cowsay:
 	./cowsay-3.03/bin/bin/cowsay this is the modified version of Fan Chi\'s correlation software
 
 test:
-	python test_modules.py -c testdata/cut_trans_mod_test.cfg
+	python test_modules.py -c testdata/sa_from_seed_mod_test.cfg
+	python test_modules.py -c testdata/cut_trans_mod_test.cfg	

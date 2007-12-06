@@ -88,8 +88,11 @@ int walk_dir(char *dirname, SAC_DB *sdb){
       read_resp(tmp,sdb,dirpointer->d_name);
 
     }
-    /* else if dir-entry is directory function calls itself again */
-    else if(attribut.st_mode & S_IFDIR && strcmp((*dirpointer).d_name,".") != 0 && strcmp((*dirpointer).d_name,"..") != 0){
+    /* else if dir-entry is directory but not .svn dir, then 
+       function calls itself again */
+    else if(attribut.st_mode & S_IFDIR && strcmp((*dirpointer).d_name,".") != 0 
+	    && strcmp((*dirpointer).d_name,"..") != 0
+	    && strcmp((*dirpointer).d_name,".svn") !=0){
       strcat(tmp,"/");
       walk_dir(tmp,sdb);
     }

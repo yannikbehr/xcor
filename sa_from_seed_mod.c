@@ -651,7 +651,7 @@ static int call_mk_one_rec(void *test, int argc, char **argv, char **azColName){
     printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
   }
   mk_one_rec(test, argv);
-  printf("\n");
+  //  printf("\n");
   return 0;
 }
 

@@ -11,6 +11,7 @@ from numpy import *
 sys.path.append('./modules')
 import pysacio, seed_db
 
+########################## COMMAND LINE ARGUMENTS ###################################
 cmdargs = []
 if len(sys.argv) < 2:
     cmdargs.append("-h")
@@ -108,6 +109,7 @@ else:
                             if os.path.isfile(tmpdir+'sac_db.out'):
                                 os.remove(tmpdir+'sac_db.out')
                             print "--------------------------------------"
+
 
 ############################### TESTING CUT_TRANS_MOD ##############################
         if cp.get('processing','rmresp')=='1':

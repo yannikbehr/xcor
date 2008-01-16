@@ -7,6 +7,8 @@
 
 #%.o:%.cpp
 #	g++ -g -c $<
+############## INSTALLER ########################
+BINDIR = ../bin
 
 ############## COMPILER #########################
 COMPL = gcc
@@ -56,20 +58,14 @@ all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
 sacseed: module_obj sa_from_seed_mod.c $(hfiles)
 	$(COMPL)  -g -I $(VPATH) sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
 
-ftan:	ftan-module
-	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)
-
-ftan-module:
-	cd $(FTANPATH); make objects
-
 cut: 	module_obj cut_trans_mod.c
 	$(COMPL) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
 
-justcor: ./xcorr/justCOR.c
-	cd ./xcorr; make; make install
+initsacdb: initsac_db.c
+	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
-module_obj:
-	cd $(VPATH); make objects
+justcor: ./xcorr/justCOR.c
+	cd ./xcorr; make
 
 filter4: ./filter4_f/driver_c.c
 	cd filter4_f; make
@@ -83,15 +79,25 @@ stack:  newstack.c module_obj $(hfiles)
 lag:    new_ch_lag.c module_obj $(hfiles)
 	$(COMPL) -g -D DEBUG -I $(VPATH) new_ch_lag.c -o new_ch_lag $(ofiles)
 
-initsacdb: initsac_db.c
-	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
+ftan:	ftan-module
+	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)
 
-#readsacdb: read_sac_db.c
-#	$(COMPL) -g  -I $(VPATH) read_sac_db.c -o read_sac_db
+ftan-module:
+	cd $(FTANPATH); make objects
 
+module_obj:
+	cd $(VPATH); make objects
 
-sqlite: sqlite-test.c
-	$(COMPL) -g sqlite-test.c -o sqlite-test -lsqlite
+install:
+	install sa_from_seed_mod $(BINDIR);\
+	install	cut_trans_mod $(BINDIR);\
+	install initsac_db $(BINDIR);\
+	install	./xcorr/justCOR $(BINDIR);\
+	install	./filter4_f/filter4 $(BINDIR);\
+	install	./white_outphamp/whiten_phamp $(BINDIR);\
+	install	newstack $(BINDIR);\
+	install	new_ch_lag $(BINDIR);\
+	install	ftandriver $(BINDIR)
 
 clean:
 	rm sa_from_seed_mod read_sac_db initsac_db new_ch_lag newstack \
@@ -101,10 +107,3 @@ clean:
 
 tilde: 
 	rm -f $(VPATH)/*~ ; rm -f *~; rm rdseed.err_log.*
-
-cowsay:
-	./cowsay-3.03/bin/bin/cowsay this is the modified version of Fan Chi\'s correlation software
-
-test:
-	python test_modules.py -c testdata/sa_from_seed_mod_test.cfg
-	python test_modules.py -c testdata/cut_trans_mod_test.cfg	

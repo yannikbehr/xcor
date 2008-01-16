@@ -50,12 +50,12 @@ class DoWhiten:
                         ff.close()
                         srclist = glob.glob(dirname+'/'+i+'/'+bpfile+'/'+j+'/ft_*')
                         targetlist = [dirname+'/'+i+'/'+bpfile+'/'+j+'/test' for cnt in range(1,len(srclist)+1)]
-                        command = './filter4_f/filter4 '+self.tmpdir+'/param.dat'
+                        command = './filter4 '+self.tmpdir+'/param.dat'
                         os.system(command)
                         map(shutil.copy, srclist, targetlist)
-                        command_test = './filter4_f/filter4 '+self.tmpdir+'param_test.dat'
+                        command_test = './filter4 '+self.tmpdir+'param_test.dat'
                         os.system(command_test)
-                        command = './white_outphamp/whiten_phamp '+self.tmpdir+'param.dat'+' -c '+self.cnffilename
+                        command = './whiten_phamp '+self.tmpdir+'param.dat'+' -c '+self.cnffilename
 			os.system(command)
                         os.system('rm -r '+dirname+'/'+i+'/'+bpfile+'/'+j+'/test')
             except os.error, e:

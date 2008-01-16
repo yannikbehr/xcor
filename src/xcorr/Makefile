@@ -52,8 +52,6 @@ module_obj:
 clean ::
 	rm -f $(BIN) core $(FOBJS) $(COBJS)
 
-install:
-	cp $(BIN) ../
 tilde :
 	rm ./*~
 

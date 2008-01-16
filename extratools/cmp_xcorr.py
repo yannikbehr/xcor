@@ -2,7 +2,7 @@
 ==> as correlations are only calculated once for each station pair
     results might differ concerning file name and can be time reversed\n
 $Rev:$
-$Author:$
+$Author$
 $LastChangedDate:$
 """
 

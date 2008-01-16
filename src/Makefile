@@ -51,7 +51,7 @@ options = -pg -D DEBUG
 %.o:%.c
 	$(COMPL) -g -c  $<  
 
-all: cut justcor filter4 whiteout ftan stack lag initsacdb readsacdb sacseed
+all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
 
 sacseed: module_obj sa_from_seed_mod.c $(hfiles)
 	$(COMPL)  -g -I $(VPATH) sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
@@ -86,8 +86,8 @@ lag:    new_ch_lag.c module_obj $(hfiles)
 initsacdb: initsac_db.c
 	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
-readsacdb: read_sac_db.c
-	$(COMPL) -g  -I $(VPATH) read_sac_db.c -o read_sac_db
+#readsacdb: read_sac_db.c
+#	$(COMPL) -g  -I $(VPATH) read_sac_db.c -o read_sac_db
 
 
 sqlite: sqlite-test.c

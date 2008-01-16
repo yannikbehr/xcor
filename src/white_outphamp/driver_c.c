@@ -3,9 +3,9 @@
   time normalization
 
   written by Fan Chi ????
-  $Rev:$
-  $Author:$
-  $LastChangedDate:$
+  $Rev$
+  $Author$
+  $LastChangedDate$
   --------------------------------------------------------------------------*/
 #define MAIN
 

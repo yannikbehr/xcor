@@ -97,7 +97,8 @@ install:
 	install	./white_outphamp/whiten_phamp $(BINDIR);\
 	install	newstack $(BINDIR);\
 	install	new_ch_lag $(BINDIR);\
-	install	ftandriver $(BINDIR)
+	install	ftandriver $(BINDIR);\
+	install proc-driver.py $(BINDIR)
 
 clean:
 	rm sa_from_seed_mod read_sac_db initsac_db new_ch_lag newstack \

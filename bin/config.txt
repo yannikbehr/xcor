@@ -56,7 +56,7 @@ lowercut=1000
 uppercut=84000
 
 #processing-steps
-initsacdb=1
+initsacdb=0
 initdb=0
 seed2sac=0
 rmresp=0

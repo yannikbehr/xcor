@@ -8,8 +8,8 @@ import sys, os.path, os, optparse, string, shutil
 from ConfigParser import SafeConfigParser
 from numpy import *
 
-sys.path.append('./modules')
-import pysacio, seed_db
+sys.path.append('../src/modules')
+import pysacio, seed_db, do_whiten
 
 ########################## COMMAND LINE ARGUMENTS ###################################
 cmdargs = []
@@ -54,7 +54,7 @@ else:
             else:
                 try:
                     print "-->running sa_from_seed_mod"
-                    err = os.system('./sa_from_seed_mod -c '+options.configfile+' >/dev/null')
+                    err = os.system('../bin/sa_from_seed_mod -c '+options.configfile+' >/dev/null')
                     if err != 0:
                         raise Exception
                 except Exception:
@@ -93,7 +93,7 @@ else:
                             print "       test didn't work"
                         else:
                             print "--------------------------------------"
-                            print "-->testing cut_trans_mod was succesful"
+                            print "-->testing sa_from_seed_mod was succesful"
                             # cleaning up
                             tmpdir = cp.get('database','tmpdir')
                             if os.path.isfile(sqlitefile):
@@ -119,7 +119,7 @@ else:
             err = 0
             print "-->writing sac_db.out file"
             try:
-                err = os.system('./initsac_db -c '+options.configfile)
+                err = os.system('../bin/initsac_db -c '+options.configfile)
                 if err != 0:
                     raise Exception
             except Exception:
@@ -129,7 +129,7 @@ else:
                 try:
                     print "-->running cut_trans_mod"
                     tmpdir = cp.get("database","tmpdir")
-                    command = './cut_trans_mod '+cp.get("processing","lowercut")+' '+\
+                    command = '../bin/cut_trans_mod '+cp.get("processing","lowercut")+' '+\
                               cp.get("processing","uppercut")+' -c '+options.configfile+\
                               " >/dev/null"
                     err = os.system(command)
@@ -179,3 +179,18 @@ else:
                             print "--------------------------------------"
                             
 
+############################### TESTING DO_WHITEN #################################
+        if cp.get('processing','white')=='1':
+            print "--------------------------------------"
+            print "TESTING: do_whiten"
+            print "--------------------------------------"
+            err = 0
+            try:
+                print "-->running do_whiten.py"
+                dowh = do_whiten.DoWhiten(cp, options.configfile)
+                err = dowh.start()
+                if err != 0:
+                    raise Exception
+            except Exception:
+                print "ERROR: while executing do_whiten.py"
+                sys.exit(1)

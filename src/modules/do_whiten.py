@@ -19,6 +19,8 @@ class DoWhiten:
         self.lowerp = conf.get("processing", "lowerperiod")
         self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 	self.cnffilename = cnffile
+
+
     def create_dir_struct(self, dirname, i):
         bpfile = self.upperp+'to'+self.lowerp
         try:
@@ -61,6 +63,7 @@ class DoWhiten:
             except os.error, e:
                 print "Cannot create directory: ", e[1]
                     
+
     def dir_walk(self, arg, dirname, names):
         try:
             for i in names:

@@ -6,23 +6,10 @@ $Author$
 $LastChangedDate$
 """
 import sys
-sys.path.append('./modules')
+sys.path.append('../src/modules')
 import seed_db, string, os, do_whiten
 from ConfigParser import SafeConfigParser
 
-def confirm(progname):
-    print "Next step is: ", progname
-    print "Press 'y' if you want to continue or 'n' if you want to abort!"
-    val = sys.stdin.readline()
-    while 1:
-        if string.find(val,'y')!=-1:
-            return 1
-        elif string.find(val, 'n')!=-1:
-            return 0
-        else:
-            print "Please answer the question with 'y' or 'n' (case sensitive!)"
-            val = sys.stdin.readline()
-        
 cp = SafeConfigParser()
 config='./config.txt'
 try:
@@ -128,9 +115,10 @@ except Exception:
     sys.exit(1)
 
 ######################## FTAN ##########################################
-if cp.get('processing','ftan')=='1' and err==0:
-    command = './ftandriver -c '+config
-    err = os.system(command)
+try:
+    if cp.get('processing','ftan')=='1' and err==0:
+        command = './ftandriver -c '+config
+        err = os.system(command)
     if err != 0:
         raise Exception
 except Exception:

@@ -15,6 +15,7 @@ class DoWhiten:
         self.sacdir = conf.get("database", "sacdirroot")
         self.sacbin = conf.get("database", "sacdir")
         self.tmpdir = conf.get("database", "tmpdir")
+        self.bindir = conf.get("local_settings", "bindir")
         self.upperp = conf.get("processing", "upperperiod")
         self.lowerp = conf.get("processing", "lowerperiod")
         self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -34,32 +35,33 @@ class DoWhiten:
         else:
             try:
                 for j in dirlist:
-                    if j != bpfile:
-                        f = open(self.tmpdir+'param.dat', 'w')
-                        ff = open(self.tmpdir+'param_test.dat', 'w')
-                        os.mkdir(dirname+'/'+i+'/'+bpfile+'/'+j)
-                        os.mkdir(dirname+'/'+i+'/'+bpfile+'/'+j+'/test')
-                        tmplist = os.listdir(dirname+'/'+i+'/'+j)
-                        for jj in tmplist:
-                            if string.find(jj, 'ft_') != -1:
+                    if j != bpfile and string.find(j, '.svn') == -1 and string.find(j, '5to100') == -1:
+                        tmplist = glob.glob(dirname+'/'+i+'/'+j+'/ft_*')
+                        if len(tmplist) != 0:
+                            f = open(self.tmpdir+'param.dat', 'w')
+                            ff = open(self.tmpdir+'param_test.dat', 'w')
+                            os.mkdir(dirname+'/'+i+'/'+bpfile+'/'+j)
+                            os.mkdir(dirname+'/'+i+'/'+bpfile+'/'+j+'/test')
+                            for jj in tmplist:
+                                jj = os.path.basename(jj)
                                 src = dirname+'/'+i+'/'+j+'/'+jj
                                 tar = dirname+'/'+i+'/'+bpfile+'/'+j+'/'+jj
                                 tar_test = dirname+'/'+i+'/'+bpfile+'/'+j+'/test/'+jj
                                 shutil.copy(src,tar)
                                 f.write('120 100 5 4 1 1 '+tar+' '+tar_test+'\n')
                                 ff.write('60 50 15 12 1 1 '+tar_test+' nothing\n')
-                        f.close()
-                        ff.close()
-                        srclist = glob.glob(dirname+'/'+i+'/'+bpfile+'/'+j+'/ft_*')
-                        targetlist = [dirname+'/'+i+'/'+bpfile+'/'+j+'/test' for cnt in range(1,len(srclist)+1)]
-                        command = './filter4 '+self.tmpdir+'/param.dat'
-                        os.system(command)
-                        map(shutil.copy, srclist, targetlist)
-                        command_test = './filter4 '+self.tmpdir+'param_test.dat'
-                        os.system(command_test)
-                        command = './whiten_phamp '+self.tmpdir+'param.dat'+' -c '+self.cnffilename
-			os.system(command)
-                        os.system('rm -r '+dirname+'/'+i+'/'+bpfile+'/'+j+'/test')
+                            f.close()
+                            ff.close()
+                            srclist = glob.glob(dirname+'/'+i+'/'+bpfile+'/'+j+'/ft_*')
+                            targetlist = [dirname+'/'+i+'/'+bpfile+'/'+j+'/test' for cnt in range(1,len(srclist)+1)]
+                            command = self.bindir+'filter4 '+self.tmpdir+'/param.dat'
+                            os.system(command)
+                            map(shutil.copy, srclist, targetlist)
+                            command_test = self.bindir+'filter4 '+self.tmpdir+'param_test.dat'
+                            os.system(command_test)
+                            command = self.bindir+'whiten_phamp '+self.tmpdir+'param.dat'+' -c '+self.cnffilename
+                            os.system(command)
+                            os.system('rm -r '+dirname+'/'+i+'/'+bpfile+'/'+j+'/test')
             except os.error, e:
                 print "Cannot create directory: ", e[1]
                     

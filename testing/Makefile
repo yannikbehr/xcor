@@ -1,3 +1,5 @@
+all: testsafromseed testcuttransmod testdowhiten
+
 testsafromseed:
 		python test_modules.py -c testdata/sa_from_seed_mod_test.cfg
 

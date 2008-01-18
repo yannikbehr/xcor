@@ -194,3 +194,55 @@ else:
             except Exception:
                 print "ERROR: while executing do_whiten.py"
                 sys.exit(1)
+            else:
+                try:
+                    print "-->comparing results with fanchi's"
+                    basedir = cp.get("database","sacdirroot")
+                    testdir = basedir+"Jan/"+cp.get("processing","upperperiod")+\
+                              "to"+cp.get("processing","lowerperiod")+\
+                              "/2003_1_10_0_0_0/"
+                    basedir = basedir+"Jan/5to100/2003_1_10_0_0_0/"
+                    file1 = basedir+"ft_MATA.BHZ.SAC.am"
+                    file2 = basedir+"ft_MATA.BHZ.SAC.ph"
+                    fcmp1 = testdir+"ft_MATA.BHZ.SAC.am"
+                    fcmp2 = testdir+"ft_MATA.BHZ.SAC.ph"
+                    [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
+                    [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
+                    [hf3,hi3,hs3,refseis1,ok3] = pysacio.ReadSacFile(fcmp1)
+                    [hf4,hi4,hs4,refseis2,ok4] = pysacio.ReadSacFile(fcmp2)
+                    if ok1==0:
+                        raise Exception, file1
+                    elif ok2==0:
+                        raise Exception, file2
+                    elif ok3==0:
+                        raise Exception, fcmp1
+                    elif ok4==0:
+                        raise Exception, fcmp2
+                except Exception, e:
+                    print "ERROR: cannot read in sac-file ", e
+                else:
+                    try:
+                        if not all(seis1==refseis1):
+                            raise Exception
+                        if not all(seis2==refseis2):
+                            raise Exception
+                    except Exception:
+                        print "ERROR: test failed"
+                        print "       either results are not identical or"
+                        print "       test didn't work"
+                    else:
+                        print "-->testing do_whiten was succesful"
+                        # cleaning up
+                        tmpdir1 = cp.get("database","tmpdir")
+                        tempdir2 = cp.get("database","sacdirroot")+\
+                                   "Jan/"+cp.get("processing","upperperiod")+\
+                                    "to"+cp.get("processing","lowerperiod")
+                        if os.path.isdir(tempdir2):
+                            shutil.rmtree(tempdir2)
+                        if os.path.isfile(tmpdir1+'param.dat'):
+                            os.remove(tmpdir1+'param.dat')
+                        if os.path.isfile(tmpdir1+'param_test.dat'):
+                            os.remove(tmpdir1+'param_test.dat')
+                        print "--------------------------------------"
+
+

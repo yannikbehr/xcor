@@ -68,27 +68,34 @@ class CheckResp:
                                         yday = `hi[1]`
                                     newline = date_resp1[0]+'     '+date_resp1[1]+\
                                               ' '+date_resp1[2]+'  '+`hi[0]`+','+\
-                                              yday+','+date_resp2[2]+'\n'
+                                              yday+','+'00:00:00\n'
                                     outlines.append(newline)
-                                elif string.find(lines,'No Ending Time')!=-1:
-                                    outlines.append(lines)
+                                #elif string.find(lines,'No Ending Time')!=-1:
+                                    #outlines.append(lines)
                                 elif string.find(lines,'End date')!=-1:
                                     date_resp1 = string.split(lines)
-                                    date_resp2 = string.split(date_resp1[3],',')
-                                    # following line-layout is exactly the one
-                                    # from the seed-RESP-file;
-                                    hi[1] = hi[1]+2
-                                    if hi[1]<10:
-                                        yday = '00'+`hi[1]`
-                                    elif hi[1]<100:
-                                        yday = '0'+`hi[1]`
-                                    else:
-                                        yday = `hi[1]`
-                                    newline = date_resp1[0]+'     '+date_resp1[1]+\
+                                    #date_resp2 = string.split(date_resp1[3],',')
+                                    if not 'Not' in (date_resp1[3]):
+				        # following line-layout is exactly the one
+                                        # from the seed-RESP-file;
+                                        hi[1] = hi[1]+2
+                                        if hi[1]<10:
+                                            yday = '00'+`hi[1]`
+                                        elif hi[1]<100:
+                                            yday = '0'+`hi[1]`
+                                        else:
+                                            yday = `hi[1]`
+                                            newline = date_resp1[0]+'     '+date_resp1[1]+\
                                               ' '+date_resp1[2]+'    '+`hi[0]`+','\
-                                              +yday+','+date_resp2[2]+'\n'
-                                    outlines.append(newline)
-                                else:
+                                              +yday+','+'23:59:59\n'
+                                            outlines.append(newline)
+                                    else:
+				       yday = yday+2
+				       newline = date_resp1[0]+'     '+date_resp1[1]+\
+                                              ' '+date_resp1[2]+'    '+`hi[0]`+','\
+                                              +yday+','+'23:59:59\n'
+                                       outlines.append(newline)
+			         else:
                                     outlines.append(lines)
                         except Exception,e:
                             print "problems with processing the RESP-files ",e

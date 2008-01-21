@@ -177,14 +177,32 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
   char sacfile[STRING],dirname[STRING];
   SAC_HD shd;
 
-  ptr = strtok(respfile, ".");
-  while(ptr != NULL) {
-    strncpy(name[m],ptr,7);
-    ptr = strtok(NULL, ".");
-    m++;
-  }
+  j = 0;   
+  for(i = 0; i < strlen(respfile); i++) {      
+  if (respfile[i] == '\.' || respfile[i] == '\..') continue;
+  respfile[j] = respfile[i]; j++;
+   }
+   respfile[j] = '\0';
+   
+   
+   k = strlen(respfile);
+   stn[0]=respfile[k-3];
+   stn[1]=respfile[k-2];
+   stn[2]=respfile[k-1];
+   stn[3]='\0';
+   name[0]=respfile[k-8];
+   name[1]=respfile[k-7];
+   name[2]=respfile[k-6];
+   name[3]='\0';
+   
+    /ptr = strtok(respfile,".");
+  /while(ptr != NULL) {
+    /strncpy(name[m],ptr,7);
+    /ptr = strtok(NULL, ".");
+    /m++;
+  /}
 
-  index = search_stat(name[2],sdb);
+  index = search_stat(name,sdb);
   if(index == -1){
     ns = sdb->nst;
     ptr = NULL;
@@ -192,11 +210,12 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     ptr = strrchr(dirname,'/');
     *(ptr+1) = '\0';
     strncpy(sacfile,dirname,STRING-1);
-    strcat(sacfile,name[2]);
+    strcat(sacfile,name);
     strcat(sacfile,".");
-    strcat(sacfile,name[4]);
+    strcat(sacfile,stn);
     strcat(sacfile,".SAC");
       
+     
     f = fopen(sacfile,"rb");
     if(NULL == f) {
       printf("fatal error!couldn't find %s\n",sacfile);

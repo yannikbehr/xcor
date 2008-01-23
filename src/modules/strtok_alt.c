@@ -27,12 +27,13 @@
  *int main(){
  *
  *  char **tokens;                              
- *  int i;
- *  ex_tokens("bla bla string", ' ', &tokens);
+ *  int i=0;
+ *  ex_tokens("//bla/bla////str/ing", '/', &tokens);
  *  
- *  for(i=0;i<3;i++)
+ *  while(tokens[i] != NULL)
  *    {                                            
  *      printf("%s\n",tokens[i]);                
+ *      i++;
  *    }                                    
  *  
  *  free(tokens);              
@@ -65,7 +66,7 @@ int ex_tokens(char *string, char c, char ***tokens)
 
                 memset(tmp_string, 0, strlen(string)+1);
 
-                if ( (tmp_tokens = (char **)calloc(toks, sizeof(char *))))
+                if ( (tmp_tokens = (char **)calloc(toks+1, sizeof(char *))))
                 {
                         toks = 0;
                         for (i = 0; i < strlen(string); i++)
@@ -101,6 +102,12 @@ int ex_tokens(char *string, char c, char ***tokens)
                                 {
                                         memset(tmp_tokens[toks], 0, strlen(tmp_string));
                                         strncpy(tmp_tokens[toks], tmp_string, strlen(tmp_string));
+
+					/*******************************/
+					/* needed to add NULL pointer at the end */
+					/* edited by Y.Behr 23/1/2008 */
+					toks++;
+					/******************************/
                                 }
                                 else
                                 {
@@ -111,6 +118,20 @@ int ex_tokens(char *string, char c, char ***tokens)
                         }
 
                         free(tmp_string);
+
+			/********************************/
+			/* adding NULL at the end */
+			/* edited by Y.Behr 23/1/2008 */
+			if ( (tmp_tokens[toks] = (char *)malloc(1)))
+			  {
+			    tmp_tokens[toks] = NULL;
+			  }
+			else
+			  {
+			    free(tmp_tokens);
+			    return (0);
+			  }
+			/*******************************/
                         *tokens = tmp_tokens;
                         return (1);
                 }

@@ -42,10 +42,12 @@ VPATH = modules
 
 hfiles = \
 	$(VPATH)/iniparser.h\
-	$(VPATH)/sac_db.h
+	$(VPATH)/sac_db.h\
+	$(VPATH)/strtok_alt.h
 
 ofiles = \
-	$(VPATH)/iniparser.o
+	$(VPATH)/iniparser.o\
+	$(VPATH)/strtok_alt.o
 
 
 options = -pg -D DEBUG

@@ -1,10 +1,12 @@
 COMPL = gcc		
 
 hfiles = \
-	iniparser.h
+	iniparser.h\
+	strtok_alt.h
 
 ofiles = \
-	iniparser.o
+	iniparser.o\
+	strtok_alt.o
 
 %.o:%.c 
 	$(COMPL) -g -c  $<  

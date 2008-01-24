@@ -15,6 +15,7 @@
 #include <string.h>
 #include <math.h>
 #include <iniparser.h>
+#include <strtok_alt.h>
 #include <mysac.h>
 #include <sac_db.h>
 
@@ -116,10 +117,12 @@ int walk_dir(char *dirname, SAC_DB *sdb){
   ------------------------------------------------------------*/
 void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   FILE *f;
-  int i, index, ns;
+  int i, index, ns, cnt=0;
+  int year, month, day, yday;
   SAC_HD shd;
   char dummy[8];
   char *ptr;
+  char **dirtokens, **datetokens;
 
   f = fopen(sacfile,"rb");
   fread(&shd, sizeof(SAC_HD),1,f);
@@ -141,18 +144,29 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
    ns = index;
   }
 
+  /* extract date of day from directory name; this has to be done as the seismogram itself might 
+     start a day earlier at for example 23:59:48 */
+  ex_tokens(sacfile,'/',&dirtokens);
+  /* count the number of tokens between '/' */
+  while(dirtokens[cnt] != NULL) cnt++;
+  ex_tokens(dirtokens[cnt-2],'_',&dirtokens);
+  year  = atoi(dirtokens[0]);
+  month = atoi(dirtokens[1]);
+  day   = atoi(dirtokens[2]);
+  yday  = day_of_year(year, month, day);
+
   strncpy(sdb->rec[sdb->cntev][ns].fname,sacfile,149);
   sprintf(sdb->rec[sdb->cntev][ns].ft_fname,"%s/ft_%s.%s.SAC\0", newname, shd.kstnm, shd.kcmpnm);
   strncpy(sdb->rec[sdb->cntev][ns].chan,shd.kcmpnm,6);
-  sdb->ev[sdb->cntev].yy = shd.nzyear;
-  sdb->ev[sdb->cntev].jday = shd.nzjday;
-  month_day(shd.nzyear, shd.nzjday, &sdb->ev[sdb->cntev].mm, &sdb->ev[sdb->cntev].dd);
-  sdb->ev[sdb->cntev].h = shd.nzhour;
-  sdb->ev[sdb->cntev].m = shd.nzmin;
+  sdb->ev[sdb->cntev].yy = year;
+  sdb->ev[sdb->cntev].jday = yday;
+  //  month_day(shd.nzyear, shd.nzjday, &sdb->ev[sdb->cntev].mm, &sdb->ev[sdb->cntev].dd);
+  sdb->ev[sdb->cntev].h = 0;
+  sdb->ev[sdb->cntev].m = 0;
   sdb->ev[sdb->cntev].s = 0;
   sdb->ev[sdb->cntev].ms = 0;
   sdb->ev[sdb->cntev].ms = 10.*sdb->ev[sdb->cntev].ms;
-  sdb->ev[sdb->cntev].t0 = abs_time ( shd.nzyear,shd.nzjday,0,0,0,0 );
+  sdb->ev[sdb->cntev].t0 = abs_time ( year,yday,0,0,0,0 );
   sdb->rec[sdb->cntev][ns].dt = (double)shd.delta;
   //  sdb->rec[sdb->cntev][ns].dt = 1.0;
   sdb->rec[sdb->cntev][ns].n  = shd.npts;
@@ -368,6 +382,24 @@ void month_day(int year, int yearday, int *pmonth, int *pday){
   *pday = yearday;
 }
 
+
+/*----------------------------------------------------------
+ * function to convert calendar date into yearday
+ ---------------------------------------------------------*/
+int day_of_year(int year, int month, int day)
+{
+  static char daytab[2][13] =  {
+    {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+    {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+  };
+
+  int i, leap;
+  
+  leap = (year%4 == 0 && year%100 != 0) || year%400 == 0;
+  for (i = 1; i < month; i++)
+    day += daytab[leap][i];
+  return day;
+}
 
 /*--------------------------------------------------------------------------
  *computes time in s relative to 1900

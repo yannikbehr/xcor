@@ -3,9 +3,9 @@
   processing routines; it searches a dir-structure for matching files, 
   extracts the necessary information from the sac-header or the file name
   and writes them into the sac_db-structure
-  $Rev: 429 $
+  $Rev$
   $Author$
-  $LastChangedDate: 2007-12-06 17:33:50 +1300 (Thu, 06 Dec 2007) $
+  $LastChangedDate$
   ---------------------------------------------------------------------------*/
 
 
@@ -42,8 +42,8 @@ void print_sac_db(SAC_DB *sdb);
 
 
 /*------------------------------------------------------------------------
-  function to find all SAC- and RESP-files and fill sac_db structure with
-  them
+  function to find all 'COR'-directories and move preliminary correlations
+  to final correlations
   needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
   stdio.h, stdlib.h
   ------------------------------------------------------------------------*/
@@ -71,7 +71,6 @@ int walk_dir(char *dirname, SAC_DB *sdb){
       fprintf(stderr,"ERROR in stat ...\n");
       return EXIT_FAILURE;
     }
-    
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' than go on*/
@@ -160,7 +159,7 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   strncpy(sdb->rec[sdb->cntev][ns].chan,shd.kcmpnm,6);
   sdb->ev[sdb->cntev].yy = year;
   sdb->ev[sdb->cntev].jday = yday;
-  //  month_day(shd.nzyear, shd.nzjday, &sdb->ev[sdb->cntev].mm, &sdb->ev[sdb->cntev].dd);
+  month_day(year, yday, &sdb->ev[sdb->cntev].mm, &sdb->ev[sdb->cntev].dd);
   sdb->ev[sdb->cntev].h = 0;
   sdb->ev[sdb->cntev].m = 0;
   sdb->ev[sdb->cntev].s = 0;
@@ -185,36 +184,21 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
 void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
 
   FILE *f;
-  int  i, ns, index, m=0;
-  char *ptr;
-  char name[6][8];
-  char sacfile[STRING],dirname[STRING];
+  int  i, ns, index, m=0, j;
+  char stn[5];
+  char *ptr, *pos, *pos1, *pos2, *pos3;
+  char name[6];
+  char sacfile[STRING],dirname[STRING],**resptokens;
   SAC_HD shd;
 
-  j = 0;   
-  for(i = 0; i < strlen(respfile); i++) {      
-  if (respfile[i] == '\.' || respfile[i] == '\..') continue;
-  respfile[j] = respfile[i]; j++;
-   }
-   respfile[j] = '\0';
-   
-   
-   k = strlen(respfile);
-   stn[0]=respfile[k-3];
-   stn[1]=respfile[k-2];
-   stn[2]=respfile[k-1];
-   stn[3]='\0';
-   name[0]=respfile[k-8];
-   name[1]=respfile[k-7];
-   name[2]=respfile[k-6];
-   name[3]='\0';
-   
-    /ptr = strtok(respfile,".");
-  /while(ptr != NULL) {
-    /strncpy(name[m],ptr,7);
-    /ptr = strtok(NULL, ".");
-    /m++;
-  /}
+  /*******************************************************/
+  /* this part was edited by Z. Rawlinson 01/08 in order */
+  /* to replace the old strtok-function*/
+  ex_tokens(respfile,'.',&resptokens);
+  strncpy(stn,resptokens[4],4);
+  strncpy(name,resptokens[2],5); 
+
+
 
   index = search_stat(name,sdb);
   if(index == -1){
@@ -229,7 +213,6 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     strcat(sacfile,stn);
     strcat(sacfile,".SAC");
       
-     
     f = fopen(sacfile,"rb");
     if(NULL == f) {
       printf("fatal error!couldn't find %s\n",sacfile);
@@ -240,10 +223,11 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     }
     sdb->st[sdb->nst].lat = shd.stla;
     sdb->st[sdb->nst].lon = shd.stlo;
-    strncpy(sdb->st[sdb->nst++].name,name[2],9);
+    strncpy(sdb->st[sdb->nst++].name,name,9);
   }else{
    ns = index;
   }
+  /*******************************************************/
 
   strncpy(sdb->rec[sdb->cntev][ns].resp_fname,resppath,149);
 

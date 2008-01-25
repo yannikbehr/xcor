@@ -184,7 +184,7 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
 void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
 
   FILE *f;
-  int  i, ns, index, m=0, j;
+  int  i, ns, index, m=0, j, cnt=0;
   char stn[5];
   char *ptr, *pos, *pos1, *pos2, *pos3;
   char name[6];
@@ -195,8 +195,17 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
   /* this part was edited by Z. Rawlinson 01/08 in order */
   /* to replace the old strtok-function*/
   ex_tokens(respfile,'.',&resptokens);
-  strncpy(stn,resptokens[4],4);
-  strncpy(name,resptokens[2],5); 
+  while(resptokens[cnt] != NULL) cnt++;
+  strncpy(stn,resptokens[cnt-2],4);
+  ptr = NULL;
+  ptr = strrchr(respfile,'.');
+  *ptr = '\0';
+  ptr = strrchr(respfile,'.');
+  *ptr = '\0';
+  ex_tokens(respfile,'.',&resptokens);
+  cnt = 0;
+  while(resptokens[cnt] != NULL) cnt++;
+  strncpy(name,resptokens[cnt-2],5); 
 
 
 

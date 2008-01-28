@@ -31,14 +31,14 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax);
 void write_sac (char *fname, float *sig, SAC_HD *SHD);
 void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir);
 void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n);
-void get_args(int argc, char** argv, SAC_DB* sdb);
+void get_args(int argc, char** argv, char* conffile);
 
 char str[300];
 
 /*--------------------------------------------------------------------------
   reading and checking commandline arguments
   --------------------------------------------------------------------------*/
-void get_args(int argc, char** argv, SAC_DB* sdb)
+void get_args(int argc, char** argv, char* conffile)
 {
   int i;
 
@@ -58,7 +58,7 @@ void get_args(int argc, char** argv, SAC_DB* sdb)
 
       switch (argv[i][1]) {
 
-      case 'c':	strncpy(sdb->conf,argv[++i],149);
+      case 'c':	strncpy(conffile,argv[++i],149);
 	break;
 
       case 'h':	    fprintf(stderr,"USAGE: %s [-c alt/config.file]\n", argv[0]);
@@ -235,7 +235,8 @@ void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
 void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
 {
   FILE *ff;
-  float fl1, fl2, fl3, fl4;
+  float fl1, fl2, fl3, fl4, freq1, factor=1;
+  int freq, i;
   long n1, n2;
   char *tmpdir;
   dictionary *d;
@@ -273,13 +274,34 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
   fprintf(ff,"rmean\n");
   fprintf(ff,"rtrend\n");
   fprintf(ff,"transfer from evalresp fname %sresp1 to vel freqlimits %f %f %f %f\n",tmpdir, fl1, fl2, fl3, fl4 );
+
   if(sd->rec[ne][ns].dt!=1.0){
+    /*****************************************************************/
+    /* The following part was edited by Z. Rawlinson in order to     */
+    /* automatically downsample traces with sample frequencies       */
+    /* higher than 1 Hz                                              */
+    /* 01/08                                                         */
+    freq1=(1.0f/sd->rec[ne][ns].dt);
+    freq=(int)freq1;
     printf("sampling rate is %f.\n",sd->rec[ne][ns].dt);
-    fprintf(ff,"decimate 5 filter on\n");
-    fprintf(ff,"decimate 5 filter on\n");
+    while ((freq/5) % 2 == 0 && freq>5){
+      freq=freq/5;
+      factor = factor * 5;
+      fprintf(ff,"decimate 5 filter on\n");
+    }
+    while ((freq/2)!=1 && freq>=2){
+      freq=freq/2;
+      factor = factor * 2;
+      fprintf(ff,"decimate 2 filter on\n");
+    }
+    freq=freq/2;
+    factor = factor * 2;
     fprintf(ff,"decimate 2 filter on\n");
     sd->rec[ne][ns].dt = 1.0;
+    sd->rec[ne][ns].n  = (int)(sd->rec[ne][ns].n/factor);
   }
+  /*******************************************************************/
+
   fprintf(ff,"w %ss1.sac\n",tmpdir);
   fprintf(ff,"quit\n");
   fprintf(ff,"END\n");
@@ -301,13 +323,14 @@ int main (int argc, char **argv)
   FILE *ff;
   int ne, ns;
   float t1, npts;
+  char conffile[150];
   dictionary *dd;
   char *tmpdir;
   char *sacdir;
   
   /* CHECK INPUT ARGUMENTS */
-  strncpy(sdb.conf,"./config.txt",149);
-  get_args(argc,argv,&sdb);
+  strncpy(conffile,"./config.txt",149);
+  get_args(argc,argv,&conffile);
   sscanf(argv[1],"%f",&t1);
   sscanf(argv[2],"%f",&npts);
 
@@ -315,7 +338,7 @@ int main (int argc, char **argv)
   fprintf(stderr,"The program assumes the results are within the 1-5 s period band.\n");
 
   /* OPEN SAC DATABASE FILE AND READ IN TO MEMORY */
-  dd = iniparser_new(sdb.conf);
+  dd = iniparser_new(conffile);
   tmpdir = iniparser_getstr(dd, "database:tmpdir");
   sprintf(str,"%ssac_db.out\0", tmpdir);
 
@@ -327,6 +350,7 @@ int main (int argc, char **argv)
   fread(&sdb, sizeof(SAC_DB), 1, ff);
   fclose(ff);
   sacdir = iniparser_getstr(dd, "database:sacdir");
+  strncpy(sdb.conf,conffile,149);
 
   /* REMOVE INSTRUMENT RESPONSE AND CUT TO DESIRED LENGTH */
   for ( ns = 0; ns < sdb.nst; ns++ ) for ( ne = 0; ne < sdb.nev; ne++ ) {

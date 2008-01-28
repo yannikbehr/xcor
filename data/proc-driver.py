@@ -1,9 +1,9 @@
 #!/usr/bin/python
 """program to combine modules written for the processing of
 continous data to calculate dispersion curves\n
-$Rev$
+$Rev: 461 $
 $Author$
-$LastChangedDate$
+$LastChangedDate: 2008-01-18 11:46:41 +1300 (Fri, 18 Jan 2008) $
 """
 import sys
 sys.path.append('../src/modules')

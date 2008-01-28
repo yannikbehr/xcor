@@ -196,7 +196,7 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
   /* to replace the old strtok-function*/
   ex_tokens(respfile,'.',&resptokens);
   while(resptokens[cnt] != NULL) cnt++;
-  strncpy(stn,resptokens[cnt-2],4);
+  strncpy(stn,resptokens[cnt-1],4);
   ptr = NULL;
   ptr = strrchr(respfile,'.');
   *ptr = '\0';
@@ -205,7 +205,7 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
   ex_tokens(respfile,'.',&resptokens);
   cnt = 0;
   while(resptokens[cnt] != NULL) cnt++;
-  strncpy(name,resptokens[cnt-2],5); 
+  strncpy(name,resptokens[cnt-1],5); 
 
 
 

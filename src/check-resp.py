@@ -29,6 +29,7 @@ class CheckResp:
                         if string.find(ffile, 'SAC')!=-1 and string.find(ffile, explode[2])!=-1:
                             ffile = dirname+'/'+ffile
                             [hf,hi,hs,ok] = pysacio.ReadSacHeader(ffile)
+			    khole = pysacio.GetHvalue('khole', hf, hi, hs)
                             if ok == 0:
                                 message = "Cannot read in SAC-file-header"
                                 raise Exception, message
@@ -53,9 +54,15 @@ class CheckResp:
                                 raise Exception, message
                             
                             for lines in alllines:
-                                
-                                if string.find(lines,'Start date')!=-1:
-                                    date_resp1 = string.split(lines)
+			  
+                                if string.find(lines,'Location')!=-1:
+				    loc_resp1 = string.split(lines)
+				    newline = loc_resp1[0]+'     '+loc_resp1[1]+\
+				    '    '+khole+'\n'
+				    outlines.append(newline)
+				
+                                elif string.find(lines,'Start date')!=-1:
+                                    date_resp1 = string.split(lines)	
                                     date_resp2 = string.split(date_resp1[3],',')
                                     # following line-layout is exactly the one
                                     # from the seed-RESP-file;
@@ -73,29 +80,31 @@ class CheckResp:
                                 #elif string.find(lines,'No Ending Time')!=-1:
                                     #outlines.append(lines)
                                 elif string.find(lines,'End date')!=-1:
+				    
                                     date_resp1 = string.split(lines)
-                                    #date_resp2 = string.split(date_resp1[3],',')
+                                    
+				    #date_resp2 = string.split(date_resp1[3],',')
                                     if not 'Not' in (date_resp1[3]):
-				        # following line-layout is exactly the one
-                                        # from the seed-RESP-file;
-                                        hi[1] = hi[1]+2
-                                        if hi[1]<10:
-                                            yday = '00'+`hi[1]`
-                                        elif hi[1]<100:
-                                            yday = '0'+`hi[1]`
-                                        else:
-                                            yday = `hi[1]`
-                                            newline = date_resp1[0]+'     '+date_resp1[1]+\
+				       # following line-layout is exactly the one
+                                       # from the seed-RESP-file;
+                                       hi[1] = hi[1]+2
+                                       if hi[1]<10:
+                                          yday = '00'+`hi[1]`
+                                       elif hi[1]<100:
+                                          yday = '0'+`hi[1]`
+                                       else:
+                                          yday = `hi[1]`
+                                       newline = date_resp1[0]+'     '+date_resp1[1]+\
                                               ' '+date_resp1[2]+'    '+`hi[0]`+','\
                                               +yday+','+'23:59:59\n'
-                                            outlines.append(newline)
-                                    else:
+                                       outlines.append(newline)
+				    else:
 				       yday = yday+2
 				       newline = date_resp1[0]+'     '+date_resp1[1]+\
                                               ' '+date_resp1[2]+'    '+`hi[0]`+','\
                                               +yday+','+'23:59:59\n'
                                        outlines.append(newline)
-			         else:
+                                else:
                                     outlines.append(lines)
                         except Exception,e:
                             print "problems with processing the RESP-files ",e
@@ -136,4 +145,4 @@ class CheckResp:
 
 if __name__ == '__main__':
     test = CheckResp()
-    test.walk_dir('/home/behrya/dev/nord-sac/fanchi/2003/Mar/')
+    test.walk_dir('/Users/home/rawlinza/Zara/sac_from_seed/Tasmanxcor/')

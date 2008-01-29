@@ -22,8 +22,7 @@ void count_files(char *dirname, int *cnt);
 
 
 /*------------------------------------------------------------------------
-  function to find all 'COR'-directories and move preliminary correlations
-  to final correlations
+  function to count number of  '*_s'-files 
   needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
   stdio.h, stdlib.h
   ------------------------------------------------------------------------*/
@@ -49,8 +48,8 @@ void count_files(char *dirname, int *cnt)
       return;
     }
 
-    /* if filename has ending '.SAC' and is a regular file but does neither 
-       contain the string 'COR' nor 'stack' than go on*/
+    /* if filename has ending '_s' and is a regular file but does neither 
+       contain the string 'AMP' nor 'DISP' than go on*/
     if(strstr((*dirpointer).d_name,"_s") !=0 && strstr((*dirpointer).d_name,"DISP") ==0 
        && strstr((*dirpointer).d_name,"AMP") ==0 
        && attribut.st_mode & S_IFREG){
@@ -65,6 +64,12 @@ void count_files(char *dirname, int *cnt)
 }
 
 
+
+/*------------------------------------------------------------------------
+  function to get list of  '*_s'-files 
+  needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
+  stdio.h, stdlib.h
+  ------------------------------------------------------------------------*/
 void get_filelist(char *dirname, char **filelist, int cnt)
 {
   DIR *dir;
@@ -88,8 +93,8 @@ void get_filelist(char *dirname, char **filelist, int cnt)
       return;
     }
 
-    /* if filename has ending '.SAC' and is a regular file but does neither 
-       contain the string 'COR' nor 'stack' than go on*/
+    /* if filename has ending '_s' and is a regular file but does neither 
+       contain the string 'AMP' nor 'DISP' than go on*/
     if(strstr((*dirpointer).d_name,"_s") !=0 
        && strstr((*dirpointer).d_name,"DISP") ==0 
        && strstr((*dirpointer).d_name,"AMP") ==0 

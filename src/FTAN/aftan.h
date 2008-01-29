@@ -1,6 +1,6 @@
 #ifndef AFTAN_H
 
-/* Finction prorotypes */
+/* Function prototypes */
 
 void aftan4i_(int *n,float *sei,double *t0,double *dt,double *delta,
            double *vmin,double *vmax,double *tmin,double *tmax,

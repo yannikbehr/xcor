@@ -9,3 +9,6 @@ testcuttransmod:
 testdowhiten:
 		python test_modules.py -c testdata/do_whiten_test.cfg	
 
+testinputevseed:
+		python test_modules.py -c testdata/mk_input_ev_seed_test.cfg	
+

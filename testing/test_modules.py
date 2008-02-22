@@ -9,7 +9,7 @@ from ConfigParser import SafeConfigParser
 from numpy import *
 
 sys.path.append('../src/modules')
-import pysacio, seed_db, do_whiten
+import pysacio, seed_db, do_whiten, mk_input_ev_seed
 
 ########################## COMMAND LINE ARGUMENTS ###################################
 cmdargs = []
@@ -246,3 +246,25 @@ else:
                         print "--------------------------------------"
 
 
+############################### TESTING MK_INPUT_EV_SEED ############################
+        if cp.get('processing','initevseed')=='1':
+            print "--------------------------------------"
+            print "TESTING: mk_input_ev_seed"
+            print "--------------------------------------"
+            err = 0
+            try:
+                print "-->running mk_input_ev_seed.py"
+                newev = mk_input_ev_seed.InitInputEvSeed(cp)
+                newev.start_seed_db()
+            except Exception:
+                print "ERROR: while executing mk_input_ev_seed.py"
+                sys.exit(1)
+            else:
+                try:
+                    print "-->running sa_from_seed_new"
+                    err = os.system('../bin/sa_from_seed_new -c '+options.configfile)
+                    if err != 0:
+                        raise Exception
+                except Exception:
+                    print "ERROR: executing sa_from_seed_mod not succesful!"
+                    sys.exit(1)

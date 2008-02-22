@@ -92,7 +92,7 @@ int ex_tokens(char *string, char c, char ***tokens)
                                 {
                                         if (string[i] == c)
                                                 continue;
-                                        strncat(tmp_string, (char*)&string[i], 1);
+					strncat(tmp_string, (char*)&string[i], 1);
                                 }
                         }
 

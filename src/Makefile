@@ -90,8 +90,12 @@ ftan-module:
 module_obj:
 	cd $(VPATH); make objects
 
+sacseedII: module_obj sa_from_seed_mod.c $(hfiles)
+	$(COMPL)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
+
 install:
 	install sa_from_seed_mod $(BINDIR);\
+	install sa_from_seed_new $(BINDIR);\
 	install	cut_trans_mod $(BINDIR);\
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
@@ -100,6 +104,7 @@ install:
 	install	newstack $(BINDIR);\
 	install	new_ch_lag $(BINDIR);\
 	install	ftandriver $(BINDIR);
+
 clean:
 	rm sa_from_seed_mod read_sac_db initsac_db new_ch_lag newstack \
 	ftandriver cut_trans_mod justCOR; cd ./white_outphamp; make clean; \

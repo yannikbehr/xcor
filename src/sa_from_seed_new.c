@@ -176,39 +176,6 @@ void write_sac (char *fname, float *sig, SAC_HD *SHD)
 
 
 /*--------------------------------------------------------------------------
-  write SAC_DB structure to ascii table 'fname'
-  --------------------------------------------------------------------------*/
-void sac_db_write_to_asc ( SAC_DB *sdb, char *fname )
-{
-  int ie, is;
-  FILE *fi, *ff;
-  static SAC_HD shd;
-
-  ff = fopen(fname,"w");
-
-  for ( ie = 0; ie < sdb->nev; ie++ ) for ( is = 0; is < sdb->nst; is++ )
-    {
-      fprintf(ff,"%s  %s  ", sdb->ev[ie].name, sdb->st[is].name );
-
-      if ( sdb->rec[ie][is].n <= 0 ) fprintf(ff,"NO DATA\n");
-
-      else 
-	{
-	  fi = fopen(sdb->rec[ie][is].fname,"rb");
-	  fread(&shd, sizeof(SAC_HD), 1, fi );
-	  fclose(fi);
-
-	  fprintf(ff,"%s  t0: %d/%d:%d:%d:%g  %g s of record\n", sdb->rec[ie][is].fname, 
-		  shd.nzyear, shd.nzjday, shd.nzhour, shd.nzmin, 
-		  (shd.nzsec + 0.001*shd.nzmsec), shd.delta*shd.npts );
-	}
-    } 
-      
-  fclose(ff);
-}
-
-
-/*--------------------------------------------------------------------------
   converts yyyy/mm/dd into year-day
   --------------------------------------------------------------------------*/
 int jday ( int y, int m, int d )
@@ -745,22 +712,17 @@ int main (int na, char **arg)
   }
 
 
-  char seedcmd2[] = "select path,channel from seedfiles";
+  printf("number of events=%d and number of stations=%d\n",sdb.cntev,sdb.cntst);
+  sdb.nst = sdb.cntst;
+  sdb.nev = sdb.cntev;
+  sdb.cntev = 0;
 
-//  printf("number of events=%d and number of stations=%d\n",sdb.cntev,sdb.cntst);
-//  sdb.nst = sdb.cntst;
-//  sdb.nev = sdb.cntev;
-//  sdb.cntev = 0;
-//
-//  tmpdir = iniparser_getstr(dd, "database:tmpdir");
-//  sprintf(str,"%ssac_db.out\0", tmpdir);
-//  printf("name of sac database is: %s\n",str);
-//  ff = fopen(str,"wb");
-//  fwrite(&sdb, sizeof(SAC_DB), 1, ff );
-//  fclose(ff);
-//  sprintf(str,"%sevent_station.tbl\0", tmpdir);
-//  printf("name of sac ascii-table is: %s\n",str);
-//  sac_db_write_to_asc ( &sdb, str );
+  tmpdir = iniparser_getstr(dd, "database:tmpdir");
+  sprintf(str,"%ssac_db.out\0", tmpdir);
+  printf("name of sac database is: %s\n",str);
+  ff = fopen(str,"wb");
+  fwrite(&sdb, sizeof(SAC_DB), 1, ff );
+  fclose(ff);
   iniparser_free(dd);
   return 0;
 }

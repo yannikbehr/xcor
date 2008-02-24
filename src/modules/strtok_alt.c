@@ -43,7 +43,7 @@
                                        
 int ex_tokens(char *string, char c, char ***tokens)
 {                                      
-        int i, toks = 0;        
+        int i, toks = 0, cnt=0;        
         char **tmp_tokens;
         char *tmp_string;
                        
@@ -74,12 +74,18 @@ int ex_tokens(char *string, char c, char ***tokens)
                                 /* cia toks patikrinimas tam jei stringas prasideda skirtuku */
                                 if (string[i] == c && strlen(tmp_string))
                                 {
-                                        if ( (tmp_tokens[toks] = (char *)malloc(strlen(tmp_string)+1)))
+                                        if ( (tmp_tokens[toks] = (char *)malloc(cnt+1)))
                                         {
-                                                memset(tmp_tokens[toks], 0, strlen(tmp_string));
-                                                strncpy(tmp_tokens[toks], tmp_string, strlen(tmp_string));
-                                                memset(tmp_string, 0, strlen(tmp_string)+1);
+                                                memset(tmp_tokens[toks], 0, cnt);
+                                                strncpy(tmp_tokens[toks], tmp_string, cnt);
+						/* I had to add the following line because for some strange 
+						   reason the string tmp_tokens[toks] wasn't correctly 
+						   terminated 
+						   02/08 Y. Behr*/
+						tmp_tokens[toks][cnt] = '\0';
+                                                memset(tmp_string, 0, strlen(string)+1);
                                                 toks++;
+						cnt = 0;
                                         }
                                         else
                                         {
@@ -93,6 +99,7 @@ int ex_tokens(char *string, char c, char ***tokens)
                                         if (string[i] == c)
                                                 continue;
 					strncat(tmp_string, (char*)&string[i], 1);
+					cnt++;
                                 }
                         }
 

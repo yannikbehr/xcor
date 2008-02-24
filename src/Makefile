@@ -58,7 +58,7 @@ options = -pg -D DEBUG
 all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
 
 sacseed: module_obj sa_from_seed_mod.c $(hfiles)
-	$(COMPL)  -g -I $(VPATH) sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
+	$(COMPL)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
 
 cut: 	module_obj cut_trans_mod.c
 	$(COMPL) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
@@ -90,11 +90,7 @@ ftan-module:
 module_obj:
 	cd $(VPATH); make objects
 
-sacseedII: module_obj sa_from_seed_mod.c $(hfiles)
-	$(COMPL)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
-
 install:
-	install sa_from_seed_mod $(BINDIR);\
 	install sa_from_seed_new $(BINDIR);\
 	install	cut_trans_mod $(BINDIR);\
 	install initsac_db $(BINDIR);\

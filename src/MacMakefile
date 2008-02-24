@@ -56,10 +56,10 @@ options = -pg -D DEBUG
 %.o:%.c
 	$(COMPL) -g -c  $<  
 
-all: cut justcor filter4 whiteout ftan stack lag initsacdb 
+all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
 
 sacseed: module_obj sa_from_seed_mod.c $(hfiles)
-	$(COMPL)  -g -I $(VAPTH) sa_from_seed_mod.c -o sa_from_seed_mod $(ofiles)  -lsqlite
+	$(COMPL)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
 
 initsacdb: initsac_db.c
 	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
@@ -92,6 +92,7 @@ module_obj:
 	cd $(VPATH); make -f MacMakefile objects
 
 install:
+	install sa_from_seed_new $(BINDIR);\
 	install	cut_trans_mod $(BINDIR);\
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\

@@ -9,7 +9,7 @@ from ConfigParser import SafeConfigParser
 from numpy import *
 
 sys.path.append('../src/modules')
-import pysacio, seed_db, do_whiten, mk_input_ev_seed
+import pysacio, do_whiten, mk_ev_table
 
 ########################## COMMAND LINE ARGUMENTS ###################################
 cmdargs = []
@@ -29,44 +29,35 @@ else:
         cp = SafeConfigParser()
         cp.read(options.configfile)
 
-############################# TESTING SA_FROM_SEED_MOD ###############################
-        if cp.get('processing','initdb')=='1':
+############################### TESTING SA_FROM_SEED ############################
+        if cp.get('processing','initevseed')=='1':
             print "--------------------------------------"
-            print "TESTING: sa_from_seed_mod"
+            print "TESTING: mk_ev_table"
             print "--------------------------------------"
             err = 0
-            print "-->creating sqlite database file"
             try:
-                seedb = seed_db.Initialize_DB(cp)
-                if cp.get('database','datatype') == 'seed':
-                    sqlitefile = cp.get('database','databasefile')
-                    sacdir = cp.get('database','sacdirroot')
-                    if os.path.isfile(sqlitefile):
-                        os.remove(sqlitefile)
-                    if os.path.isdir(sacdir):
-                        shutil.rmtree(sacdir)
-                    err = seedb.start_seed_db()
-                if err != 0:
-                    raise Exception
+                print "-->running mk_ev_table.py"
+                newev = mk_ev_table.InitInputEvSeed(cp)
+                newev.start_seed_db()
             except Exception:
-                print "ERROR: creating sqlite database file not succesful!"
+                print "ERROR: while executing mk_ev_table.py"
                 sys.exit(1)
             else:
                 try:
-                    print "-->running sa_from_seed_mod"
-                    err = os.system('../bin/sa_from_seed_mod -c '+options.configfile+' >/dev/null')
+                    print "-->running sa_from_seed_new"
+                    err = os.system('../bin/sa_from_seed_new -c '+options.configfile+' > /dev/null')
                     if err != 0:
                         raise Exception
                 except Exception:
-                    print "ERROR: executing sa_from_seed_mod not succesful!"
+                    print "ERROR: executing sa_from_seed_new not succesful!"
                     sys.exit(1)
                 else:
                     try:
                         print "-->comparing results with fanchi's"
                         file1 = "./testdata/test/2003/Jan/2003_1_2_0_0_0/MATA.BHZ.SAC"
-                        file2 = "./testdata/test/2003/Jan/2003_1_2_0_0_0/TIKO.BHZ.SAC"
+                        file2 = "./testdata/test/2003/Feb/2003_2_5_0_0_0/TIKO.BHZ.SAC"
                         fcmp1 = "./testdata/fanchi/Jan/2003_1_2_0_0_0/MATA.BHZ.SAC"
-                        fcmp2 = "./testdata/fanchi/Jan/2003_1_2_0_0_0/TIKO.BHZ.SAC"
+                        fcmp2 = "./testdata/fanchi/Feb/2003_2_5_0_0_0/TIKO.BHZ.SAC"
                         [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
                         [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
                         [hf3,hi3,hs3,refseis1,ok3] = pysacio.ReadSacFile(fcmp1)
@@ -93,19 +84,14 @@ else:
                             print "       test didn't work"
                         else:
                             print "--------------------------------------"
-                            print "-->testing sa_from_seed_mod was succesful"
+                            print "-->testing sa_from_seed_new was succesful"
                             # cleaning up
                             tmpdir = cp.get('database','tmpdir')
-                            if os.path.isfile(sqlitefile):
-                                os.remove(sqlitefile)
+                            sacdir = cp.get('database','sacdirroot')
                             if os.path.isdir(sacdir):
                                 shutil.rmtree(sacdir)
-                            if os.path.isfile(tmpdir+'event_station.tbl'):
-                                os.remove(tmpdir+'event_station.tbl')
                             if os.path.isfile(tmpdir+'from_seed'):
                                 os.remove(tmpdir+'from_seed')
-                            if os.path.isfile(tmpdir+'seed_test.db'):
-                                os.remove(tmpdir+'seed_test.db')
                             if os.path.isfile(tmpdir+'sac_db.out'):
                                 os.remove(tmpdir+'sac_db.out')
                             print "--------------------------------------"
@@ -237,8 +223,13 @@ else:
                         tempdir2 = cp.get("database","sacdirroot")+\
                                    "Jan/"+cp.get("processing","upperperiod")+\
                                     "to"+cp.get("processing","lowerperiod")
+                        tempdir3 = cp.get("database","sacdirroot")+\
+                                   "Feb/"+cp.get("processing","upperperiod")+\
+                                    "to"+cp.get("processing","lowerperiod")
                         if os.path.isdir(tempdir2):
                             shutil.rmtree(tempdir2)
+                        if os.path.isdir(tempdir3):
+                            shutil.rmtree(tempdir3)
                         if os.path.isfile(tmpdir1+'param.dat'):
                             os.remove(tmpdir1+'param.dat')
                         if os.path.isfile(tmpdir1+'param_test.dat'):
@@ -246,25 +237,3 @@ else:
                         print "--------------------------------------"
 
 
-############################### TESTING MK_INPUT_EV_SEED ############################
-        if cp.get('processing','initevseed')=='1':
-            print "--------------------------------------"
-            print "TESTING: mk_input_ev_seed"
-            print "--------------------------------------"
-            err = 0
-            try:
-                print "-->running mk_input_ev_seed.py"
-                newev = mk_input_ev_seed.InitInputEvSeed(cp)
-                newev.start_seed_db()
-            except Exception:
-                print "ERROR: while executing mk_input_ev_seed.py"
-                sys.exit(1)
-            else:
-                try:
-                    print "-->running sa_from_seed_new"
-                    err = os.system('../bin/sa_from_seed_new -c '+options.configfile)
-                    if err != 0:
-                        raise Exception
-                except Exception:
-                    print "ERROR: executing sa_from_seed_mod not succesful!"
-                    sys.exit(1)

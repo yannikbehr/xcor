@@ -58,7 +58,7 @@ options = -pg -D DEBUG
 
 all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
 
-sacseed: module_obj sa_from_seed_mod.c $(hfiles)
+sacseed: module_obj sa_from_seed_new.c $(hfiles)
 	$(COMPL)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
 
 initsacdb: initsac_db.c

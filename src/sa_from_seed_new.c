@@ -682,7 +682,7 @@ int main (int na, char **arg)
   /* initialise SAC_DB structure */
   for ( iev = 0; iev < NEVENTS; iev++ ) for ( ist = 0; ist < NSTATION; ist++ ) 
     sdb.rec[iev][ist].n = 0;
-  fprintf(stderr,"initializing DB ok\n");
+  fprintf(stderr,"initializing SAC_DB ok\n");
 
   
   size_t *t = malloc(0);

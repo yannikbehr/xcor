@@ -30,7 +30,7 @@ else:
         cp.read(options.configfile)
 
 ############################### TESTING SA_FROM_SEED ############################
-        if cp.get('processing','initevseed')=='1':
+        if cp.get('processing','initevtbl')=='1':
             print "--------------------------------------"
             print "TESTING: mk_ev_table"
             print "--------------------------------------"

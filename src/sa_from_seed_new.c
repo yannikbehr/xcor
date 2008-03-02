@@ -456,7 +456,7 @@ int merge_sac(char *sta, char *chan, double *t0, float *dt, long *nrec)
 void mk_one_rec (SAC_DB *sdb, char *inputstring)
 {
   FILE *ff;
-  int ns, ne, cnt=0, scnt=0;
+  int ns, ne, cnt=0, scnt=0, err;
   dictionary *d;
   char *rdseedroot;
   char *tmpdir;
@@ -480,8 +480,8 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring)
       strcpy(bufftmp,tmpdir);
       strcat(bufftmp,"from_seed");
       ff = fopen(bufftmp,"w");
-      sprintf(str,"%srdseed <<END\n",rdseedroot);
-      fprintf(ff,"%srdseed <<END\n", rdseedroot);
+      //sprintf(str,"%srdseed <<END\n",rdseedroot);
+      fprintf(ff,"%srdseed <<END 2>/dev/null\n", rdseedroot);
       fprintf(ff,"%s\n", evtokens[7]);
       fprintf(ff,"\n");                             /* out file */
       fprintf(ff,"\n");                             /* volume */
@@ -506,7 +506,8 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring)
       fclose(ff);
 
       sprintf(str,"sh %s\0",bufftmp);
-      system(str);
+      err=system(str);
+      printf("error is %d\n",err);
 
       if ( !merge_sac(sdb->st[ns].name, evtokens[6], &(sdb->rec[ne][ns].t0), &(sdb->rec[ne][ns].dt), &(sdb->rec[ne][ns].n) ) )
 	{

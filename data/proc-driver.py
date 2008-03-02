@@ -7,7 +7,7 @@ $LastChangedDate: 2008-01-18 11:46:41 +1300 (Fri, 18 Jan 2008) $
 """
 import sys
 sys.path.append('../src/modules')
-import seed_db, string, os, do_whiten
+import string, os, do_whiten, mk_ev_table, sendrequest, imaprequest
 from ConfigParser import SafeConfigParser
 
 cp = SafeConfigParser()
@@ -22,15 +22,38 @@ except Exception:
     print "config file is config.txt"
 
 cp.read(config)
+bindir=cp.get('database','bindir')
 
 err = 0
 
-################### WRITE SQLITE-DB FILE OF SEED DATA ##############
+################### SEND DATA-REQUEST ############################
 try:
-    if cp.get('processing','initdb')=='1' and err==0:
-        seedb = seed_db.Initialize_DB(cp)
+    if cp.get('processing','datarequest')=='1' and err==0:
+        mail = sendrequest.makerequest(cp)
+        err  = mail.mkrequest()
+    if err != 0:
+        raise Exception
+except Exception:
+    print "ERROR: while executing sendrequest.py"
+    sys.exit(1)
+
+################### GET DATA ######################################
+try:
+    if cp.get('processing','datadownload')=='1' and err==0:
+        ftp  = imaprequest.mailwatcher(cp)
+        err = ftp.getmail()
+    if err != 0:
+        raise Exception
+except Exception:
+    print "ERROR: while executing imaprequest.py"
+    sys.exit(1)
+
+################### WRITE ASCII-DB FILE OF SEED DATA ##############
+try:
+    if cp.get('processing','initevtbl')=='1' and err==0:
+        ascdb = mk_ev_table.InitInputEvSeed(cp)
         if cp.get('database','datatype') == 'seed':
-            err = seedb.start_seed_db()
+            err = ascdb.start_seed_db()
     if err != 0:
         raise Exception
 except Exception:
@@ -40,7 +63,7 @@ except Exception:
 ####################### CONV SEED 2 SAC AND RM HOLES ###############
 try:
     if cp.get('processing','seed2sac')=='1' and err==0:
-        err = os.system('./sa_from_seed_mod -c '+config)
+        err = os.system(bindir+'sa_from_seed_new -c '+config)
     if err != 0:
         raise Exception
 except Exception:

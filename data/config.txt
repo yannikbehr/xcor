@@ -7,29 +7,32 @@
 # for your imap-password
 
 smtpserver=vuwmail.staff.vuw.ac.nz
-senderaddress=yannik.behr@vuw.ac.nz
-recipient-address=autodrm@geonet.org.nz yannik.behr@physik.uni-muenchen.de
+senderaddress=yannik@yanmail.de
+recipient-address=autodrm@geonet.org.nz yannik@yanmail.de
+#recipient-address=yannik@yanmail.de
 imapserver=imap.vuw.ac.nz
+#imapserver=imap.goneo.de
 imapusername=behrya
 
 # info to create request-message-body
-month=2 
+month=1 2 3 4 5 6 7 8 9 10 11 12
 year=2006
 message-id=Yannik any-dnc
 return-email=yannik.behr@vuw.ac.nz
-station-list=BFZ
+station-list=EAZ
 channel=LHZ 
 
 # directory for downloaded data
-download-dir=download/
+download-dir=./download/
+seed-dir=/Volumes/data/indrajit/Newzealand/2005/seed/
 
 [database]
-databasedir=/Volumes/data/yannik78/dev/test-data/seed/
-databasefile=./raw-data.db
+databasedir=/Volumes/data/indrajit/Newzealand/2005/seed/
+databasefile=./tmp/event-table.txt
 
-#configuration on my computer
-rdseeddir=/home/behrya/src/rdseed4.6/
-sacdir=/home/behrya/src/sac/bin/
+#configuration on kaikouras
+rdseeddir=/Users/home/yannik78/bin/
+sacdir=/Volumes/data/yannik78/src/linux/sac/bin/
 
 # tararuas configuration
 #rdseeddir=/usr/local/packages/hypo/bin/rdseed/
@@ -37,14 +40,15 @@ sacdir=/home/behrya/src/sac/bin/
 
 
 datatype=seed
-sacdirroot=../test/
+sacdirroot=./geonet/
 cordir=../sacroot/2005/Apr/5to100/COR/
-tmpdir=/home/behrya/dev/automation/tmp/
+tmpdir=/Volumes/data/yannik78/auto/data/tmp/
+bindir=/Users/home/yannik78/auto/bin/
 
 [processing]
 
 #define channel (sample frequency)
-channel=BHZ
+channel=LHZ
 
 #define frequency range for correlations
 upperperiod=5
@@ -56,9 +60,11 @@ lowercut=1000
 uppercut=84000
 
 #processing-steps
+datarequest=0
+datadownload=0
+initevtbl=0
+seed2sac=1
 initsacdb=0
-initdb=0
-seed2sac=0
 rmresp=0
 white=0
 xcorr=0

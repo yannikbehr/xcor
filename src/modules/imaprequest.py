@@ -11,7 +11,7 @@ directory as 'imaprequest.py', adapt the settings and then run 'python imapreque
 it only works with imap-email-accounts and only if the autodrm-mails are
 still marked as 'unseen' or 'unread'
 """
-import getpass, imaplib, string, ftplib, os, uu, glob
+import getpass, imaplib, string, ftplib, os, uu, glob, re, os.path, sys
 from ConfigParser import SafeConfigParser
 
 class ftpdownload:
@@ -23,37 +23,49 @@ class ftpdownload:
         self.dwnld = downloaddir
 
     def getftp(self):
-        try: con = ftplib.FTP(self.ftpinfo[0][0])
-        except Exception, error:
-            print "Cannot connect: ", error
+        try:
+            # extracting server sub-string and directory
+            pattern = r'ftp://(.*)\/(.*)\/.*'
+            match = re.search(pattern, self.ftpinfo[0])
+            ftpserver = match.group(1)
+            ftpdir = match.group(2)
+        except Exception,e:
+            print "ERROR: cannot extract ftp server name "
         else:
-            try: con.login(self.ftpusr, self.ftppwd)
+            try: con = ftplib.FTP(ftpserver)
             except Exception, error:
-                print "Cannot login: ", error
+                print "Cannot connect to ",ftpserver, error
             else:
-                print "ftp-login successful"
-                try: con.cwd(self.ftpinfo[0][1])
+                try: con.login(self.ftpusr, self.ftppwd)
                 except Exception, error:
-                    print "Cannot change directory: ", error
+                    print "Cannot login: ", error
                 else:
-                    print "change to directory ", self.ftpinfo[0][1], " successful"
-                    try:
-                        dirlist = os.listdir(self.dwnld)
-                        con.set_pasv(0)
-                        counter = 0
-                        for i in self.ftpinfo:
-                            if i[2] not in dirlist:
-                                print "Starting download of file: ", i[2]
-                                con.retrbinary('RETR '+i[2], open(self.dwnld +i[2],'wb').write)
-                                counter = counter+1
-                            else:
-                                print i[2], "already exists in: ", self.dwnld
+                    print "ftp-login successful"
+                    try: con.cwd(ftpdir)
                     except Exception, error:
-                        print "Cannot retrieve file: ", error
+                        print "Cannot change directory: ", error
                     else:
-                        print "number of downloaded files is: ", counter
+                        print "change to directory ", ftpdir, " successful"
+                        try:
+                            dirlist = os.listdir(self.dwnld)
+                            con.set_pasv(1)
+                            counter = 0
+                            for i in self.ftpinfo:
+                                pattern = r'ftp://.*\/.*\/(.*)'
+                                match = re.search(pattern, i)
+                                file = match.group(1)
+                                if file not in dirlist:
+                                    print "Starting download of file: ", file
+                                    con.retrbinary('RETR '+file, open(self.dwnld +file,'wb').write)
+                                    counter = counter+1
+                                else:
+                                    print file, "already exists in: ", self.dwnld
+                        except Exception, error:
+                            print "Cannot retrieve file: ", error
+                        else:
+                            print "number of downloaded files is: ", counter
 
-    def py_uudecode(self):
+    def py_uudecode(self, seeddir):
         try:
             dirlist = os.listdir(self.dwnld)
         except OSError, err:
@@ -61,29 +73,31 @@ class ftpdownload:
         else:
             try:
                 for i in dirlist:
-                    if string.find(i,'seed') == -1:
-                        infile = open(self.dwnld+i,'r')
-                        uu.decode(infile)
+                    infile = open(self.dwnld+i,'r')
+                    outfile = seeddir
+                    uu.decode(infile, outfile)
             except Exception, e:
                 print "Cannot decode data-file. ",e
-            else:
-                try:
-                    seedlist = glob.glob('*.seed')
-                    seeddir = self.dwnld+'seed'
-                    if not os.path.isdir(seeddir):
-                        os.mkdir(seeddir)
-                    for i in seedlist:
-                        print i, seeddir+'/'+i
-                        os.rename(i,seeddir+'/'+i)
-                except Exception, e:
-                    print "Cannot move seed-files"
 
 class msg:
+    """extract ftp-server-string from email body"""
     def __init__(self,text):
         self.lines = string.split(text, '\015\012')
+
     def readline(self):
-        try: return self.lines[12] + '\n'
-        except: return ''
+        try:
+            if string.find(self.lines[4], 'error_log') != -1:
+                print "WARNING: found error code in autodrm message!"
+                return 1
+            elif string.find(self.lines[4], 'ftp_log') != 0:
+                pattern = r'\s+\[\s{1}(ftp.*)\s{1}\]'
+                for line in self.lines:
+                    match = re.search(pattern, line)
+                    if match:
+                        return match.group(1)
+        except Exception,e:
+            print "ERROR: cannot process email contents"
+            return 1
 
 
 class mailwatcher:
@@ -94,7 +108,7 @@ class mailwatcher:
         self.usr = confdat.get('rawdata','imapusername')
         self.pwd = getpass.getpass()
         self.dwnld = confdat.get('rawdata', 'download-dir')
-        self.list = []
+        self.seeddir = confdat.get('rawdata', 'seed-dir')
         self.ftpmat = []
 
     def getmail(self):
@@ -104,46 +118,48 @@ class mailwatcher:
             M = imaplib.IMAP4(self.ims)
             M.login(self.usr, self.pwd)
         except Exception, e:
-            self.list.insert(-1, ('IMAP login error: ',e))
-            return self.list
-
+            print "ERROR: IMAP login not successful: ",e
+            return 1
         try:
             result, message = M.select(readonly=1)
             if result != 'OK':
                 raise Exception, message
-            typ, data = M.search(None, '(UNSEEN FROM "autodrm@geonet.org.nz")')
-            for num in string.split(data[0]):
-                try:
-                    f = M.fetch(num, '(BODY[TEXT])')
-                    # now comes the ftp-site extraction part
-                    # if autodrm-format changes this part has
-                    # to be changed as well
-                    aaa = msg(f[1][0][1])
-                    tmpstr = aaa.readline()
-                    ftpbeg = string.find(tmpstr,'ftp')
-                    ftpend = string.find(tmpstr, ']', ftpbeg)
-                    serverst = string.find(tmpstr,'ftp', ftpbeg+1)
-                    serverend = string.find(tmpstr, '/', serverst)
-                    serverstr = tmpstr[serverst:serverend]
-                    dirend = string.find(tmpstr, '/', serverend+1)
-                    dirstr = tmpstr[serverend+1:dirend]
-                    filestr = tmpstr[dirend+1:ftpend-1]
-                    tmpmat = [serverstr, dirstr, filestr]
-                    self.ftpmat.append(tmpmat)
-                except KeyError:
-                    self.list.insert(-1, 'KeyError')
-                    return self.list
+            typ, data = M.search(None, '(UNSEEN FROM "autodrm@geonet.org.nz" SUBJECT "GeoNet AutoDRM Response")')
+            if len(data[0]) > 0:
+                for num in string.split(data[0]):
+                    try:
+                        f = M.fetch(num, '(BODY[TEXT])')
+                        # now comes the ftp-site extraction part
+                        # if autodrm-format changes this part has
+                        # to be changed as well
+                        aaa = msg(f[1][0][1])
+                        if aaa.readline() != 1:
+                            self.ftpmat.append(aaa.readline())
+                    except Exception,e:
+                        print "ERROR: cannot process email"
+                        return 1
+                if not len(self.ftpmat):
+                    print "WARNING: no ftp-address extracted"
+                    return 1
+            else:
+                print "-->No unseen autodrm emails on server"
+                print "-->if there should be any, check if"
+                print "-->they are marked as seen in your inbox"
+                return 1
+                
         except Exception, e:
-            print "Cannot get message!"
-            self.list.insert(-1, ('IMAP read error ', e))
-            return self.list
+            print "ERROR: Cannot get message!", e
+            return 1
         else:
             try:
-                ftpfile=ftpdownload(self.ftpmat, self.dwnld)
-                ftpfile.getftp()
-                ftpfile.py_uudecode()
+                #ftpfile=ftpdownload(self.ftpmat, self.dwnld)
+                #ftpfile.getftp()
+                ftpfile.py_uudecode(self.seeddir)
             except Exception, e:
                 print "Call of ftpdownload-class not successful!", e
+                return 1
+            else:
+                return 0
         M.logout()
 
 
@@ -154,11 +170,11 @@ class mailwatcher:
 if __name__ == '__main__':
     # reading config-file
     cp = SafeConfigParser()
-    cp.read('/Volumes/data/yannik78/upload/nord.cfg')
+    cp.read('/Users/home/rawlinza/Zara/sac_from_seed/modules/nord.cfg')
 
     # checking imap-server for autodrm-mail
-    mail=mailwatcher(cp)
-    list=mail.getmail()
+    mail = mailwatcher(cp)
+    err  = mail.getmail()
 
 
 

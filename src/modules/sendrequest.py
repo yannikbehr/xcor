@@ -32,8 +32,8 @@ class makerequest:
         self.month = string.split(confdat.get('rawdata', 'month'))
         self.msgid = confdat.get('rawdata', 'message-id')
         self.email = confdat.get('rawdata', 'return-email')
-        self.stat = confdat.get('rawdata', 'station-list')
-        self.chan = confdat.get('rawdata', 'channel')
+        self.stat = string.split(confdat.get('rawdata', 'station-list'))
+	self.chan = confdat.get('rawdata', 'channel')
         self.smtpserver = confdat.get('rawdata', 'smtpserver')
         self.senderaddress = confdat.get('rawdata', 'senderaddress')
         self.recipient = string.split(confdat.get('rawdata', 'recipient-address'))
@@ -53,38 +53,53 @@ class makerequest:
                         self.mday['2'] = 28
         except Exception:
             print "something 's wrong with date-format!"
+            return 1
         else:
             counter = 0
-            for j in self.month:
-                for i in range(1,self.mday[j]+1):
+	    for s in self.stat:    
+                for j in self.month:
+                    for i in range(1,self.mday[j]+1):
                         try:
+			    if len(str(i))<2:
+			       day="0"+str(i)
+			    else:
+			       day=str(i)
+			    if len(str(j))<2:  
+			       mnth="0"+str(j)
+			    else:
+			       mnth=str(j)
                             self.body = "BEGIN GSE2.0\nMSG_TYPE REQUEST\n"
-                            self.body = self.body + "MSG_ID " +self.msgid + "\n"
+                            self.body = self.body + "MSG_ID " +s+"-"+day+":"+mnth+":"+str(self.year)+" ANY_NDC\n"
                             self.body = self.body + "EMAIL " +self.email + "\n"
                             self.body = self.body + "FTP " +self.email + "\n"
-                            self.body = self.body + "STA_LIST " +self.stat + "\n"
+                            self.body = self.body + "STA_LIST " +s+ "\n"
                             self.body = self.body + "CHAN_LIST " +self.chan + "\n"
-                            self.body = self.body + "TIME " +str(self.year)+"/"+j+"/"+str(i)\
-                                        +" 00:00:01 TO " +str(self.year)+"/"+j+"/"+str(i)\
+                            self.body = self.body + "TIME " +str(self.year)+"/"+mnth+"/"+day\
+                                        +" 00:00:01 TO " +str(self.year)+"/"+mnth+"/"+day\
                                         +" 23:59:59\n"
                             self.body = self.body + "WAVEFORM SEED\nSTOP"
                         except Exception:
                             print "Cannot produce message-body!"
+                            return 1
                         else:
-                            # sending the request as email
-                            mailsend = sendrequest(self.senderaddress, self.smtpserver, self.recipient)
-                            mailsend.request(self.body)
-                            counter = counter + 1
-            return counter
+                            try:
+                                # sending the request as email
+                                mailsend = sendrequest(self.senderaddress, self.smtpserver, self.recipient)
+                                mailsend.request(self.body)
+                                counter = counter + 1
+                            except Exception, e:
+                                print "Cannot send request email"
+                                return 1
+            print "number of requested files is: ", counter
+            return 0
 
 if __name__ == '__main__':
     # reading config-file
     cp = SafeConfigParser()
-    cp.read('../nord.cfg')
+    cp.read('nord.cfg')
 
     # building request mail-body and
     # sending it
     timespan = makerequest(cp)
-    cnt = timespan.mkrequest()
-    print "number of requested files is: ", cnt
+    err = timespan.mkrequest()
 

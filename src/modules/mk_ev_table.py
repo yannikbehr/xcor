@@ -1,7 +1,7 @@
 """python script to generate input_ev_seed-file needed by sa_from_seed_holes_NZ.c
 from a set of seed-files"""
 
-import string, os, glob, optparse, re
+import string, os, glob, optparse, re, sys
 from ConfigParser import SafeConfigParser
 
 class Events: pass
@@ -41,6 +41,7 @@ class InitInputEvSeed:
                 g.mint = mylist[2][2:4]
                 g.sec = mylist[2][4:6]
                 g.path = self.datadir+i
+                print g
                 self.output_events.append(g)
         except Exception, e:
             print "ERROR: in function 'extr_date'", e
@@ -55,8 +56,6 @@ class InitInputEvSeed:
             "ERROR: Cannot retrieve directory-contents: ",e
         else:
             try:
-                curdir = os.getcwd()
-                os.chdir(self.datadir)
                 stations = []
                 # delete .svn directory from contents!!!
                 for j in range(0,len(contents)):
@@ -65,8 +64,12 @@ class InitInputEvSeed:
                         break
 
                 for i in contents:
-                    command = self.rdseed + ' -Sf '+i
-                    os.system(command)
+                    command = self.rdseed + ' -Sf '+self.datadir+i+' 2>/dev/null'
+                    a=os.system(command)
+                    if a != 0:
+                        print "WARNING: cannot read station list from ",i
+                        continue
+                    
                     for line in open('rdseed.stations').readlines():
                         tmpline = string.split(line)
                         s = Stations()
@@ -91,7 +94,6 @@ class InitInputEvSeed:
                         
                     for i in glob.glob('rdseed*'):
                         os.remove(i)
-                os.chdir(curdir)
             except os.error, value:
                 print "ERROR: problems occured in system calls: ", value[0], value[1]
             except Exception, e:

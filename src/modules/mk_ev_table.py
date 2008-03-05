@@ -17,9 +17,8 @@ class InitInputEvSeed:
             self.datadir = self.cp.get('database', 'databasedir')
             self.databasefile = self.cp.get('database', 'databasefile')
             if not os.access(self.rdseed,os.F_OK) or \
-                   not os.access(self.datadir,os.F_OK) or \
-                   not os.access(self.databasefile, os.F_OK):
-                raise Exception, (self.rdseed, self.datadir, self.databasefile)
+                   not os.access(self.datadir,os.F_OK):
+                raise Exception, (self.rdseed, self.datadir)
         except Exception, value:
             print "ERROR: directory or file doesn't exist: ", value
         self.channel = self.cp.get("processing", "channel")
@@ -41,7 +40,6 @@ class InitInputEvSeed:
                 g.mint = mylist[2][2:4]
                 g.sec = mylist[2][4:6]
                 g.path = self.datadir+i
-                print g
                 self.output_events.append(g)
         except Exception, e:
             print "ERROR: in function 'extr_date'", e

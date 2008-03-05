@@ -35,7 +35,7 @@ SAC_HD *read_sac_header(char *fname, SAC_HD *SHD)
  FILE *fsac;
 /*..........................................................................*/
         if((fsac = fopen(fname, "rb")) == NULL) {
-          printf("could not open sac file to write\n");
+          printf("could not open sac file to read\n");
           exit(1);
         }
 
@@ -357,7 +357,11 @@ int main(int argc, char **argv)
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
 
-  row = (sdb.nst)*(sdb.nst-1)/2;
+  if(sdb.nst <=2){
+    row = 1;
+  }else{
+    row = sdb.nst*(sdb.nst-1)/2;
+  }
   col = 25;  /* Attention: hard-wired to not more than 2 years of data  */
 
   matrix = (struct corfile **)malloc(row * sizeof(struct corfile *));

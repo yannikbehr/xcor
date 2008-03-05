@@ -14,7 +14,6 @@
 
 
 #define MAIN
-#define _GNU_SOURCE
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,7 +22,7 @@
 #include <mysac.h>
 #include <sac_db.h>
 #include <iniparser.h>
-#include <strtok_alt.h>
+#include <strtok_mod.h>
 
 /* MACROS */
 #define Linel 300
@@ -456,19 +455,17 @@ int merge_sac(char *sta, char *chan, double *t0, float *dt, long *nrec)
 void mk_one_rec (SAC_DB *sdb, char *inputstring)
 {
   FILE *ff;
-  int ns, ne, cnt=0, scnt=0, err;
+  int ns, ne, nrows=20, err;
+  char evtokens[nrows][Linel];
   dictionary *d;
   char *rdseedroot;
   char *tmpdir;
   char bufftmp[150];
   static char resp_name[150];
 
-  char **evtokens;
-  ex_tokens(inputstring,' ',&evtokens);
-  /* count the number of tokens between spaces */
-  while(evtokens[cnt] != NULL) cnt++;
+  strtok_mod(inputstring,' ',evtokens, &nrows);
 
-  if(cnt >= 7){
+  if(nrows >= 7){
     d = iniparser_new(sdb->conf);
     rdseedroot = iniparser_getstr(d, "database:rdseeddir");
     tmpdir = iniparser_getstr(d, "database:tmpdir");
@@ -477,11 +474,10 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring)
       if ( sdb->rec[ne][ns].n > 0 ) break;
       /*buffersize should be aquired dynamically*/
       int buffersize=8640000;
-      strcpy(bufftmp,tmpdir);
+      strncpy(bufftmp,tmpdir,149);
       strcat(bufftmp,"from_seed");
       ff = fopen(bufftmp,"w");
-      //sprintf(str,"%srdseed <<END\n",rdseedroot);
-      fprintf(ff,"%srdseed <<END 2>/dev/null\n", rdseedroot);
+      fprintf(ff,"%srdseed <<END\n", rdseedroot);
       fprintf(ff,"%s\n", evtokens[7]);
       fprintf(ff,"\n");                             /* out file */
       fprintf(ff,"\n");                             /* volume */
@@ -502,13 +498,15 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring)
       fprintf(ff,"quit\n");
       fprintf(ff,"END\n");
 
-    
       fclose(ff);
 
-      sprintf(str,"sh %s\0",bufftmp);
+      sprintf(str,"sh %s 2>/dev/null 1>/dev/null\0",bufftmp);
       err=system(str);
-      printf("error is %d\n",err);
-
+      if(err != 0){
+	printf("ERROR: rdseed system call exited with non-zero value");
+	err = 0;
+      }
+      
       if ( !merge_sac(sdb->st[ns].name, evtokens[6], &(sdb->rec[ne][ns].t0), &(sdb->rec[ne][ns].dt), &(sdb->rec[ne][ns].n) ) )
 	{
 	  sdb->rec[ne][ns].n = 0;
@@ -535,7 +533,7 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring)
       system(str);
 
       system("/bin/rm list_resp");
-      system("/bin/rm RESP*");
+      system("/bin/rm RESP* 2>/dev/null");
 
 
       /*------------- moving sac file -------*/
@@ -562,12 +560,11 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring)
   -------------------------------------------------------------------------*/
 void  fill_one_sta (SAC_DB *st1, char *inputstring)
 {
-  int cnt=0;
-  char **stattokens;
-  ex_tokens(inputstring,' ',&stattokens);
+  int nrows = 20;
+  char stattokens[nrows][Linel];
+  strtok_mod(inputstring,' ',stattokens, &nrows);
   /* count the number of tokens between '/' */
-  while(stattokens[cnt] != NULL) cnt++;
-  if(cnt >= 3){
+  if(nrows >= 3){
     strncpy(st1->st[st1->cntst].name,stattokens[0],9);
     st1->st[st1->cntst].lat = atof(stattokens[1]);
     st1->st[st1->cntst].lon = atof(stattokens[2]);
@@ -584,18 +581,11 @@ void  fill_one_sta (SAC_DB *st1, char *inputstring)
   -------------------------------------------------------------------------*/
 void fill_one_event (SAC_DB *ev1, char *inputstring )
 {
-  int cnt=0, scnt=0;
-  char **evtokens;
-  ex_tokens(inputstring,' ',&evtokens);
+  int nrows = 20;
+  char evtokens[nrows][Linel];
+  strtok_mod(inputstring,' ',evtokens, &nrows);
 
-  /* count the number of tokens between spaces */
-  while(evtokens[cnt] != NULL) cnt++;
-
-  /* remove end-of-line character */
-  while(evtokens[cnt-1][scnt] != '\n') scnt++;
-  evtokens[cnt-1][scnt] = '\0';
-
-  if(cnt >= 8){
+  if(nrows >= 8){
     ev1->ev[ev1->cntev].yy = atoi(evtokens[0]);
     ev1->ev[ev1->cntev].mm = atoi(evtokens[1]);
     ev1->ev[ev1->cntev].dd = atoi(evtokens[2]);
@@ -627,7 +617,6 @@ void fill_one_event (SAC_DB *ev1, char *inputstring )
   else{
     printf("Error: entries are missing in input file!\n");
   }
-
   return;
 }
 
@@ -662,6 +651,7 @@ int main (int na, char **arg)
   char *zErrMsg = 0;
   char *test;
   char *tmpdir;
+  char puffer[Linel];
   int ist, iev;
   FILE *ff, *fi;
   int rc;
@@ -685,33 +675,29 @@ int main (int na, char **arg)
     sdb.rec[iev][ist].n = 0;
   fprintf(stderr,"initializing SAC_DB ok\n");
 
-  
-  size_t *t = malloc(0);
-  char **gptr = (char **)malloc(sizeof(char*));
-  *gptr = NULL;
   sdb.cntst = 0;
   sdb.cntev = 0;
 
-  if(getline(gptr, t, fi) > 0){
-    if(strstr(*gptr,"[stations]") != 0){
-      while(getline(gptr, t, fi) > 0 && 
-	    strstr(*gptr,"[events]") == 0){
-	if(s_len_trim(*gptr) != 0){
-	  fputs(*gptr,stdout);
-	  fill_one_sta (&sdb, *gptr);
+  while(fgets(puffer, Linel, fi)){
+    if(strstr(puffer,"[stations]") != 0){
+      while(fgets(puffer, Linel, fi) > 0 && 
+	    strstr(puffer,"[events]") == 0){
+	if(s_len_trim(puffer) != 0){
+	  fputs(puffer,stdout);
+	  fill_one_sta (&sdb, puffer);
 	}
       }
-      if(strstr(*gptr,"[events]") != 0){
-	while(getline(gptr, t, fi) > 0 && 
-	      s_len_trim(*gptr) != 0){
-	  fputs(*gptr,stdout);
-	  fill_one_event(&sdb,*gptr);
-	  mk_one_rec(&sdb,*gptr);
+      if(strstr(puffer,"[events]") != 0){
+	while(fgets(puffer, Linel, fi) > 0 && 
+	      s_len_trim(puffer) != 0){
+	  fputs(puffer,stdout);
+	  fill_one_event(&sdb,puffer);
+	  mk_one_rec(&sdb,puffer);
 	    }
       }
     }
   }
-
+  fclose(fi);
 
   printf("number of events=%d and number of stations=%d\n",sdb.cntev,sdb.cntst);
   sdb.nst = sdb.cntst;

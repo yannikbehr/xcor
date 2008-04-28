@@ -42,8 +42,7 @@ void print_sac_db(SAC_DB *sdb);
 
 
 /*------------------------------------------------------------------------
-  function to find all 'COR'-directories and move preliminary correlations
-  to final correlations
+  function to find all '*.SAC' and 'RESP.*' files
   needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
   stdio.h, stdlib.h
   ------------------------------------------------------------------------*/
@@ -83,7 +82,7 @@ int walk_dir(char *dirname, SAC_DB *sdb){
       extr_sac_hd(tmp,sdb,newname);
 
     }
-    /* if filename has contains 'RESP' string and is regular file */
+    /* if filename contains 'RESP' string and is regular file */
     else if(strstr((*dirpointer).d_name,"RESP") !=0 && attribut.st_mode & S_IFREG){
       count_ev(newname, tmp, oldname, sdb);
       read_resp(tmp,sdb,dirpointer->d_name);

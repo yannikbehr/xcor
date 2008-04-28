@@ -10,6 +10,10 @@ Revision 1.2  2007-07-05 06:10:59  behrya
 conf element for config filename added
 
 */
+#define NSTATION 220
+#define NEVENTS 788
+#define LINEL 300
+#define SLINE 10
 
 
 typedef struct event
@@ -39,9 +43,6 @@ typedef struct record
   long n;
 }
 RECORD;
-
-#define NSTATION 220
-#define NEVENTS 366
 
 typedef struct sac_dbase
 {

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """program to combine modules written for the processing of
 continous data to calculate dispersion curves\n
 $Rev: 461 $
@@ -22,7 +22,7 @@ except Exception:
     print "config file is config.txt"
 
 cp.read(config)
-bindir=cp.get('database','bindir')
+bindir=cp.get('local_settings','bindir')
 
 err = 0
 
@@ -67,13 +67,13 @@ try:
     if err != 0:
         raise Exception
 except Exception:
-    print "ERROR: while executing sa_from_seed_mod"
+    print "ERROR: while executing sa_from_seed_new"
     sys.exit(1)
 
 ####################### REINIT SAC_DB.OUT FILE ######################
 try:
     if cp.get('processing','initsacdb')=='1':
-        err = os.system('./initsac_db -c '+config)
+        err = os.system(bindir+'initsac_db -c '+config)
     if err != 0:
         raise Exception
 except Exception:
@@ -83,7 +83,7 @@ except Exception:
 ####################### REMOVE INSTR. RESP. #########################
 try:
     if cp.get('processing','rmresp')=='1' and err==0:
-        command = './cut_trans_mod '+cp.get("processing","lowercut")+' '+\
+        command = bindir+'cut_trans_mod '+cp.get("processing","lowercut")+' '+\
                   cp.get("processing","uppercut")+' -c '+config
         err = os.system(command)
     if err != 0:
@@ -107,7 +107,7 @@ except Exception:
 ######################## X-CORR ######################################
 try:
     if cp.get('processing','xcorr')=='1'and err==0:
-        command = './justCOR -c '+config
+        command = bindir+'justCOR -c '+config
         err = os.system(command)
     if err != 0:
         raise Exception
@@ -118,7 +118,7 @@ except Exception:
 ######################## STACK #######################################
 try:
     if cp.get('processing','stack')=='1' and err==0:
-        command = './newstack -c '+config
+        command = bindir+'newstack -c '+config
         err = os.system(command)
     if err != 0:
         raise Exception
@@ -129,7 +129,7 @@ except Exception:
 ######################## SYMMETRY #####################################
 try:
     if cp.get('processing','sym')=='1' and err==0:
-        command = './new_ch_lag -c '+config
+        command = bindir+'new_ch_lag -c '+config
         err = os.system(command)
     if err != 0:
         raise Exception
@@ -140,7 +140,7 @@ except Exception:
 ######################## FTAN ##########################################
 try:
     if cp.get('processing','ftan')=='1' and err==0:
-        command = './ftandriver -c '+config
+        command = bindir+'ftandriver -c '+config
         err = os.system(command)
     if err != 0:
         raise Exception

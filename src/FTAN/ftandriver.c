@@ -191,13 +191,6 @@ int main (int argc, char **argv)
   ffact = iniparser_getdouble(dd,"FTAN:ffact",initerror);
   taperl = iniparser_getdouble(dd,"FTAN:taperl",initerror);
   snr = iniparser_getdouble(dd,"FTAN:snr",initerror);
-  printf("FTAN parameters:\n");
-  printf("--> vmin = %lf, vmax = %lf\n",vmin,vmax);
-  printf("--> tmin = %lf, tmax = %lf\n",tmin,tmax);
-  printf("--> threshhold = %lf\n",tresh);
-  printf("--> filter-factor = %lf\n",ffact);
-  printf("--> taper length = %lf\n",taperl);
-  printf("--> SNR = %lf\n",snr);
 
   if(strcmp(altsacroot,"dummy")==0){
     sacroot = iniparser_getstr(dd,"database:sacdirroot");
@@ -240,11 +233,23 @@ int main (int argc, char **argv)
     npoints = 3;        // only 3 points in jump
     perc    = 50.0;     // 50 % for output segment
     //  taperl  = 2.0;      // factor to the left end tapering
-    printf("#filters= %d, Perc= %6.2f %s, npoints= %d, Taper factor= %6.2f\n",
-	   nfin,perc,"%",npoints,taperl);
+    //  ffact =2.0;
+    printf("FTAN parameters:\n");
+    printf("--> station distance = %lf\n",delta);
+    printf("--> length of trace = %d\n",n);
+    printf("--> sampling interval = %lf\n",dt);
+    printf("--> vmin = %lf, vmax = %lf\n",vmin,vmax);
+    printf("--> tmin = %lf, tmax = %lf\n",tmin,tmax);
+    printf("--> threshhold = %lf\n",tresh);
+    printf("--> filter-factor = %lf\n",ffact);
+    printf("--> taper length = %lf\n",taperl);
+    printf("--> SNR = %lf\n",snr);
+    printf("--> filters = %d\n",nfin);
+    printf("--> npoints = %d\n",npoints);
+    printf("--> percent = %lf\n",perc);
+    printf("--> t0 = %lf\n",t0);
     /* Call aftan4i function, FTAN + prediction         */
     printf("FTAN + prediction curve\n");
-    //  ffact =2.0;
     int ii; 
     for(ii=0;ii<=3;ii++)
       {
@@ -271,7 +276,8 @@ int main (int argc, char **argv)
    
 	/* FTAN with phase match filter. First Iteration. */
       
-	printf("FTAN - the first ineration\n");
+	printf("--> tmin = %lf   tmax = %lf\n",tmin,tmax);
+	printf("FTAN - the first iteration\n");
 	//      ffact =1.0;
 	aftan4_(&n,sei,&t0,&dt,&delta,&vmin,&vmax,&tmin,&tmax,&tresh,
 		&ffact,&perc,&npoints,&taperl,&nfin,&snr,&nfout1,arr1,
@@ -300,8 +306,9 @@ int main (int argc, char **argv)
       }
   }
 
-  for(i = 0; i < counter; i++)
+  for(i = 0; i < counter; i++){
     free(filelist[i]);
+  }
   free(filelist);
 
   iniparser_free(dd);

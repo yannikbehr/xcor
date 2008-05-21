@@ -1,62 +1,16 @@
-[rawdata]
-# email-data: you can add as many recipient addresses 
-# as you want separated by a whitespace;
-# the senderaddress appears in the message body and
-# as the sender-address in the header;
-# before downloading the data the program prompts
-# for your imap-password
-
-smtpserver=vuwmail.staff.vuw.ac.nz
-senderaddress=yannik@yanmail.de
-recipient-address=autodrm@geonet.org.nz yannik@yanmail.de
-#recipient-address=yannik@yanmail.de
-imapserver=imap.vuw.ac.nz
-#imapserver=imap.goneo.de
-imapusername=behrya
-
-# info to create request-message-body
-month=1 2 3 4 5 6 7 8 9 10 11 12
-year=2006
-message-id=Yannik any-dnc
-return-email=yannik.behr@vuw.ac.nz
-station-list=EAZ
-channel=LHZ 
-
-# directory for downloaded data
-download-dir=./download/
-#seed-dir=../testing/testdata/seed/
-seed-dir=/Volumes/data/indrajit/Newzealand/2005/seed/
-
 [local_settings]
 bindir=../bin/
 
-
 [database]
-databasedir=../../../../../Volumes/data/indrajit/Newzealand/2005/seed/
+databasedir=/Volumes/stage/stage/yannik78/test_data_set/
 databasefile=./tmp/event-table.txt
-#databasedir=../testing/testdata/seed/
-#databasefile=./tmp/event-table-test.txt
-
-#configuration on my computer
 rdseeddir=/home/behrya/src/rdseed4.6/
 sacdir=/home/behrya/src/sac/bin/
-
-#configuration on kaikouras
-#rdseeddir=/Users/home/yannik78/bin/
-#sacdir=/Volumes/data/yannik78/src/linux/sac/bin/
-
-# tararuas configuration
-#rdseeddir=/usr/local/packages/hypo/bin/rdseed/
-#sacdir=/usr/local/packages/sac/bin/
-
-
 datatype=seed
 sacdirroot=./geonet/
-cordir=../sacroot/2005/Apr/5to100/COR/
 tmpdir=./tmp/
 
 [processing]
-
 #define channel (sample frequency)
 channel=LHZ
 
@@ -70,8 +24,6 @@ lowercut=1000
 uppercut=84000
 
 #processing-steps
-datarequest=0
-datadownload=0
 initevtbl=0
 seed2sac=0
 initsacdb=0
@@ -80,7 +32,7 @@ white=0
 xcorr=0
 stack=0
 sym=0
-ftan=1
+ftan=0
 
 
 [FTAN]
@@ -91,4 +43,4 @@ tmax=50  	#maximal period, s
 thresh=10	#treshold, usualy = 10
 ffact=1  	#factor to automatic filter parameter, usualy =1
 taperl=1 	#factor for the left end seismogram tapering,taper = taperl*tmax
-snr=0.1  	#signal-to-noise ratio
+snr=0.1  	#signal-to-noise ratio (not used like that in ftan-code!!!)

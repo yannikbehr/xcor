@@ -26,28 +26,6 @@ bindir=cp.get('local_settings','bindir')
 
 err = 0
 
-################### SEND DATA-REQUEST ############################
-try:
-    if cp.get('processing','datarequest')=='1' and err==0:
-        mail = sendrequest.makerequest(cp)
-        err  = mail.mkrequest()
-    if err != 0:
-        raise Exception
-except Exception:
-    print "ERROR: while executing sendrequest.py"
-    sys.exit(1)
-
-################### GET DATA ######################################
-try:
-    if cp.get('processing','datadownload')=='1' and err==0:
-        ftp  = imaprequest.mailwatcher(cp)
-        err = ftp.getmail()
-    if err != 0:
-        raise Exception
-except Exception:
-    print "ERROR: while executing imaprequest.py"
-    sys.exit(1)
-
 ################### WRITE ASCII-DB FILE OF SEED DATA ##############
 try:
     if cp.get('processing','initevtbl')=='1' and err==0:

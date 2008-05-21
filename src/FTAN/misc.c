@@ -52,7 +52,7 @@ FILE  *fd;
 
 // seismogram is ready
 
-      printf("Delta= %lf, Dt= %lf, Nsamples= %d\n",*delta,*dt,*n);
+//      printf("Delta= %lf, Dt= %lf, Nsamples= %d\n",*delta,*dt,*n);
 }
 /*
  * print completion result

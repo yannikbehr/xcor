@@ -16,6 +16,7 @@
 #include <math.h>
 #include <iniparser.h>
 #include <strtok_alt.h>
+#include <strtok_mod.h>
 #include <mysac.h>
 #include <sac_db.h>
 
@@ -25,7 +26,7 @@
 #include <dirent.h>
 
 
-#define STRING 200
+#define STRING 300
 
 
 /* function prototypes */
@@ -83,7 +84,8 @@ int walk_dir(char *dirname, SAC_DB *sdb){
 
     }
     /* if filename contains 'RESP' string and is regular file */
-    else if(strstr((*dirpointer).d_name,"RESP") !=0 && attribut.st_mode & S_IFREG){
+    else if(strstr((*dirpointer).d_name,"RESP") !=0 && 
+	    attribut.st_mode & S_IFREG){
       count_ev(newname, tmp, oldname, sdb);
       read_resp(tmp,sdb,dirpointer->d_name);
 
@@ -115,12 +117,13 @@ int walk_dir(char *dirname, SAC_DB *sdb){
   ------------------------------------------------------------*/
 void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   FILE *f;
-  int i, index, ns, cnt=0;
+  int i, index, ns, cnt=0, nrows=10;
   int year, month, day, yday;
   SAC_HD shd;
   char dummy[8];
   char *ptr;
   char **dirtokens, **datetokens;
+  char tokens[nrows][STRING];
 
   f = fopen(sacfile,"rb");
   fread(&shd, sizeof(SAC_HD),1,f);
@@ -183,28 +186,25 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
 void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
 
   FILE *f;
-  int  i, ns, index, m=0, j, cnt=0;
-  char stn[5];
-  char *ptr, *pos, *pos1, *pos2, *pos3;
+  int  i, ns, index, m=0, j, nrows = 10;
+  char chan[5];
+  char *ptr;
   char name[6];
-  char sacfile[STRING],dirname[STRING],**resptokens;
+  char sacfile[STRING],dirname[STRING];
+  char tokens[nrows][STRING];
   SAC_HD shd;
 
-  /*******************************************************/
-  /* this part was edited by Z. Rawlinson 01/08 in order */
-  /* to replace the old strtok-function*/
-  ex_tokens(respfile,'.',&resptokens);
-  while(resptokens[cnt] != NULL) cnt++;
-  strncpy(stn,resptokens[cnt-1],4);
-  ptr = NULL;
-  ptr = strrchr(respfile,'.');
-  *ptr = '\0';
-  ptr = strrchr(respfile,'.');
-  *ptr = '\0';
-  ex_tokens(respfile,'.',&resptokens);
-  cnt = 0;
-  while(resptokens[cnt] != NULL) cnt++;
-  strncpy(name,resptokens[cnt-1],5); 
+  strtok_mod(respfile,'.',tokens, &nrows);
+  if(nrows >= 4){
+    strncpy(chan,tokens[nrows],4);
+    ptr = NULL;
+    ptr = strrchr(respfile,'.');
+    *ptr = '\0';
+    ptr = strrchr(respfile,'.');
+    *ptr = '\0';
+    strtok_mod(respfile,'.',tokens, &nrows);
+    strncpy(name,tokens[nrows],5); 
+  }
 
 
 
@@ -218,7 +218,7 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     strncpy(sacfile,dirname,STRING-1);
     strcat(sacfile,name);
     strcat(sacfile,".");
-    strcat(sacfile,stn);
+    strcat(sacfile,chan);
     strcat(sacfile,".SAC");
       
     f = fopen(sacfile,"rb");

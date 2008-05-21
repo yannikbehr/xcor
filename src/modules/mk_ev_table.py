@@ -106,23 +106,19 @@ class InitInputEvSeed:
     def init_dat_strct(self):
         """create directory tree according to information
         extracted from seed-files"""
+
         monthdict = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May', \
                      '06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct', \
                      '11':'Nov','12':'Dec'}
         try:
-            if os.path.isdir(self.rootdir):
-                print "directory ", self.rootdir," already exists!"
-            else:
+            print "--> initialising dir-structure"
+            if not os.path.isdir(self.rootdir):
                 os.mkdir(self.rootdir)
             for i in self.output_events:
                 if not os.path.isdir(self.rootdir+i.year):
                     os.mkdir(self.rootdir+i.year)
-                else:
-                    print "directory ",self.rootdir+i.year," already exists!"
                 if not os.path.isdir(self.rootdir+i.year+'/'+monthdict[i.month]):
                     os.mkdir(self.rootdir+i.year+'/'+monthdict[i.month])
-                else:
-                    print "directory ",self.rootdir+i.year+'/'+monthdict[i.month]," already exists!"
                 dirname = self.rootdir+i.year+'/'+monthdict[i.month]
                 i.sacdir = dirname
         except Exception, e:

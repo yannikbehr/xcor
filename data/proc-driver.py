@@ -71,15 +71,15 @@ except Exception:
     sys.exit(1)
 
 ######################## WHITENING ##################################
-#try:
-if cp.get('processing','white')=='1' and err==0:
-    dowh = do_whiten.DoWhiten(cp, config)
-    err = dowh.start()
-#    if err != 0:
-#        raise Exception
-#except Exception:
-#    print "ERROR: while executing do_whiten.py"
-#    sys.exit(1)
+try:
+    if cp.get('processing','white')=='1' and err==0:
+        dowh = do_whiten.DoWhiten(cp, config)
+        err = dowh.start()
+    if err != 0:
+        raise Exception
+except Exception:
+    print "ERROR: while executing do_whiten.py"
+    sys.exit(1)
 
 
 ######################## X-CORR ######################################

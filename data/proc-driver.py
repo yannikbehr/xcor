@@ -71,21 +71,23 @@ except Exception:
     sys.exit(1)
 
 ######################## WHITENING ##################################
-try:
-    if cp.get('processing','white')=='1' and err==0:
-        dowh = do_whiten.DoWhiten(cp, config)
-        err = dowh.start()
-    if err != 0:
-        raise Exception
-except Exception:
-    print "ERROR: while executing do_whiten.py"
-    sys.exit(1)
+#try:
+if cp.get('processing','white')=='1' and err==0:
+    dowh = do_whiten.DoWhiten(cp, config)
+    err = dowh.start()
+#    if err != 0:
+#        raise Exception
+#except Exception:
+#    print "ERROR: while executing do_whiten.py"
+#    sys.exit(1)
 
 
 ######################## X-CORR ######################################
 try:
     if cp.get('processing','xcorr')=='1'and err==0:
-        command = bindir+'justCOR -c '+config
+        up = cp.get('processing','upperperiod')
+        lp = cp.get('processing','lowerperiod')
+        command = bindir+'justCOR -c '+config+' -p '+up+'to'+lp
         err = os.system(command)
     if err != 0:
         raise Exception

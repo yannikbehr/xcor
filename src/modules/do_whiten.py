@@ -16,14 +16,18 @@ class DoWhiten:
         self.sacbin = conf.get("database", "sacdir")
         self.tmpdir = conf.get("database", "tmpdir")
         self.bindir = conf.get("local_settings", "bindir")
-        self.upperp = conf.get("processing", "upperperiod")
-        self.lowerp = conf.get("processing", "lowerperiod")
+        # frequency band +- 20% as taper
+        self.upperp = int(conf.get("processing", "upperperiod"))
+        self.utaper = self.upperp - (float(self.upperp)/100)*20
+        self.lowerp = int(conf.get("processing", "lowerperiod"))
+        self.ltaper = self.lowerp + (float(self.lowerp)/100)*20
+
         self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 	self.cnffilename = cnffile
 
 
     def create_dir_struct(self, dirname, i):
-        bpfile = self.upperp+'to'+self.lowerp
+        bpfile = `self.upperp`+'to'+`self.lowerp`
         try:
             os.mkdir(dirname+'/'+i+'/'+bpfile)
         except os.error, value:
@@ -48,7 +52,8 @@ class DoWhiten:
                                 tar = dirname+'/'+i+'/'+bpfile+'/'+j+'/'+jj
                                 tar_test = dirname+'/'+i+'/'+bpfile+'/'+j+'/test/'+jj
                                 shutil.copy(src,tar)
-                                f.write('120 100 5 4 1 1 '+tar+' '+tar_test+'\n')
+                                f.write(`self.ltaper`+' '+`self.lowerp`+' '+\
+                                        `self.upperp`+' '+`self.utaper`+' 1 1 '+tar+' '+tar_test+'\n')
                                 ff.write('60 50 15 12 1 1 '+tar_test+' nothing\n')
                             f.close()
                             ff.close()

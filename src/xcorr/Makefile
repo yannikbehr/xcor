@@ -7,7 +7,8 @@
 #*** empty log message ***
 #
 
-BIN  = justCOR
+BIN1  = justCOR
+BIN2  = justCOR_EE_EN
 
 VPATH = ../modules
 
@@ -43,8 +44,13 @@ ofiles = $(VPATH)/iniparser.o
 %.o:%.f 
 	$(FC) $(FFLAGS) $<
 
-$(BIN) : $(FOBJS) $(COBJS) module_obj
-	$(CC) justCOR.c $(ofiles) $(FOBJS) -o $(BIN) $(LDLIBS) $(CFLAGS)
+all: $(BIN1) $(BIN2)
+
+$(BIN1) : $(FOBJS) $(COBJS) module_obj
+	$(CC) justCOR.c $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS) $(CFLAGS)
+
+$(BIN2) : $(FOBJS) $(COBJS) module_obj
+	$(CC) justCOR_EE_EN.c $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS) $(CFLAGS)
 
 module_obj:
 	cd $(VPATH); make objects

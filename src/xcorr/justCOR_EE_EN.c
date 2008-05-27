@@ -280,11 +280,11 @@ int do_cor( SAC_DB *sdb, int lag)
 		// read amp and phase files and read into common memory
 		if ( read_sac(amp_sac, amp, &shdamp1, 1000000 )==NULL ){
 		    fprintf(stderr,"ERROR: cannot read  %s\n", amp_sac );
-		    return;
+		    return 0;
 		  }
 		if ( read_sac(phase_sac, phase, &shdph1, 1000000)== NULL ){
 		    fprintf(stderr,"ERROR: cannot read  %s\n", phase_sac );
-		    return;
+		    return 0;
 		  }
 		len = shdamp1.npts;
 		dcommon_( &len, amp, phase ); // reads amp and phase files into common memory
@@ -300,11 +300,11 @@ int do_cor( SAC_DB *sdb, int lag)
 		// get array of floats for amp and phase of first signal
 		if ( read_sac(amp_sac, amp, &shdamp2, 100000) ==NULL ){
 		    fprintf(stderr,"ERROR: cannot read  %s\n", amp_sac );
-		    return;
+		    return 0;
 		  }
 		if ( read_sac(phase_sac, phase, &shdph2, 100000)==NULL ){
 		    fprintf(stderr,"ERROR: cannot read  %s\n", phase_sac );
-		    return;
+		    return 0;
 		  }
 			    
 		len = shdamp2.npts;
@@ -365,7 +365,7 @@ int do_cor( SAC_DB *sdb, int lag)
       }  //else expr from jsta1
     }  //loop over jsta1
   }  //loop over events
-  return 0;
+  return 1;
 }
 
 

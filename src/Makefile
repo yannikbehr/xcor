@@ -97,6 +97,7 @@ install:
 	install	cut_trans_mod $(BINDIR);\
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
+	install	./xcorr/justCOR_EE_EN $(BINDIR);\
 	install	./filter4_f/filter4 $(BINDIR);\
 	install	./white_outphamp/whiten_phamp $(BINDIR);\
 	install	newstack $(BINDIR);\

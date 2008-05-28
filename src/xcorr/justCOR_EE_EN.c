@@ -58,7 +58,7 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
 
   if ( SHD->npts > nmax ) {
     fprintf(stderr,
-	    "ATTENTION !!! in the file %s npts exceeds limit  %d",fname,nmax);
+	    "ATTENTION !!! in the file %s npts exceeds limit  %ld",fname,nmax);
     SHD->npts = nmax;
   }
 
@@ -154,6 +154,7 @@ int check_info ( SAC_DB *sdb, int ne, int ns1, int ns2 )
     fprintf(stderr,"incompatible DT\n");
     return 0;
   }
+  return 1;
 }
 
 /*c/////////////////////////////////////////////////////////////////////////*/
@@ -189,7 +190,6 @@ int do_cor( SAC_DB *sdb, int lag)
   char *cutptr;
   float amp[400000], phase[400000], cor[400000];
   float seis_out[400000];
-  FILE *ff;
 
   /*outermost loop over day number, then station number*/
   for( ine = 0; ine < sdb->nev; ine++ ) {
@@ -376,7 +376,7 @@ previous changes in the overall program structure makes it necessary
 void sac_db_chng ( SAC_DB *sdb, char *pbdir )
 
 {
-  int ie, is, k, j;
+  int ie, is;
   char *result;
   char filename[20], daydir[20];
 
@@ -524,8 +524,8 @@ SAC_DB sdb;
 int main (int na, char **arg)
 {
   FILE *ff;
-  int ns1 = 0, ns2 = 0,lag;
-  char str[600], filename[LINEL];
+  int lag;
+  char str[600];
   dictionary *dd;
   char *tmpdir;
   char *sacdirroot;
@@ -540,7 +540,7 @@ int main (int na, char **arg)
   dd = iniparser_new(sdb.conf);
   tmpdir = iniparser_getstr(dd, "database:tmpdir");
   sacdirroot = iniparser_getstr(dd, "database:sacdirroot");
-  sprintf(str,"%ssac_db.out\0", tmpdir);
+  sprintf(str,"%ssac_db.out", tmpdir);
 
   ff = fopen(str,"rb");
   fread(&sdb, sizeof(SAC_DB), 1, ff );

@@ -7,12 +7,19 @@
 #*** empty log message ***
 #
 
+############## COMPILER #########################
+CC = gcc
+CPP = g++
+FC = g77
+
 BIN1  = justCOR
 BIN2  = justCOR_EE_EN
 
 VPATH = ../modules
 
-fflags = -c
+fflags = -O2 -Wall -c -ffixed-line-length-none
+
+cflags = -O2 -Wall -c -I $(VPATH)
 #fflags = -fast -Mextend -Msave
 #fflags =  -O -e
 
@@ -23,40 +30,36 @@ DBG = -g
 
 FFLAGS = $(DBG)  $(fflags) $(shlib)
 
-CFLAGS = $(DBG) -I $(VPATH)
+CFLAGS = $(DBG) $(cflags)
 
-LDLIBS = -L/usr/lib -L/usr/local/packages/fftw/lib -L/Volumes/Server\ HD/usr/lib/ -lfftw3 -lgcc
-
-FC = g77
-
-CC = gcc
-
+LDLIBS = -lfftw3 -lgcc
 
 FOBJS = dcommon.o dmultifft.o 
 
-#COBJS = justCOR.o 
+binofiles = justCOR.o\
+	    justCOR_EE_EN.o
 
 ofiles = $(VPATH)/iniparser.o
 
-#%.o:%.c 
-#	$(CC) $(CFLAGS) $<
+%.o:%.c 
+	$(CC) $(CFLAGS) $<
 
 %.o:%.f 
 	$(FC) $(FFLAGS) $<
 
 all: $(BIN1) $(BIN2)
 
-$(BIN1) : $(FOBJS) $(COBJS) module_obj
-	$(CC) justCOR.c $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS) $(CFLAGS)
+$(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj 
+	$(FC) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS)
 
-$(BIN2) : $(FOBJS) $(COBJS) module_obj
-	$(CC) justCOR_EE_EN.c $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS) $(CFLAGS)
+$(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
+	$(FC) justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS)
 
 module_obj:
 	cd $(VPATH); make objects
 
 clean ::
-	rm -f $(BIN) core $(FOBJS) $(COBJS)
+	rm -f $(BIN) core *.o
 
 tilde :
 	rm ./*~

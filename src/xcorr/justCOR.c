@@ -197,11 +197,11 @@ int do_cor( SAC_DB *sdb, int lag)
 
 	// read amp and phase files and read into common memory
         if ( read_sac(amp_sac, amp, &shdamp1, 1000000 )==NULL ) {
-  	  fprintf( stderr,"file %s did not found\n", amp_sac );
+  	  fprintf( stderr,"file %s not found\n", amp_sac );
    	  continue;
         }
         if ( read_sac(phase_sac, phase, &shdph1, 1000000)== NULL ) {
-          fprintf( stderr,"file %s did not found\n", phase_sac );
+          fprintf( stderr,"file %s not found\n", phase_sac );
           continue;
         }
 

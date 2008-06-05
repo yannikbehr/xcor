@@ -1,0 +1,6 @@
+# Makefile macro for compiling on RedHat with intel fortran-compiler ifort
+############## COMPILER #########################
+CC = gcc
+CPP = g++
+FC = g77
+

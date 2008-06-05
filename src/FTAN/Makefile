@@ -1,4 +1,6 @@
 
+include ../kaikouras.macro
+
 fflags = -O2 -Wall -g -c -ffixed-line-length-none
 cflags = -O2 -Wall -g -c -I ../modules
 
@@ -6,10 +8,6 @@ cflags = -O2 -Wall -g -c -I ../modules
 FFLAGS = $(DBG) $(fflags)
 
 CFLAGS = $(DBG) $(cflags) 
-
-FC = g77
-
-CC = gcc
 
 DBG =
 

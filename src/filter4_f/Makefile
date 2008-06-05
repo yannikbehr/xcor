@@ -1,24 +1,22 @@
-#
-INST_DIR = $(HOME)/bin
+include ../kaikouras.macro
+
 BIN  = filter4
 VPATH = ../modules
 
-fflags = -O2 -Wall -ffixed-line-length-none
-cflags = -O2 -Wall -I $(VPATH)
+fflags_loc = 
 
-LDLIBS = -L/usr/lib -L/usr/local/packages/fftw/lib -lgcc -lfftw3
-
-FFLAGS = $(DBG) $(fflags)
-
-CFLAGS = $(DBG) $(cflags)
-
-FC = g77
-
-CC = gcc
+cflags_loc = -I $(VPATH)
 
 DBG = -g
 
-FOBJS = \
+LDLIBS = -L/usr/lib -L/usr/local/packages/fftw/lib -lgcc -lfftw3
+
+FFLAGS_all = $(FFLAGS) $(fflags) $(DBG) 
+
+CFLAGS_all = $(CFLAGS) $(cflags) $(DBG) 
+
+
+OBJS = \
 	driver_c.o \
 	filter4.o \
 	swapn.o \
@@ -30,14 +28,11 @@ FOBJS = \
 %.o:%.c 
 	$(CC) $(DBG) $(cflags) -c $<
 
-$(BIN) : $(FOBJS) module_obj
-	$(FC) $(FFLAGS) $(CFLAGS) $(FOBJS) -o $(BIN) $(LDLIBS) 
+$(BIN) : $(OBJS) module_obj
+	$(FC) $(FFLAGS) $(CFLAGS) $(OBJS) -o $(BIN) $(LDLIBS) 
 
 module_obj:
 	cd $(VPATH); make objects
 
-install :: $(BIN)
-	install -s $(BIN) $(INST_DIR)
-
 clean ::
-	rm -f $(BIN) core $(FOBJS)
+	rm -f $(BIN) core $(OBJS) *~

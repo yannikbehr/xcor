@@ -408,7 +408,7 @@ int merge_sac(char *sta, char *chan, double *t0, float *dt, long *nrec)
       sprintf(str,"/bin/rm *%s*%s*SAC\0", sta, chan);
       system(str);
       system("/bin/rm list_sac");
-
+      system("/bin/rm RESP*");
       return 0;
     }
 

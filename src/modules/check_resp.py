@@ -1,8 +1,8 @@
 """module to modify start and end date of RESP-files according to the
 corresponding SAC-files
-$Rev$
-$Author$
-$LastChangedDate$
+$Rev: 492 $
+$Author: $
+$LastChangedDate: 2008-01-28 16:41:35 +1300 (Mon, 28 Jan 2008) $
 """
 import sys
 sys.path.append('./modules')
@@ -142,6 +142,8 @@ class CheckResp:
                         self.walk_dir(newsac1)
             except Exception, e:
                 print "ERROR in comparing lists", e
+
+            
 
 if __name__ == '__main__':
     test = CheckResp()

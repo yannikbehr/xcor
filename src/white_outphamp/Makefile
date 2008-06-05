@@ -1,4 +1,6 @@
 #
+include ../kaikouras.macro
+
 BIN  = whiten_phamp
 
 VPATH = ../modules
@@ -13,10 +15,6 @@ DBG = -g
 FFLAGS = $(DBG) $(fflags)
 
 CFLAGS = $(DBG) $(cflags)
-
-FC = g77
-
-CC = gcc
 
 FOBJS = whiten_phamp.o
 

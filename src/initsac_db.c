@@ -73,8 +73,8 @@ int walk_dir(char *dirname, SAC_DB *sdb){
     }
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
-       contain the string 'COR' nor 'stack' than go on*/
-    if(strstr((*dirpointer).d_name,".SAC") !=0 &&
+       contain the string 'COR' nor 'stack' nor 'ft_' than go on*/
+    if(strstr((*dirpointer).d_name,"E.SAC") !=0 &&
        strstr((*dirpointer).d_name,"ft_") ==0 
        &&strstr((*dirpointer).d_name,"COR") ==0 
        &&strstr((*dirpointer).d_name,"stack") ==0 
@@ -203,7 +203,8 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     ptr = strrchr(respfile,'.');
     *ptr = '\0';
     strtok_mod(respfile,'.',tokens, &nrows);
-    strncpy(name,tokens[nrows],5); 
+    strncpy(name,tokens[nrows],4); 
+    name[strlen(tokens[nrows])] = '\0';
   }
 
 
@@ -215,11 +216,12 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     strncpy(dirname,resppath,STRING-1);
     ptr = strrchr(dirname,'/');
     *(ptr+1) = '\0';
-    strncpy(sacfile,dirname,STRING-1);
+    sprintf(sacfile,"%s%s.%s.SAC",dirname,name,chan);
+    /*strncpy(sacfile,dirname,STRING-1);
     strcat(sacfile,name);
     strcat(sacfile,".");
     strcat(sacfile,chan);
-    strcat(sacfile,".SAC");
+    strcat(sacfile,".SAC");*/
       
     f = fopen(sacfile,"rb");
     if(NULL == f) {

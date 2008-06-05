@@ -22,7 +22,6 @@
 #include <mysac.h>
 #include <sac_db.h>
 #include <iniparser.h>
-#include <strtok_mod.h>
 #include <glob.h>
 #include <assert.h>
 
@@ -35,6 +34,7 @@
 #define RDSEEDBUF 5000000
 #define NPTSMAX 5000000
 #define SLINE 10
+enum DTYPE { SEED, MSEED};
 
 /* GLOBAL VARIABLES */
 char str[LINEL];
@@ -49,16 +49,18 @@ int isign(double f);
 int nint(double f);
 double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms );
 float av_sig (float *sig, int i, int N, int nwin );
-int merge_sac(char *sta, char *chan, double *t0, float *dt, long *nrec);
+//int merge_sac(char *sta, char *chan, double *t0, float *dt, long *nrec);
+int merge_sac(int ne, int ns, char *chan);
 int rdseed_cmd(char *rdseedroot, char *filename, char *chan, char *station, int ne, int ns);
 int copy(char *in, char *out);
-int mv_resp_file(SAC_DB *sdb, char *chan, int ns, int ne);
-int mv_sac_files(SAC_DB *sdb, char *chan, int ne, int ns);
-void fill_one_sta (SAC_DB *st1, char *inputstring);
-void fill_one_event (SAC_DB *ev1, char *inputstring );
-void mk_one_rec (SAC_DB *sdb, char *inputstring, char *rdseedroot, char *tmpdir);
+int mv_resp_file(char *chan, int ns, int ne);
+int mv_sac_files(char *chan, int ne, int ns);
+void fill_one_sta (char *inputstring);
+void fill_one_event (char *inputstring );
+void mk_one_rec (char *inputstring, char *rdseedroot, char *tmpdir);
 int s_len_trim ( char *s );
 
+SAC_DB sdb;
 
 /*========================== MAIN =================================================*/
 int main (int na, char **arg)
@@ -71,9 +73,10 @@ int main (int na, char **arg)
   char *database;
   char *rdseedroot;
   char *tmpdir;
+  char *respfile;
+  char *respascii;
+  int dtype;
   char configfile[LINEL];
-  static SAC_DB sdb;
-
   /* initialise SAC_DB structure */
   for ( iev = 0; iev < NEVENTS; iev++ ){
     for ( ist = 0; ist < NSTATION; ist++ ){
@@ -91,6 +94,11 @@ int main (int na, char **arg)
   database = iniparser_getstr(dd, "database:databasefile");
   rdseedroot = iniparser_getstr(dd, "database:rdseeddir");
   tmpdir = iniparser_getstr(dd, "database:tmpdir");
+  dtype = iniparser_getint(dd, "database:tmpdir");
+  if(dtype == 2){
+    respfile = iniparser_getstr(dd, "database:responsefile");
+    respascii = iniparser_getstr(dd, "database:response_ascii");
+  }
 
   if( (fi=fopen(database,"r")) == NULL) {
       fprintf(stderr, "ERROR: cannot open %s\n", database);
@@ -106,16 +114,16 @@ int main (int na, char **arg)
       while(fgets(puffer, LINEL, fi) > 0 && 
 	    strstr(puffer,"[events]") == 0){
 	if(s_len_trim(puffer) != 0){
-	  fill_one_sta (&sdb, puffer);
+	  fill_one_sta (puffer);
 	}
       }
       if(strstr(puffer,"[events]") != 0){
 	printf("Reading event information and starting rdseed processing\n");
 	while(fgets(puffer, LINEL, fi) > 0 && 
 	      s_len_trim(puffer) != 0){
-	  fill_one_event(&sdb,puffer);
+	  fill_one_event(puffer);
 	  printf("%s\n",puffer);
-	  mk_one_rec(&sdb,puffer,rdseedroot,tmpdir);
+	  mk_one_rec(puffer,rdseedroot,tmpdir);
 	    }
       }
     }
@@ -361,24 +369,26 @@ float av_sig (float *sig, int i, int N, int nwin ){
   dt   = sample rate in s
   nrec = original number of data points in trace
   -------------------------------------------------------------------------*/
+/* some systems can't cope with very big, locally defined arrays; in this case 
+ the array has to be defined globally*/
+float sig1[NPTSMAX];
 float sig0[NPTSMAX];
 
-int merge_sac(SAC_DB *sd, char *chan, int ne, int ns){
-  FILE *fi;
+int merge_sac(int ne, int ns, char *chan){
   glob_t dircont;
-  int i, n, j, N, nfirst, Nholes;
-  SAC_HD sh[300], s0;
+  int i, n, j, nfirst, Nholes;
+  long N;
+  SAC_HD sh[LINEL], s0;
   double t1[LINEL], t2[LINEL];
   double T1=1.e25, T2=100.;
-  float sig1[NPTSMAX];
   int nf;
 
-  assert((strlen(sd->st[ns].name)+strlen(chan)+7)<LINEL);
-  sprintf(str,"*%s*%s*SAC",sd->st[ns].name,chan);
+  assert((strlen(sdb.st[ns].name)+strlen(chan)+7)<LINEL);
+  sprintf(str,"*%s*%s*SAC",sdb.st[ns].name,chan);
   glob(str, GLOB_NOSORT, NULL, &dircont);
   if(dircont.gl_pathc > 0){
   }else{
-    fprintf(stderr, "ERROR: no SAC-files found for station %s and channel %s.\n", sta, chan);
+    fprintf(stderr, "ERROR: no SAC-files found for station %s and channel %s.\n", sdb.st[ns].name, chan);
     glob("*.SAC", GLOB_NOSORT, NULL, &dircont);
     if(dircont.gl_pathc >0){
       fprintf(stderr,"..... found other SAC-files instead!\n");
@@ -414,9 +424,9 @@ int merge_sac(SAC_DB *sd, char *chan, int ne, int ns){
   if ( N > NPTSMAX ) N = NPTSMAX;
 
   s0.npts = N;
-  *t0 = T1;
-  *dt = s0.delta;
-  *nrec = s0.npts;
+  sdb.rec[ne][ns].t0 = T1;
+  sdb.rec[ne][ns].dt = s0.delta;
+  sdb.rec[ne][ns].n = s0.npts;
 
   for ( j = 0; j < N; j++ ) sig0[j] = 1.e30;
 
@@ -489,7 +499,7 @@ int merge_sac(SAC_DB *sd, char *chan, int ne, int ns){
 }
 
 /*-------------------------------------------------------------------
-  execute rdseed command 
+  execute rdseed command if input is seed-file
   -----------------------------------------------------------------*/
 int rdseed_cmd(char *rdseedroot, char *filename, char *chan, 
 		char *station, int ne, int ns){
@@ -543,6 +553,34 @@ int rdseed_cmd(char *rdseedroot, char *filename, char *chan,
 }
 
 
+/*-------------------------------------------------------------------
+  execute rdseed command if input is miniseed file
+  -----------------------------------------------------------------*/
+int msrdseed_cmd(char *rdseedroot, char *filename, char *respfile){
+  glob_t dircont;
+  FILE *ff;
+  int buffersize = RDSEEDBUF;
+  assert((strlen(rdseedroot)+strlen(filename)+strlen(respfile)+60)<LINEL);
+  sprintf(str,"%srdseed -f %s -g %f -o 1 -d -b %d 2>/dev/null 1>/dev/null",
+	  rdseedroot, filename, respfile, buffersize);
+  if(system(str) == -1){
+    fprintf(stderr,"ERROR: rdseed command failed\n");
+    return 0;
+  }
+  assert((strlen("rdseed.err_log*")+1)<LINEL);
+  sprintf(str,"rdseed.err_log*");
+  glob(str, GLOB_NOSORT, NULL, &dircont);
+  if(dircont.gl_pathc == 1){
+    if(unlink(dircont.gl_pathv[0])!=0)
+      fprintf(stderr,"ERROR: cannot remove rdseed error logfile.\n");
+  }else{
+    fprintf(stderr, "ERROR: no rdseed error logfile found.\n");
+    return 0;
+  }
+  return 1;
+}
+
+
 /*-------------------------------------------------------
  copy routine for ascii-files
  in = src-file
@@ -566,22 +604,22 @@ int copy(char *in, char *out){
 /*---------------------------------------------------------------------------
   copy response file from rdseed output to apropriate directory
   ---------------------------------------------------------------------------*/
-int mv_resp_file(SAC_DB *sdb, char *chan, int ns, int ne){
+int mv_resp_file(char *chan, int ns, int ne){
 
   glob_t dircont;
 
-  assert((strlen(sdb->st[ns].name)+strlen(chan)+6)<LINEL);
-  sprintf(str,"RESP*%s*%s*",sdb->st[ns].name,chan);
+  assert((strlen(sdb.st[ns].name)+strlen(chan)+6)<LINEL);
+  sprintf(str,"RESP*%s*%s*",sdb.st[ns].name,chan);
   glob(str, GLOB_NOSORT, NULL, &dircont);
   if(dircont.gl_pathc == 1){
-    assert((strlen(sdb->ev[ne].name)+strlen(dircont.gl_pathv[0])+1)<LINEL);
-    sprintf(sdb->rec[ne][ns].resp_fname,"%s/%s\0", sdb->ev[ne].name, dircont.gl_pathv[0]);
+    assert((strlen(sdb.ev[ne].name)+strlen(dircont.gl_pathv[0])+1)<LINEL);
+    sprintf(sdb.rec[ne][ns].resp_fname,"%s/%s\0", sdb.ev[ne].name, dircont.gl_pathv[0]);
   }else{
     fprintf(stderr, "ERROR: no or too many RESP-files found.\n");
-    sdb->rec[ne][ns].n = 0;
+    sdb.rec[ne][ns].n = 0;
     return 0;
   }
-  if(!copy(dircont.gl_pathv[0],sdb->rec[ne][ns].resp_fname))
+  if(!copy(dircont.gl_pathv[0],sdb.rec[ne][ns].resp_fname))
     fprintf(stderr,"ERROR: cannot copy RESP-file %s.\n",dircont.gl_pathv[0]);
   if(unlink(dircont.gl_pathv[0])!= 0)
     fprintf(stderr,"ERROR: cannot delete RESP-file %s.\n",dircont.gl_pathv[0]);
@@ -590,9 +628,23 @@ int mv_resp_file(SAC_DB *sdb, char *chan, int ns, int ne){
 
 
 /*---------------------------------------------------------------------------
+  copy response file for mseed file to apropriate directory
+  ---------------------------------------------------------------------------*/
+int msmv_resp_file(char *filename, int ne, int ns){
+  assert((strlen(sdb.ev[ne].name)+strlen(filename)+1)<LINEL);
+  sprintf(sdb.rec[ne][ns].resp_fname,"%s/%s\0", sdb.ev[ne].name, filename);
+  if(!copy(filename,sdb.rec[ne][ns].resp_fname)){
+    fprintf(stderr,"ERROR: cannot copy RESP-file %s.\n",dircont.gl_pathv[0]);
+    return 0;
+  }
+  return 1;
+}
+
+
+/*---------------------------------------------------------------------------
  move sac-files from rdseed output to apropriate place
  --------------------------------------------------------------------------*/
-int mv_sac_files(SAC_DB *sdb, char *chan, int ne, int ns){
+int mv_sac_files(char *chan, int ne, int ns){
   
   struct stat attribut;
 
@@ -601,16 +653,16 @@ int mv_sac_files(SAC_DB *sdb, char *chan, int ne, int ns){
     return 0;
   }
   if(attribut.st_mode & S_IFREG){
-    assert((strlen(sdb->ev[ne].name)+strlen(sdb->st[ns].name)+strlen(chan)+10)<LINEL);
-    sprintf(str,"%s/%s.%s.SAC", sdb->ev[ne].name, sdb->st[ns].name, chan);
+    assert((strlen(sdb.ev[ne].name)+strlen(sdb.st[ns].name)+strlen(chan)+10)<LINEL);
+    sprintf(str,"%s/%s.%s.SAC", sdb.ev[ne].name, sdb.st[ns].name, chan);
     if(!copy("merged.sac",str)){
       fprintf(stderr,"ERROR: cannot copy merged.sac.\n");
       return 0;
     }else{
-      sprintf(sdb->rec[ne][ns].fname,"%s/%s.%s.SAC\0", sdb->ev[ne].name, sdb->st[ns].name, chan);
-      sprintf(sdb->rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC\0", sdb->ev[ne].name, sdb->st[ns].name, chan);
+      sprintf(sdb.rec[ne][ns].fname,"%s/%s.%s.SAC\0", sdb.ev[ne].name, sdb.st[ns].name, chan);
+      sprintf(sdb.rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC\0", sdb.ev[ne].name, sdb.st[ns].name, chan);
       assert((strlen(chan)+1)<SLINE);
-      sprintf(sdb->rec[ne][ns].chan,"%s", chan);
+      sprintf(sdb.rec[ne][ns].chan,"%s", chan);
       if(unlink("merged.sac")!= 0)
 	fprintf(stderr,"ERROR: cannot delete 'merged.sac'.\n");
     }
@@ -626,7 +678,8 @@ int mv_sac_files(SAC_DB *sdb, char *chan, int ne, int ns){
   read one-day seed-files into several sac-files and call merge_sac to 
   merge them into one sac file
   ------------------------------------------------------------------------*/
-void mk_one_rec (SAC_DB *sdb, char *inputstring, char *rdseedroot, char *tmpdir){
+void mk_one_rec (char *inputstring, char *rdseedroot, char *tmpdir, char *respfile
+		 char * respascii, int datype){
   int ns, ne, err, i;
   glob_t dircont;
   char chan[SLINE], seedf[LINEL], sacdir[LINEL];
@@ -634,12 +687,15 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring, char *rdseedroot, char *tmpdir)
   err = sscanf(inputstring,"%d %d %d %d %d %d %s %s %s",&year, &month, &day, &hour,
 	       &min, &sec, &chan, &seedf, &sacdir );
   if(err == 9){
-    ne = sdb->cntev;
-    for(ns=0;ns<sdb->cntst;ns++){
-      if ( sdb->rec[ne][ns].n > 0 ) break;
-      rdseed_cmd(rdseedroot, seedf, chan, sdb->st[ns].name, ne, ns);
-      if ( !merge_sac(sdb, ne, ns, chan) ){
-	  sdb->rec[ne][ns].n = 0;
+    ne = sdb.cntev;
+    for(ns=0;ns<sdb.cntst;ns++){
+      if ( sdb.rec[ne][ns].n > 0 ) break;
+      if(datype == SEED)
+	rdseed_cmd(rdseedroot, seedf, chan, sdb.st[ns].name, ne, ns);
+      if(datype == MSEED)
+	msrdseed_cmd(rdseedroot, seedf, respfile);
+      if ( !merge_sac(ne, ns, chan) ){
+	  sdb.rec[ne][ns].n = 0;
 	  glob("RESP*", GLOB_NOSORT, NULL, &dircont);
 	  for(i=0;i<dircont.gl_pathc;i++){
 	    if(unlink(dircont.gl_pathv[i])!= 0)
@@ -647,11 +703,14 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring, char *rdseedroot, char *tmpdir)
 	  }
 	  continue;
 	}
-      mv_resp_file(sdb,chan,ns,ne);
-      mv_sac_files(sdb,chan,ne,ns);
+      if(datype == SEED)
+	mv_resp_file(chan,ns,ne);
+      if(datype == MSEED)
+	msmv_resp_file(respascii, ne, ns);
+      mv_sac_files(chan,ne,ns);
     }
     fprintf(stderr,".");
-    sdb->cntev++;
+    sdb.cntev++;
   }else{
     fprintf(stderr,"ERROR: wrong number of entries in event table!\n");
 
@@ -663,16 +722,16 @@ void mk_one_rec (SAC_DB *sdb, char *inputstring, char *rdseedroot, char *tmpdir)
 /*-------------------------------------------------------------------------
   read in station information into SAC_DB structure
   -------------------------------------------------------------------------*/
-void  fill_one_sta (SAC_DB *st1, char *inputstring){
+void  fill_one_sta (char *inputstring){
   int err;
   char name[SLINE];
   float lat, lon, elev;
   err = sscanf(inputstring,"%s %f %f %f",&name, &lat, &lon, &elev);
   if(err == 4){
-    strncpy(st1->st[st1->cntst].name,name,SLINE-1);
-    st1->st[st1->cntst].lat = lat;
-    st1->st[st1->cntst].lon = lon;
-    st1->cntst++;
+    strncpy(sdb.st[sdb.cntst].name,name,SLINE-1);
+    sdb.st[sdb.cntst].lat = lat;
+    sdb.st[sdb.cntst].lon = lon;
+    sdb.cntst++;
   }else{
     fprintf(stderr,"ERROR: wrong number of entries in event table!\n");
   }
@@ -683,34 +742,34 @@ void  fill_one_sta (SAC_DB *st1, char *inputstring){
 /*-------------------------------------------------------------------------
   write date and path of seed-files into SAC_DB structure       
   -------------------------------------------------------------------------*/
-void fill_one_event (SAC_DB *ev1, char *inputstring ){
+void fill_one_event (char *inputstring ){
   int err;
   char chan[SLINE], seedf[LINEL], sacdir[LINEL];
   int year, month, day, hour, min, sec;
   err = sscanf(inputstring,"%d %d %d %d %d %d %s %s %s",&year, &month, &day, &hour,
 	       &min, &sec, &chan, &seedf, &sacdir );
   if(err == 9){
-    ev1->ev[ev1->cntev].yy = year;
-    ev1->ev[ev1->cntev].mm = month;
-    ev1->ev[ev1->cntev].dd = day;
-    ev1->ev[ev1->cntev].h = hour;
-    ev1->ev[ev1->cntev].m = min;
-    ev1->ev[ev1->cntev].s = 0;
-    ev1->ev[ev1->cntev].ms = 0;
-    ev1->ev[ev1->cntev].ms = 10.*ev1->ev[ev1->cntev].ms;
+    sdb.ev[sdb.cntev].yy = year;
+    sdb.ev[sdb.cntev].mm = month;
+    sdb.ev[sdb.cntev].dd = day;
+    sdb.ev[sdb.cntev].h = hour;
+    sdb.ev[sdb.cntev].m = min;
+    sdb.ev[sdb.cntev].s = 0;
+    sdb.ev[sdb.cntev].ms = 0;
+    sdb.ev[sdb.cntev].ms = 10.*sdb.ev[sdb.cntev].ms;
 
-    ev1->ev[ev1->cntev].jday = jday( ev1->ev[ev1->cntev].yy, ev1->ev[ev1->cntev].mm, ev1->ev[ev1->cntev].dd );
+    sdb.ev[sdb.cntev].jday = jday( sdb.ev[sdb.cntev].yy, sdb.ev[sdb.cntev].mm, sdb.ev[sdb.cntev].dd );
     
-    ev1->ev[ev1->cntev].t0 = abs_time (ev1->ev[ev1->cntev].yy, ev1->ev[ev1->cntev].jday, 
-				       ev1->ev[ev1->cntev].h, ev1->ev[ev1->cntev].m, 
-				       ev1->ev[ev1->cntev].s, ev1->ev[ev1->cntev].ms );
+    sdb.ev[sdb.cntev].t0 = abs_time (sdb.ev[sdb.cntev].yy, sdb.ev[sdb.cntev].jday, 
+				       sdb.ev[sdb.cntev].h, sdb.ev[sdb.cntev].m, 
+				       sdb.ev[sdb.cntev].s, sdb.ev[sdb.cntev].ms );
 
-    sprintf(ev1->ev[ev1->cntev].name,"%d_%d_%d_%d_%d_%d\0",ev1->ev[ev1->cntev].yy, ev1->ev[ev1->cntev].mm, 
-	    ev1->ev[ev1->cntev].dd, ev1->ev[ev1->cntev].h, ev1->ev[ev1->cntev].m, ev1->ev[ev1->cntev].s );
+    sprintf(sdb.ev[sdb.cntev].name,"%d_%d_%d_%d_%d_%d\0",sdb.ev[sdb.cntev].yy, sdb.ev[sdb.cntev].mm, 
+	    sdb.ev[sdb.cntev].dd, sdb.ev[sdb.cntev].h, sdb.ev[sdb.cntev].m, sdb.ev[sdb.cntev].s );
 
-    sprintf(str,"%s/%s",sacdir, ev1->ev[ev1->cntev].name);
-    strncpy(ev1->ev[ev1->cntev].name,str,LINEL-1);
-    sprintf(str,"mkdir %s", ev1->ev[ev1->cntev].name);
+    sprintf(str,"%s/%s",sacdir, sdb.ev[sdb.cntev].name);
+    strncpy(sdb.ev[sdb.cntev].name,str,LINEL-1);
+    sprintf(str,"mkdir %s", sdb.ev[sdb.cntev].name);
     system(str);
   }
   else{

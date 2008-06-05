@@ -10,11 +10,7 @@
 ############## INSTALLER ########################
 BINDIR = ../bin
 
-############## COMPILER #########################
-COMPL = gcc
-CPPOMPL = g++
-FC = g77
-
+include kaikouras.macro
 ############## ftan options ######################
 FTANPATH = FTAN
 
@@ -55,20 +51,21 @@ ofiles = \
 options = -pg -D DEBUG
 
 %.o:%.c
-	$(COMPL) -g -c  $<  
+	$(CC) -g -c  $<  
 
-all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
+#all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
+all: cut filter4 whiteout ftan stack lag initsacdb sacseed
 
 sacseed: module_obj sa_from_seed_new.c $(hfiles)
-	$(COMPL)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
+	$(CC)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
 
 cut: 	module_obj cut_trans_mod.c
-	$(COMPL) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
+	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
 
 initsacdb: initsac_db.c
-	$(COMPL) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
+	$(CC) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
-justcor: ./xcorr/justCOR.c
+justcor: 
 	cd ./xcorr; make
 
 filter4: ./filter4_f/driver_c.c
@@ -78,13 +75,17 @@ whiteout: ./white_outphamp/driver_c.c
 	cd ./white_outphamp; make
 
 stack:  newstack.c module_obj $(hfiles)
-	$(CPPOMPL) -g -D DEBUG -I modules newstack.c -o newstack $(ofiles)
+	$(CPP) -g -D DEBUG -I modules newstack.c -o newstack $(ofiles)
 
 lag:    new_ch_lag.c module_obj $(hfiles)
-	$(COMPL) -g -D DEBUG -I $(VPATH) new_ch_lag.c -o new_ch_lag $(ofiles)
+	$(CC) -g -D DEBUG -I $(VPATH) new_ch_lag.c -o new_ch_lag $(ofiles)
 
 ftan:	ftan-module
 	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)
+
+testing: module_obj test_sa_from_seed.c test_cut_trans_mod.c $(hfiles)
+	$(CC)  -g -I $(VPATH) test_sa_from_seed.c -o test_sa_from_seed $(ofiles);
+	$(CC) -g -I modules test_cut_trans_mod.c -o test_cut_trans_mod $(ofiles)
 
 ftan-module:
 	cd $(FTANPATH); make objects
@@ -102,8 +103,9 @@ install:
 	install	./white_outphamp/whiten_phamp $(BINDIR);\
 	install	newstack $(BINDIR);\
 	install	new_ch_lag $(BINDIR);\
-	install	ftandriver $(BINDIR);
-
+	install	ftandriver $(BINDIR);\
+	install test_sa_from_seed $(BINDIR);\
+	install test_cut_trans_mod $(BINDIR);
 clean:
 	rm sa_from_seed_mod read_sac_db initsac_db new_ch_lag newstack \
 	ftandriver cut_trans_mod justCOR; cd ./white_outphamp; make clean; \

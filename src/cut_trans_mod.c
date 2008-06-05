@@ -330,7 +330,7 @@ int main (int argc, char **argv)
   
   /* CHECK INPUT ARGUMENTS */
   strncpy(conffile,"./config.txt",149);
-  get_args(argc,argv,&conffile);
+  get_args(argc,argv,conffile);
   sscanf(argv[1],"%f",&t1);
   sscanf(argv[2],"%f",&npts);
 

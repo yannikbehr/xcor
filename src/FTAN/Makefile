@@ -1,5 +1,5 @@
 
-include ../kaikouras.macro
+include ../makeauto.macro
 
 fflags = -O2 -Wall -g -c -ffixed-line-length-none
 cflags = -O2 -Wall -g -c -I ../modules

@@ -1,5 +1,5 @@
 #
-include ../kaikouras.macro
+include ../makeauto.macro
 
 BIN  = whiten_phamp
 

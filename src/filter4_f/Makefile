@@ -1,4 +1,4 @@
-include ../kaikouras.macro
+include ../makeauto.macro
 
 BIN  = filter4
 VPATH = ../modules
@@ -16,10 +16,9 @@ FFLAGS_all = $(FFLAGS) $(fflags) $(DBG)
 CFLAGS_all = $(CFLAGS) $(cflags) $(DBG) 
 
 
-OBJS = \
-	driver_c.o \
-	filter4.o \
-	swapn.o \
+OBJS = 	driver_c.o\
+	filter4.o\
+	swapn.o\
 	$(VPATH)/iniparser.o
 
 %.o:%.f 

@@ -10,7 +10,7 @@
 ############## INSTALLER ########################
 BINDIR = ../bin
 
-include kaikouras.macro
+include makeauto.macro
 ############## ftan options ######################
 FTANPATH = FTAN
 
@@ -54,7 +54,7 @@ options = -pg -D DEBUG
 	$(CC) -g -c  $<  
 
 #all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
-all: cut filter4 whiteout ftan stack lag initsacdb sacseed
+all: cut filter4 whiteout ftan stack lag initsacdb sacseed whiteout1cmp newfilter4 whiteout2cmp
 
 sacseed: module_obj sa_from_seed_new.c $(hfiles)
 	$(CC)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
@@ -71,8 +71,17 @@ justcor:
 filter4: ./filter4_f/driver_c.c
 	cd filter4_f; make
 
+newfilter4: filter4_driver.c module_obj
+	$(CC) -g filter4_driver.c -o filter4 -I $(VPATH) -lfftw3 ./modules/filter4.o ./modules/mysac.o
+
 whiteout: ./white_outphamp/driver_c.c
 	cd ./white_outphamp; make
+
+whiteout1cmp: white_1cmp_driver.c module_obj
+	$(CC) -g white_1cmp_driver.c -o white_1cmp -I $(VPATH) -lfftw3 ./modules/white_phamp_1cmp.o ./modules/mysac.o
+
+whiteout2cmp: white_2cmp_driver.c module_obj
+	$(CC) -g white_2cmp_driver.c -o white_2cmp -I $(VPATH) -lfftw3 ./modules/white_phamp_2cmp.o ./modules/mysac.o
 
 stack:  newstack.c module_obj $(hfiles)
 	$(CPP) -g -D DEBUG -I modules newstack.c -o newstack $(ofiles)
@@ -104,11 +113,14 @@ install:
 	install	newstack $(BINDIR);\
 	install	new_ch_lag $(BINDIR);\
 	install	ftandriver $(BINDIR);\
-	install test_sa_from_seed $(BINDIR);\
-	install test_cut_trans_mod $(BINDIR);
+	install filter4 $(BINDIR);\
+	install white_1cmp $(BINDIR);\
+	install white_2cmp $(BINDIR)
+
 clean:
 	rm sa_from_seed_mod read_sac_db initsac_db new_ch_lag newstack \
-	ftandriver cut_trans_mod justCOR; cd ./white_outphamp; make clean; \
+	ftandriver cut_trans_mod justCOR filter4 white_1cmp white_2cmp; \
+	cd ./white_outphamp; make clean; \
 	cd ..; cd ./filter4_f; make clean; cd ..; cd ./xcorr; make clean; \
 	cd ..; cd ./modules; make clean; cd ..; cd ./FTAN; make clean; cd ..
 

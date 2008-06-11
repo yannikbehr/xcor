@@ -9,7 +9,7 @@ from ConfigParser import SafeConfigParser
 from numpy import *
 
 sys.path.append('../src/modules')
-import pysacio, do_whiten, mk_ev_table
+import pysacio, do_whiten_new, mk_ev_table
 
 ########################## COMMAND LINE ARGUMENTS ###################################
 cmdargs = []
@@ -165,6 +165,7 @@ else:
                             print "--------------------------------------"
                             
 
+
 ############################### TESTING DO_WHITEN #################################
         if cp.get('processing','white')=='1':
             print "--------------------------------------"
@@ -236,4 +237,59 @@ else:
                             os.remove(tmpdir1+'param_test.dat')
                         print "--------------------------------------"
 
+############################### TESTING DO_WHITEN_NEW #################################
+        if cp.get('processing','white_new')=='1':
+            print "--------------------------------------"
+            print "TESTING: do_whiten_new"
+            print "--------------------------------------"
+            err = 0
+            print "-->running do_whiten_new.py"
+            dowh = do_whiten_new.DoWhiten(options.configfile)
+            os.path.walk(dowh.sacdir, dowh.dir_walk, 0)
+            dowh.process()
+            print "-->comparing results with fanchi's"
+            basedir = cp.get("database","sacdirroot")
+            testdir = basedir+"/Jan/test_"+cp.get("processing","upperperiod")+\
+                      "to"+cp.get("processing","lowerperiod")+\
+                      "/2003_1_10_0_0_0/"
+            basedir = basedir+"/Jan/5to100/2003_1_10_0_0_0/"
+            file1 = basedir+"ft_MATA.BHZ.SAC.am"
+            file2 = basedir+"ft_MATA.BHZ.SAC.ph"
+            fcmp1 = testdir+"ft_MATA.BHZ.SAC.am"
+            fcmp2 = testdir+"ft_MATA.BHZ.SAC.ph"
+            [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
+            [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
+            [hf3,hi3,hs3,refseis1,ok3] = pysacio.ReadSacFile(fcmp1)
+            [hf4,hi4,hs4,refseis2,ok4] = pysacio.ReadSacFile(fcmp2)
+            if ok1==0:
+                print 'cannot read in', file1
+            elif ok2==0:
+                print 'cannot read in', file2
+            elif ok3==0:
+                print 'cannot read in', fcmp1
+            elif ok4==0:
+                print 'cannot read in', fcmp2
+            if not all(seis1==refseis1):
+                print file1, ' and ', file2, ' are not identical'
+                err = 1
+            if not all(seis2==refseis2):
+                print file1, ' and ', file2, ' are not identical'
+                err = 1
+            # cleanup
+            if err == 0:
+                tempdir2 = cp.get("database","sacdirroot")+\
+                           "/Jan/test_"+cp.get("processing","upperperiod")+\
+                           "to"+cp.get("processing","lowerperiod")
+                tempdir3 = cp.get("database","sacdirroot")+\
+                           "/Feb/test_"+cp.get("processing","upperperiod")+\
+                           "to"+cp.get("processing","lowerperiod")
+                if os.path.isdir(tempdir2):
+                    shutil.rmtree(tempdir2)
+                if os.path.isdir(tempdir3):
+                    shutil.rmtree(tempdir3)
+            else:
+                print "ERROR: test failed"
+                print "       either results are not identical or"
+                print "       test didn't work"
+            print "--------------------------------------"
 

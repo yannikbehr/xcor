@@ -8,3 +8,6 @@ testcuttransmod:
 
 testdowhiten:
 		python test_modules.py -c testdata/do_whiten_test.cfg	
+
+testdowhitenew:
+		python test_modules.py -c testdata/do_whiten_new_test.cfg	

@@ -215,7 +215,7 @@ int do_cor( SAC_DB *sdb, int lag)
       strcpy(name1_E,sdb->rec[ine][jsta1].ft_fname);
       for(j=0;j<=strlen(name1_E);j++)
 	{
-	  if(name1_E[j]=='E' && name1_E[j-1]=='H' && name1_E[j-2]=='L')
+	  if(name1_E[j]=='E' && name1_E[j-1]=='H' && name1_E[j-2]=='B')
 	    name1_N[j]='N';
 	  else
 	    name1_N[j]=name1_E[j];
@@ -243,7 +243,7 @@ int do_cor( SAC_DB *sdb, int lag)
 	  strcpy(name2_E,sdb->rec[ine][jsta2].ft_fname);
 	  for(j=0;j<=strlen(name2_E);j++)
 	    {
-	      if(name2_E[j]=='E' && name2_E[j-1]=='H' && name2_E[j-2]=='L')
+	      if(name2_E[j]=='E' && name2_E[j-1]=='H' && name2_E[j-2]=='B')
 		name2_N[j]='N';
 	      else
 		name2_N[j]=name2_E[j];

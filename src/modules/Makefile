@@ -1,5 +1,4 @@
-COMPL = gcc		
-FCOMPL = g77
+include ../makeauto.macro
 
 FFLAGS = -I /usr/include
 
@@ -20,12 +19,16 @@ ofiles = \
 
 
 %.o:%.c 
-	$(COMPL) -g -c  $<  
+	$(CC) -g -c  $<  
 
 %.o:%.f 
-	$(FCOMPL) -g -c $(FFLAGS) $<  
+	$(FC) -g -c $(FFLAGS) $<  
 
-objects: $(ofiles) $(hfiles)
+objects: $(ofiles) $(hfiles) stack
+
+stack: c_stack.c
+	gcc -O3 -g -I $(PYTHON) -I $(NUMPY) -c c_stack.c;\
+	gcc -shared -o c_stack.so c_stack.o	
 
 clean:
 	rm *.o *.pyc

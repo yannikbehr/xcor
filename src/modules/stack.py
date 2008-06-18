@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 import numpy as np
-import sys
-from pylab import *
-sys.path.append('./modules')
 import c_stack as c
 import pysacio as p
 
@@ -35,17 +32,10 @@ def stack(trace1, trace2):
 
 
 if __name__ == '__main__':
-    file1 = '/home/behrya/dev/nord-sac2/2003/Jan/5to100/COR/COR_TIKO_WCZ.SAC'
-    file2 = '/home/behrya/dev/nord-sac2/2003/Feb/5to100/COR/COR_TIKO_WCZ.SAC'
+    file1 = '../../testing/testdata/fanchi/Jan/5to100/COR/COR_MATA_TIKO.SAC'
+    file2 = '../../testing/testdata/fanchi/Jan/5to100/COR/COR_MATA_TIKO.SAC'
     [hf1,hi1,hs1,seis1,ok1] = p.ReadSacFile(file1)
     [hf2,hi2,hs2,seis2,ok2] = p.ReadSacFile(file2)
     trace1 = np.array(seis1, dtype=float)
     trace2 = np.array(seis2, dtype=float)
     result = stack(trace1, trace2)
-    subplot(3,1,1)
-    plot(seis1,'b')
-    subplot(3,1,2)
-    plot(seis2,'b')
-    subplot(3,1,3)
-    plot(result,'r')
-    show()

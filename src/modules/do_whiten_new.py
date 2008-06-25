@@ -45,7 +45,7 @@ class DoWhiten:
 	self.cnffilename = cnffile
         self.npow = 1
         self.tb = TwirlyBar()
-        self.complst = ['BHE', 'BHN']
+        self.complst = ['LHE', 'LHN']
         self.proclst = ProcLst()
         self.proclst.ydaydir = []
         self.cnt = -1

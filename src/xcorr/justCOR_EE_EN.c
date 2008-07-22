@@ -226,24 +226,30 @@ int do_cor( SAC_DB *sdb, int lag)
       sprintf( phase_sac1N, "%s.ph", name1_N );
       if(!(sdb->rec[ine][jsta1].n > 0)){
 	continue;
-      }else if(!access(name1_E, F_OK)){
+      }else if(access(name1_E, F_OK) != 0){
+	fprintf(stderr,"WARNING: cannot find %s\n",name1_E);
 	continue;
-      }else if(!access(name1_N, F_OK)){
+      }else if(access(name1_N, F_OK) != 0){
+	fprintf(stderr,"WARNING: cannot find %s\n",name1_N);
 	continue;
-      }else if(!access(amp_sac1E, F_OK)){
+      }else if(access(amp_sac1E, F_OK) != 0){
+	fprintf(stderr,"WARNING: cannot find %s\n",amp_sac1E);
 	continue;
-      }else if(!access(phase_sac1E, F_OK)){
+      }else if(access(phase_sac1E, F_OK) != 0){
+	fprintf(stderr,"WARNING: cannot find %s\n",phase_sac1E);
 	continue;
-      }else if(!access(amp_sac1N, F_OK)){
+      }else if(access(amp_sac1N, F_OK) != 0){
+	fprintf(stderr,"WARNING: cannot find %s\n",amp_sac1N);
 	continue;
-      }else if(!access(phase_sac1N, F_OK)){
+      }else if(access(phase_sac1N, F_OK) != 0){
+	fprintf(stderr,"WARNING: cannot find %s\n",phase_sac1N);
 	continue;
       }else{
 	for( jsta2 = (jsta1+1); jsta2 < sdb->nst; jsta2++ ){
 	  strcpy(name2_E,sdb->rec[ine][jsta2].ft_fname);
 	  for(j=0;j<=strlen(name2_E);j++)
 	    {
-	      if(name2_E[j]=='E' && name2_E[j-1]=='H' && name2_E[j-2]=='B')
+	      if(name2_E[j]=='E' && name2_E[j-1]=='H' && name2_E[j-2]=='L')
 		name2_N[j]='N';
 	      else
 		name2_N[j]=name2_E[j];
@@ -254,22 +260,22 @@ int do_cor( SAC_DB *sdb, int lag)
 	  sprintf( phase_sac2N, "%s.ph", name2_N );
 	  if(!(sdb->rec[ine][jsta2].n > 0)){
 	    continue;
-	  }else if(!access(name2_E, F_OK)){
+	  }else if(access(name2_E, F_OK) != 0){
 	    continue;
-	  }else if(!access(name2_N, F_OK)){
+	  }else if(access(name2_N, F_OK) != 0){
 	    continue;
-	  }else if(!access(amp_sac2E, F_OK)){
+	  }else if(access(amp_sac2E, F_OK) != 0){
 	    continue;
-	  }else if(!access(phase_sac2E, F_OK)){
+	  }else if(access(phase_sac2E, F_OK) != 0){
 	    continue;
-	  }else if(!access(amp_sac2N, F_OK)){
+	  }else if(access(amp_sac2N, F_OK) != 0){
 	    continue;
-	  }else if(!access(phase_sac2N, F_OK)){
+	  }else if(access(phase_sac2N, F_OK) != 0){
 	    continue;
 	  }else{
 	    fprintf(stdout,"%s %s %s %s\n", name1_E,name1_N,name2_E,name2_N);
 	    // compute correlation
- 	    for(comp=0;comp<2;comp++){   
+ 	    for(comp=0;comp<4;comp++){   
 		if(comp==0||comp==1){
 		    sprintf( amp_sac, "%s.am", name1_E );
 		    sprintf( phase_sac, "%s.ph", name1_E );
@@ -306,7 +312,7 @@ int do_cor( SAC_DB *sdb, int lag)
 		    fprintf(stderr,"ERROR: cannot read  %s\n", phase_sac );
 		    return 0;
 		  }
-			    
+		fprintf(stdin,"file E: %s  file N: %s\n",name2_E,name2_N);
 		len = shdamp2.npts;
 		if(!check_info(sdb, ine, jsta1, jsta2 )){
 		  fprintf(stderr,"ERROR: files incompatible\n");
@@ -347,13 +353,15 @@ int do_cor( SAC_DB *sdb, int lag)
 		  // if file doesn't already exist, use one of the current headers
 		  // and change a few values. more may need to be added
 		  else {
-		    shdamp1.delta = sdb->rec[ine][jsta1].dt;
+		    shdamp1.delta = 1.0;
+		    //		    shdamp1.delta = sdb->rec[ine][jsta1].dt;
 		    shdamp1.evla =  sdb->st[jsta1].lat;
 		    shdamp1.evlo =  sdb->st[jsta1].lon;
 		    shdamp1.stla =  sdb->st[jsta2].lat;
 		    shdamp1.stlo =  sdb->st[jsta2].lon;
 		    shdamp1.npts =  2*lag+1;
 		    shdamp1.b    = -(lag)*shdamp1.delta;
+		    shdamp1.user9=  shdamp2.cmpaz;
 		    shdamp1.unused1 = 0;
 		    write_sac (filename, cor, &shdamp1);
 		  }
@@ -554,7 +562,7 @@ int main (int na, char **arg)
   printf("correlations finished\n");
 
   /* move %s/COR_STA1_STA2.SAC.prelim to %s/COR_STA1_STA2.SAC */
-  walk_dir(sacdirroot);
+  //  walk_dir(sacdirroot);
 
   iniparser_free(dd);
   return 0;

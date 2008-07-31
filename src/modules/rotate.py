@@ -4,7 +4,7 @@ import array as a
 import pysacio as p
 import os.path, glob, re, sys
 from math import *
-sys.path.append('/Users/home/yannik78/proc-scripts/')
+sys.path.append('/home/behrya/dev/proc-scripts/')
 import delaz
 
 def one_pair(sacfile, stat1, stat2):
@@ -41,7 +41,7 @@ def one_pair(sacfile, stat1, stat2):
 
 if __name__ == '__main__':
 
-    stackdir = '/Volumes/stage/stage/yannik78/datasets/nord/nord-sac-EN/STACK'
+    stackdir = '/home/behrya/dev/auto/testing/testdata/fanchi_horiz/STACK'
     pattern  = r'COR_(\w*_\w*).SAC_(\w*)'
     statpair = {}
     for myfile in glob.glob(stackdir+'/COR*.SAC*'):

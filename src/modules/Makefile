@@ -1,6 +1,6 @@
 include ../makeauto.macro
 
-FFLAGS = -I /usr/local/include
+FFLAGS = -I /usr/local/include -I /usr/include
 
 hfiles = \
 	iniparser.h\

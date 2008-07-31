@@ -13,6 +13,7 @@ conf element for config filename added
 #define NSTATION 220
 #define NEVENTS 788
 #define LINEL 300
+#define HLINE 150
 #define SLINE 10
 
 
@@ -21,22 +22,22 @@ typedef struct event
   float lat, lon;
   int yy, mm, dd, h, m, s, ms, jday;
   double t0;
-  char name[150];
+  char name[HLINE];
 }
 EVENT;
 
 typedef struct station
 {
   float lat, lon;
-  char name[10];
+  char name[SLINE];
 }
 STATION;
 
 typedef struct record
 {
-  char fname[150];
-  char ft_fname[150];
-  char resp_fname[150];
+  char fname[HLINE];
+  char ft_fname[HLINE];
+  char resp_fname[HLINE];
   char chan[7];
   double t0;
   float dt;
@@ -49,7 +50,7 @@ typedef struct sac_dbase
   EVENT ev[NEVENTS];
   STATION st[NSTATION];
   RECORD rec[NEVENTS][NSTATION];
-  char conf[150];
+  char conf[HLINE];
   int nev, nst;
   int cntst;
   int cntev;

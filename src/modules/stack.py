@@ -103,8 +103,9 @@ if __name__ == '__main__':
     stackdir = '/Volumes/stage/stage/yannik78/datasets/nord/nord-sac-EN/STACK'
     [hf1,hi1,hs1,seis1,ok1] = p.ReadSacFile(file1)
     [hf2,hi2,hs2,seis2,ok2] = p.ReadSacFile(file2)
-    trace1 = np.array(seis1, dtype=float)
-    trace2 = np.array(seis2, dtype=float)
+    print seis1.typecode
+    trace1 = np.array(object=seis1)
+    trace2 = np.array(object=seis2)
     os.path.walk(rootdir, find_xcor, stackdir)
     if not os.path.isdir(stackdir):
         os.mkdir(stackdir)
@@ -119,7 +120,3 @@ if __name__ == '__main__':
             hs = mystack[stat]['hs']
             hi = mystack[stat]['hi']
             p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))
-
-
-
-

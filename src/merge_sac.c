@@ -14,14 +14,15 @@
 
 /* MACROS */
 #define LINEL 300
-#define NPTSMAX 5000000
+#define THRESH 36000
 #define SLINE 10
-#define NFILES 30
+#define NFILES 500
 
 
 /* FUNCTION DECLARATIONS */
 SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax);
 SAC_HD *read_sac_header(char *fname, SAC_HD *SHD);
+float *read_sac_dyn (char *fname, SAC_HD *SHD);
 void write_sac (char *fname, float *sig, SAC_HD *SHD);
 int isign(double f);
 int nint(double f);
@@ -30,8 +31,6 @@ float av_sig (float *sig, int i, int N, int nwin );
 
 /* some systems can't cope with very big, locally defined arrays; in this case 
  the array has to be defined globally*/
-float sig1[NPTSMAX];
-float sig0[NPTSMAX];
 
 /*========================== MAIN =================================================*/
 int main (int argc, char** argv)
@@ -45,6 +44,7 @@ int main (int argc, char** argv)
   SAC_HD sh[NFILES], s0;
   double t1[NFILES], t2[NFILES];
   double T1=1.e25, T2=100.;
+  float *sig0, *sig1;
   char str[NFILES][LINEL];
   int nf, nn;
 
@@ -71,19 +71,23 @@ int main (int argc, char** argv)
     }
   nf = i;
   memcpy(&s0, &(sh[nfirst]), sizeof(SAC_HD) );
-
+  
   N = nint((T2-T1)/s0.delta);
-  if ( N > NPTSMAX ) N = NPTSMAX;
-
+  if(N < THRESH){
+    fprintf(stdout, "WARNING: trace smaller than %d pts", THRESH);
+    return 1;
+  }
   s0.npts = N;
-
+  sig0 = (float *)malloc(N*sizeof(float));
   for ( j = 0; j < N; j++ ) sig0[j] = 1.e30;
 
 
   for (i = 0;i<nf;i++){
     int nb;
     double ti;
-    if ( !read_sac ( str[i], sig1, &(sh[i]), N))
+    //    if ( !read_sac( str[i], sig1, &(sh[i]), N))
+    sig1 = read_sac_dyn( str[i], &(sh[i]));
+    if ( !sig1 )
       {
 	fprintf(stderr,"ERROR: file %s not found\n", str[i]);
 	continue;
@@ -106,6 +110,7 @@ int main (int argc, char** argv)
 
 	if ( sig0[jj] > 1.e29 ) sig0[jj] = sig1[j];
       }
+    free(sig1);
   }
 
   Nholes = 0;
@@ -136,6 +141,7 @@ int main (int argc, char** argv)
     }
   }
   write_sac (argv[1], sig0, &s0);
+  free(sig0);
   return 0;
 }
 
@@ -206,6 +212,49 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
 
 
     return SHD;
+  }
+}
+
+
+/*--------------------------------------------------------------------------
+  reads sac-files fname with maximum length nmax into signal sig and \
+  header SHD
+  --------------------------------------------------------------------------*/
+float *read_sac_dyn (char *fname, SAC_HD *SHD){
+
+  FILE *fsac;
+  float *sig;
+  fsac = fopen(fname, "rb");
+  if ( !fsac )
+    {
+      fclose (fsac);
+      return NULL;
+    }
+  if ( !SHD ) SHD = &SAC_HEADER;
+  fread(SHD,sizeof(SAC_HD),1,fsac);
+  sig = (float *)malloc(SHD->npts*sizeof(float));
+  if(sig != NULL){
+    fread(sig,sizeof(float),(int)(SHD->npts),fsac);
+  }else{
+    printf("ERROR: nomore virtual RAM available!\n");
+    return NULL;
+  } 
+  fclose (fsac);
+
+  /*-------------  calcule de t0  ----------------*/
+  {
+    int eh, em ,i;
+    float fes;
+    char koo[9];
+
+    for ( i = 0; i < 8; i++ ) koo[i] = SHD->ko[i];
+    koo[8] = '\0';
+
+    SHD->o = SHD->b + SHD->nzhour*3600. + SHD->nzmin*60 +
+      SHD->nzsec + SHD->nzmsec*.001;
+
+
+    return sig;
   }
 }
 

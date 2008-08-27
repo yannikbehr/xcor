@@ -1,16 +1,17 @@
 [local_settings]
-bindir=../bin/
+bindir=../../bin/
 
 [database]
-databasedir=/Volumes/stage/stage/yannik78/test_data_set/
+databasedir=/Volumes/stage/stage/yannik78/datasets/geonet/geonet_xcorr/2005/Apr/
 databasefile=./tmp/event-table.txt
-rdseeddir=/home/behrya/src/rdseed4.6/
+rdseeddir=/home/behrya/src/rdseed4.7.5/
 sacdir=/home/behrya/src/sac/bin/
 datatype=seed
-sacdirroot=./geonet/
+sacdirroot=/Volumes/stage/stage/yannik78/datasets/geonet/geonet_xcorr/2005/
 tmpdir=./tmp/
 
 [processing]
+seedfilere=
 #define channel (sample frequency)
 channel=LHZ
 
@@ -32,7 +33,7 @@ white=0
 xcorr=0
 stack=0
 sym=0
-ftan=0
+ftan=1
 
 
 [FTAN]

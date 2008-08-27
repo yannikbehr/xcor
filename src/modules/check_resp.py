@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """module to modify start and end date of RESP-files according to the
 corresponding SAC-files
 $Rev: 492 $
@@ -10,7 +11,12 @@ import  os, os.path, string, pysacio
 
 class CheckResp:
     """class to check and, if necessary, modify response files"""
+    def __init__(self):
+        pass
 
+    def __call__(self, dirname):
+        self.walk_dir(dirname)
+        
 
     def check_resp(self, file1):
         try:
@@ -57,10 +63,15 @@ class CheckResp:
 			  
                                 if string.find(lines,'Location')!=-1:
 				    loc_resp1 = string.split(lines)
-				    newline = loc_resp1[0]+'     '+loc_resp1[1]+\
-				    '    '+khole+'\n'
-				    outlines.append(newline)
-				
+                                    if len(khole.rstrip()) > 0:
+                                        newline = loc_resp1[0]+'     '+loc_resp1[1]+\
+                                                  '    '+khole.rstrip()+'\n'
+                                        outlines.append(newline)
+                                    else:
+                                        newline = loc_resp1[0]+'     '+loc_resp1[1]+\
+                                                  '    '+'??'+'\n'
+                                        outlines.append(newline)
+
                                 elif string.find(lines,'Start date')!=-1:
                                     date_resp1 = string.split(lines)	
                                     date_resp2 = string.split(date_resp1[3],',')
@@ -143,8 +154,8 @@ class CheckResp:
             except Exception, e:
                 print "ERROR in comparing lists", e
 
-            
+
 
 if __name__ == '__main__':
     test = CheckResp()
-    test.walk_dir('/Users/home/rawlinza/Zara/sac_from_seed/Tasmanxcor/')
+    test('/data/hawea/yannik/SAPSE/sacfiles/')

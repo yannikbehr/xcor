@@ -16,10 +16,11 @@ FFLAGS_all = $(FFLAGS) $(fflags) $(DBG)
 CFLAGS_all = $(CFLAGS) $(cflags) $(DBG) 
 
 
-OBJS = 	driver_c.o\
-	filter4.o\
+COBJS =	driver_c.o\
 	swapn.o\
 	$(VPATH)/iniparser.o
+
+FOBJS = filter4.o
 
 %.o:%.f 
 	$(FC) $(DBG) -c $<
@@ -27,11 +28,11 @@ OBJS = 	driver_c.o\
 %.o:%.c 
 	$(CC) $(DBG) $(cflags) -c $<
 
-$(BIN) : $(OBJS) module_obj
-	$(FC) $(FFLAGS) $(CFLAGS) $(OBJS) -o $(BIN) $(LDLIBS) 
+$(BIN) : $(COBJS) $(FOBJS) module_obj
+	$(FC) $(FFLAGS) $(CFLAGS) $(COBJS) $(FOBJS) -o $(BIN) $(LDLIBS) 
 
 module_obj:
 	cd $(VPATH); make objects
 
 clean ::
-	rm -f $(BIN) core $(OBJS) *~
+	rm -f $(BIN) core $(COBJS) $(FOBJS) *~ iniparser.o

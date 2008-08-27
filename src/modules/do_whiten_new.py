@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """module for calling filter4.f and whiten_phamp.f with appropriate values
 and creating output directory\n
 $Log$
@@ -36,7 +37,6 @@ class DoWhiten:
         conf.read(cnffile)
         self.sacdir = conf.get("database", "sacdirroot")
         self.sacbin = conf.get("database", "sacdir")
-        self.tmpdir = conf.get("database", "tmpdir")
         self.bindir = conf.get("local_settings", "bindir")
         # frequency band +- 20% as taper
         self.upperp = int(conf.get("processing", "upperperiod"))
@@ -46,7 +46,7 @@ class DoWhiten:
 	self.cnffilename = cnffile
         self.npow = 1
         self.tb = TwirlyBar()
-        self.complst = ['LHE', 'LHN']
+        self.complst = ['BHN', 'BHE']
         self.proclst = ProcLst()
         self.proclst.ydaydir = []
         self.cnt = -1
@@ -60,39 +60,41 @@ class DoWhiten:
         eqltaper = self.eqband[0] + (float(self.eqband[0])/100)*20
         filtercmd = self.bindir+"/filter4"
         for i in self.proclst.ydaydir:
-            print i['name']
             self.tb.ShowProgress()
-            if len(i.keys()) > 1:
+            if len(i.keys()) == len(self.complst) + 1:
                 for j in self.complst:
                     for k in i[j]:
                         src, tar, eqtar = k
-                        child = os.popen(filtercmd,'w')
+                        p = sp.Popen(filtercmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+                        child = p.stdin
                         print >>child, ltaper, lowerp, upperp, utaper, self.npow, src, tar
                         err = child.close()
-                        if err:
+                        ret = p.wait()
+                        if err or ret != 0:
                             raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
-                        child = os.popen(filtercmd,'w')
+                        p = sp.Popen(filtercmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+                        child = p.stdin
                         print >>child, eqltaper, self.eqband[0], self.eqband[1], equtaper, self.npow, tar, eqtar
                         err = child.close()
-                        if err:
+                        ret = p.wait()
+                        if err or ret != 0:
                             raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
         return 1
 
 
     def white_1_comp(self, upperp, lowerp):
-        """ call sac routines conduct whitening for Z-component"""
+        """ calls sac routines to conduct whitening for Z-component"""
         utaper = upperp - (float(upperp)/100)*20
         ltaper = lowerp + (float(lowerp)/100)*20
         saccmd = self.sacbin+'/sac'+' 1>/dev/null'
-        child1 = os.popen(saccmd, 'w')
         whitefilter = self.bindir+'/white_1cmp'+' 1>/dev/null'
-        child2 = os.popen(whitefilter, 'w')
         for i in self.proclst.ydaydir:
-            if len(i.keys()) > 1:
+            if len(i.keys()) == len(self.complst) +1:
                 for j in self.complst:
                     for k in i[j]:
+                        p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+                        child1 = p1.stdin
                         src, tar, eqtar = k
-                        self.tb.ShowProgress()
                         print >>child1, "r %s" %(eqtar)
                         print >>child1, "abs"
                         print >>child1, "smooth mean h 128"
@@ -100,20 +102,21 @@ class DoWhiten:
                         print >>child1, "r %s" %(tar)
                         print >>child1, "divf a1.avg"
                         print >>child1, "w over %s" %(tar)
-                        self.tb.ShowProgress()
+                        print >>child1, "q"
+                        err1 = child1.close()
+                        ret1 = p1.wait()
+                        if os.path.isfile('a1.avg'):
+                            os.remove('a1.avg')
+                        if err1 or ret1 != 0:
+                            raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
+                        p2 = sp.Popen(whitefilter, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+                        child2 = p2.stdin
                         print >>child2, ltaper, lowerp, upperp, utaper, self.npow, tar
-        err1 = child1.close()
-        err2 = child2.close()
-#        if os.path.isfile('a1.avg'):
-#            os.remove('a1.avg')
-        if err1:
-            raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
-            return 0
-        if err2:
-            raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
-            return 0
-        else:
-            return 1
+                        err2 = child2.close()
+                        ret2 = p2.wait()
+                        if err2 or ret2 != 0:
+                            raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
+        return 1
 
 
     def xtract_fn(self, file1, file2):
@@ -145,14 +148,13 @@ class DoWhiten:
 
     def white_2_comp(self, upperp, lowerp):
         """ call sac routines conduct whitening for North and East component"""
+        utaper = upperp - (float(upperp)/100)*20
+        ltaper = lowerp + (float(lowerp)/100)*20
+        whitefilter = self.bindir+'/white_2cmp'
         saccmd = self.sacbin+'/sac'
         for i in self.proclst.ydaydir:
             self.tb.ShowProgress()
-            if not (len(i.keys()) == 3):
-                print 'ERROR: too many components or not enough'
-                continue
-            else:
-                print i['name']
+            if len(i.keys()) == len(self.complst) +1:
                 for j in i[self.complst[0]]:
                     for k in i[self.complst[1]]:
                         src1, tar1, eqtar1 = j
@@ -160,7 +162,8 @@ class DoWhiten:
                         if not self.xtract_fn(src1, src2):
                             print "ERROR: files %s and %s inadequate!" %(src1, src2)
                         else:
-                            child1 = os.popen(saccmd, 'w')
+                            p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+                            child1 = p1.stdin
                             print src1, src2
                             print >>child1, "r %s %s" %(eqtar1, eqtar2)
                             print >>child1, "abs"
@@ -177,39 +180,26 @@ class DoWhiten:
                             print >>child1, "divf a1.avg"
                             print >>child1, "w %s %s" %(tar1, tar2)
                             print >>child1, "q"
-                            err = child1.close()
-                            if err:
-                                raise RuntimeError, '%r failed with exit code %d' %(saccmd, err)
+                            err1 = child1.close()
+                            ret1 = p1.wait()
+                            if err1 or ret1 != 0:
+                                raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
                             if os.path.isfile('./aaa'):
                                 os.remove('./aaa')
                             if os.path.isfile('./bbb'):
                                 os.remove('./bbb')
                             if os.path.isfile('./a1.avg'):
                                 os.remove('./a1.avg')
+                            p2 = sp.Popen(whitefilter, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+                            child2 = p2.stdin
+                            print >>child2, ltaper, lowerp, upperp, utaper, self.npow, tar1, tar2
+                            err2 = child2.close()
+                            ret2 = p2.wait()
+                            if err2 or ret2 != 0:
+                                raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
         return 1
 
-    def final_filter(self, upperp, lowerp):
-        utaper = upperp - (float(upperp)/100)*20
-        ltaper = lowerp + (float(lowerp)/100)*20
-        whitefilter = self.bindir+'/white_2cmp'
-        for i in self.proclst.ydaydir:
-            if not (len(i.keys()) == 3):
-                print 'ERROR: too many components or not enough'
-                continue
-            else:
-                for j in i[self.complst[0]]:
-                    for k in i[self.complst[1]]:
-                        src1, tar1, eqtar1 = j
-                        src2, tar2, eqtar2 = k
-                        if not self.xtract_fn(src1, src2):
-                            print "ERROR: files %s and %s inadequate!" %(src1, src2)
-                        else:
-                            child2 = os.popen(whitefilter, 'w')
-                            print >>child2, ltaper, lowerp, upperp, utaper, self.npow, tar1, tar2
-                            err = child2.close()
-                            if err:
-                                raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err)
-        return 1
+
 
     def create_dir_struct(self, dirname, month):
         """ creates the dir-structure for the filtering and whitening step\n
@@ -220,7 +210,7 @@ class DoWhiten:
         bpfile = `self.upperp`+'to'+`self.lowerp`
         if not os.path.isdir(dirname+'/'+month+'/'+bpfile):
             os.mkdir(dirname+'/'+month+'/'+bpfile)
-        print "Creating dir structure: ", month
+            print "Creating dir structure: ", month
         for day in dirlist:
             if day != bpfile and string.find(day, '.svn') == -1 and string.find(day, '5to100') == -1 and string.find(day, '5to100_EN') == -1:
                 self.tb.ShowProgress()
@@ -248,14 +238,14 @@ class DoWhiten:
 
     def process(self):
         print "filtering...."
+        print self.proclst
         self.filter4_f(self.upperp, self.lowerp)
         if len(self.complst) < 2:
             print "whitening...."
             self.white_1_comp(self.upperp, self.lowerp)
         elif len(self.complst) == 2:
-            print "whitening...."
+            print "whitening 2 components...."
             self.white_2_comp(self.upperp, self.lowerp)
-            self.final_filter(self.upperp, self.lowerp)
         else:
             print "ERROR: number of components too big or too small!"
             sys.exit(1)

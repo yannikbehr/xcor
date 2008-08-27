@@ -27,6 +27,7 @@
 
 
 #define STRING 300
+#define MODUS 0711
 
 
 /* function prototypes */
@@ -74,7 +75,7 @@ int walk_dir(char *dirname, SAC_DB *sdb){
 
     /* if filename has ending '.SAC' and is a regular file but does neither 
        contain the string 'COR' nor 'stack' nor 'ft_' than go on*/
-    if(strstr((*dirpointer).d_name,"E.SAC") !=0 &&
+    if(strstr((*dirpointer).d_name,"BHZ.SAC") !=0 &&
        strstr((*dirpointer).d_name,"ft_") ==0 
        &&strstr((*dirpointer).d_name,"COR") ==0 
        &&strstr((*dirpointer).d_name,"stack") ==0 
@@ -85,6 +86,7 @@ int walk_dir(char *dirname, SAC_DB *sdb){
     }
     /* if filename contains 'RESP' string and is regular file */
     else if(strstr((*dirpointer).d_name,"RESP") !=0 && 
+	    strstr((*dirpointer).d_name,".BHZ") !=0 && 
 	    attribut.st_mode & S_IFREG){
       count_ev(newname, tmp, oldname, sdb);
       read_resp(tmp,sdb,dirpointer->d_name);
@@ -94,7 +96,8 @@ int walk_dir(char *dirname, SAC_DB *sdb){
        function calls itself again */
     else if(attribut.st_mode & S_IFDIR && strcmp((*dirpointer).d_name,".") != 0 
 	    && strcmp((*dirpointer).d_name,"..") != 0
-	    && strcmp((*dirpointer).d_name,".svn") !=0){
+	    && strcmp((*dirpointer).d_name,".svn") !=0 
+	    && strcmp((*dirpointer).d_name,"5to100") !=0){
       strcat(tmp,"/");
       walk_dir(tmp,sdb);
     }
@@ -157,6 +160,7 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   yday  = day_of_year(year, month, day);
 
   strncpy(sdb->rec[sdb->cntev][ns].fname,sacfile,149);
+  printf("%s\n", sdb->rec[sdb->cntev][ns].fname);
   sprintf(sdb->rec[sdb->cntev][ns].ft_fname,"%s/ft_%s.%s.SAC\0", newname, shd.kstnm, shd.kcmpnm);
   strncpy(sdb->rec[sdb->cntev][ns].chan,shd.kcmpnm,6);
   sdb->ev[sdb->cntev].yy = year;
@@ -195,7 +199,7 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
   SAC_HD shd;
 
   strtok_mod(respfile,'.',tokens, &nrows);
-  if(nrows >= 4){
+  if(nrows >= 3){
     strncpy(chan,tokens[nrows],4);
     ptr = NULL;
     ptr = strrchr(respfile,'.');
@@ -203,7 +207,7 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     ptr = strrchr(respfile,'.');
     *ptr = '\0';
     strtok_mod(respfile,'.',tokens, &nrows);
-    strncpy(name,tokens[nrows],4); 
+    strncpy(name,tokens[nrows],5); 
     name[strlen(tokens[nrows])] = '\0';
   }
 
@@ -216,6 +220,7 @@ void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
     strncpy(dirname,resppath,STRING-1);
     ptr = strrchr(dirname,'/');
     *(ptr+1) = '\0';
+    printf("%s %s %s\n", dirname, name, chan);
     sprintf(sacfile,"%s%s.%s.SAC",dirname,name,chan);
     /*strncpy(sacfile,dirname,STRING-1);
     strcat(sacfile,name);
@@ -481,6 +486,8 @@ int main (int argc, char **argv){
   if(!strcmp(filename,"./dummy.out")){
     tmpdir = iniparser_getstr(dd, "database:tmpdir");
     strncpy(filename,tmpdir,STRING-1);
+    if(mkdir(tmpdir, MODUS) == -1)
+      fprintf(stdout,"directory %s already exists \n", tmpdir); 
     strcat(filename,"sac_db.out");
   }
 

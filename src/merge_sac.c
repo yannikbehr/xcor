@@ -7,108 +7,95 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <mysac.h>
-#include <sac_db.h>
 #include <assert.h>
+#include "merge_sac.h"
 
-
-/* MACROS */
-#define LINEL 300
-#define THRESH 36000
-#define SLINE 10
-#define NFILES 500
-
-
-/* FUNCTION DECLARATIONS */
-SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax);
-SAC_HD *read_sac_header(char *fname, SAC_HD *SHD);
-float *read_sac_dyn (char *fname, SAC_HD *SHD);
-void write_sac (char *fname, float *sig, SAC_HD *SHD);
-int isign(double f);
-int nint(double f);
-double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms );
-float av_sig (float *sig, int i, int N, int nwin );
-
-/* some systems can't cope with very big, locally defined arrays; in this case 
- the array has to be defined globally*/
 
 /*========================== MAIN =================================================*/
 int main (int argc, char** argv)
 {
+  int i=0, nn;
+  char str[NFILES][LINEL];
+  while((nn = fscanf(stdin,"%s",str[i])) != EOF) i++;
+  merge_sac(str, i, argv[1]);
+  return 0;
+}
+
 /*-------------------------------------------------------------------------
   merge several sac files into one-day sac-files interpolating over data
   holes
   -------------------------------------------------------------------------*/
-  int i=0, n, j, nfirst, Nholes;
+int merge_sac(char str[NFILES][LINEL], int i, char *fileout){
+  int k, j, nfirst, Nholes;
   long N;
   SAC_HD sh[NFILES], s0;
   double t1[NFILES], t2[NFILES];
   double T1=1.e25, T2=100.;
   float *sig0, *sig1;
-  char str[NFILES][LINEL];
-  int nf, nn;
+  int nf;
 
 
-  while((nn = fscanf(stdin,"%s",str[i])) != EOF){
-      if ( !read_sac_header( str[i],&(sh[i])))
-	{
-	  fprintf(stderr,"ERROR: file %s not found\n", str[i]);
-	  continue;
-	}
-      t1[i] = abs_time (sh[i].nzyear, sh[i].nzjday, sh[i].nzhour, 
-			sh[i].nzmin, sh[i].nzsec, sh[i].nzmsec );
-      t2[i] = t1[i] + sh[i].npts*sh[i].delta;
-
-      /* finding the longest time series and the earliest starting time*/
-      if ( t1[i] < T1 )
-	{
-	  T1 = t1[i];
-	  nfirst = i;
-	}
-
-      if ( t2[i] > T2 ) T2 = t2[i];
-      i++;
-    }
-  nf = i;
-  memcpy(&s0, &(sh[nfirst]), sizeof(SAC_HD) );
-  
-  N = nint((T2-T1)/s0.delta);
-  if(N < THRESH){
-    fprintf(stdout, "WARNING: trace smaller than %d pts", THRESH);
-    return 1;
-  }
-  s0.npts = N;
-  sig0 = (float *)malloc(N*sizeof(float));
-  for ( j = 0; j < N; j++ ) sig0[j] = 1.e30;
-
-
-  for (i = 0;i<nf;i++){
-    int nb;
-    double ti;
-    //    if ( !read_sac( str[i], sig1, &(sh[i]), N))
-    sig1 = read_sac_dyn( str[i], &(sh[i]));
-    if ( !sig1 )
+  for(j=0; j<i; j++){
+    if ( !read_sac_header( str[j],&(sh[j])))
       {
 	fprintf(stderr,"ERROR: file %s not found\n", str[i]);
 	continue;
       }
-
-    if ( fabs(sh[i].delta-s0.delta) > .0001 )
+    t1[j] = abs_time (sh[j].nzyear, sh[j].nzjday, sh[j].nzhour, 
+		      sh[j].nzmin, sh[j].nzsec, sh[j].nzmsec );
+    t2[j] = t1[j] + sh[j].npts*sh[j].delta;
+    
+    /* finding the longest time series and the earliest starting time*/
+    if ( t1[j] < T1 )
       {
-	fprintf(stderr,"ERROR: incompatible dt in file %s\n", str[i]);
+	T1 = t1[j];
+	nfirst = j;
+	}
+
+      if ( t2[j] > T2 ) T2 = t2[j];
+    }
+  nf = j;
+  memcpy(&s0, &(sh[nfirst]), sizeof(SAC_HD) );
+  s0.user0 = T1;
+  s0.user1 = T2;
+
+  N = nint((T2-T1)/s0.delta);
+  //  if(N < THRESH){
+  //    fprintf(stdout, "WARNING: trace smaller than %d pts", THRESH);
+  //    return 1;
+  //  }
+  s0.npts = N;
+  sig0 = (float *)malloc(N*sizeof(float));
+  for (j=0;j<N;j++ ) sig0[j] = 1.e30;
+
+
+  for (j = 0;j<nf;j++){
+    int nb;
+    double ti;
+    //    if ( !read_sac( str[i], sig1, &(sh[i]), N))
+    sig1 = read_sac_dyn( str[j], &(sh[j]));
+    if ( !sig1 )
+      {
+	fprintf(stderr,"ERROR: file %s not found\n", str[j]);
 	continue;
       }
 
-    ti = abs_time (sh[i].nzyear, sh[i].nzjday, sh[i].nzhour, sh[i].nzmin, 
-		   sh[i].nzsec, sh[i].nzmsec );
+    if ( fabs(sh[j].delta-s0.delta) > .0001 )
+      {
+	fprintf(stderr,"ERROR: incompatible dt in file %s\n", str[j]);
+	continue;
+      }
+
+    ti = abs_time (sh[j].nzyear, sh[j].nzjday, sh[j].nzhour, sh[j].nzmin, 
+		   sh[j].nzsec, sh[j].nzmsec );
     nb = nint((ti-T1)/s0.delta);
 
     /* finding all the values that are higher than 1e29 */
-    for ( j = 0; j < sh[i].npts; j++ )
+    for ( k = 0; k < sh[j].npts; k++ )
       {
-	int jj = nb+j;
+	int jj = nb+k;
 
-	if ( sig0[jj] > 1.e29 ) sig0[jj] = sig1[j];
+	if ( sig0[jj] > 1.e29 ) sig0[jj] = sig1[k];
       }
     free(sig1);
   }
@@ -130,7 +117,7 @@ int main (int argc, char** argv)
       for( ;;){
 	av = av_sig (sig0, j, N, N/npart );
 	if ( av < 1.e29 ) break;
-	if ( npart = 1 )
+	if ( npart == 1 )
 	  {
 	    av = 0.;
 	    break;
@@ -140,7 +127,7 @@ int main (int argc, char** argv)
       sig0[j] = av;
     }
   }
-  write_sac (argv[1], sig0, &s0);
+  write_sac (fileout, sig0, &s0);
   free(sig0);
   return 0;
 }
@@ -189,7 +176,7 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
 
   if ( SHD->npts > nmax )
     {
-      fprintf(stderr,"WARNING: in file %s npts is limited to %d",fname,nmax);
+      fprintf(stderr,"WARNING: in file %s npts is limited to %ld",fname,nmax);
 
       SHD->npts = nmax;
     }
@@ -200,8 +187,7 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
 
   /*-------------  calcule de t0  ----------------*/
   {
-    int eh, em ,i;
-    float fes;
+    int i;
     char koo[9];
 
     for ( i = 0; i < 8; i++ ) koo[i] = SHD->ko[i];
@@ -243,8 +229,7 @@ float *read_sac_dyn (char *fname, SAC_HD *SHD){
 
   /*-------------  calcule de t0  ----------------*/
   {
-    int eh, em ,i;
-    float fes;
+    int i;
     char koo[9];
 
     for ( i = 0; i < 8; i++ ) koo[i] = SHD->ko[i];
@@ -328,19 +313,35 @@ float av_sig (float *sig, int i, int N, int nwin ){
 
 
 /*--------------------------------------------------------------------------
-  computes time in s relative to 1900
+  computes time in s relative to 1970
   --------------------------------------------------------------------------*/
 double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms ){
 
   long nyday = 0, i;
 
-  for ( i = 1901; i < yy; i++ )
+  for ( i = 1970; i < yy; i++ )
     {
-      if ( 4*(i/4) == i ) nyday += 366;
-      else nyday += 365;
+      nyday += ndaysinyear(i);
     }
 
   return 24.*3600.*(nyday+jday) + 3600.*hh + 60.*mm + ss + 0.001*ms;
+}
+
+
+/*--------------------------------------------------------------------------
+  decide whether year is a leap year or not and return number of days 
+  accordingly
+  --------------------------------------------------------------------------*/
+int ndaysinyear (int yy){
+  int i0, i1, i2;
+  i0 = yy % 4;
+  i1 = yy % 100;
+  i2 = yy % 400;
+  if((i0 == 0 && i1 != 0) || i2 == 0){
+    return 366;
+  }else{
+    return 365;
+  }
 }
 
 

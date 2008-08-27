@@ -8,6 +8,7 @@ $LastChangedDate: 2008-01-18 11:46:41 +1300 (Fri, 18 Jan 2008) $
 import sys
 sys.path.append('../src/modules')
 import string, os, do_whiten, mk_ev_table, sendrequest, imaprequest
+import sac_from_seed, sac_from_mseed, glob
 from ConfigParser import SafeConfigParser
 
 cp = SafeConfigParser()
@@ -38,15 +39,26 @@ except Exception:
     print "ERROR: while executing seed_db.py"
     sys.exit(1)
 
+######################## CONV SEED 2 SAC AND RM HOLES ###############
+#try:
+#    if cp.get('processing','seed2sac')=='1' and err==0:
+#        err = os.system(bindir+'sa_from_seed_new -c '+config)
+#    if err != 0:
+#        raise Exception
+#except Exception:
+#    print "ERROR: while executing sa_from_seed_new"
+#    sys.exit(1)
+#
 ####################### CONV SEED 2 SAC AND RM HOLES ###############
-try:
-    if cp.get('processing','seed2sac')=='1' and err==0:
-        err = os.system(bindir+'sa_from_seed_new -c '+config)
-    if err != 0:
-        raise Exception
-except Exception:
-    print "ERROR: while executing sa_from_seed_new"
-    sys.exit(1)
+if cp.get('processing','seed2sac')=='1' and err==0:
+    rdseedir   = cp.get('database','rdseeddir')
+    bindir     = cp.get('local_settings', 'bindir')
+    sacroot    = cp.get('database', 'sacdirroot')
+    seedfilere = cp.get('processing', 'seedfilere')
+    seedir     = cp.get('database', 'databasedir')
+    t = sac_from_seed.SaFromSeed(rdseedir, bindir, sacroot)
+    for sf in glob.glob(seedir+seedfilere):
+        t(sf)
 
 ####################### REINIT SAC_DB.OUT FILE ######################
 try:

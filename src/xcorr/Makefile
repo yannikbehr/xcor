@@ -53,7 +53,7 @@ $(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj
 	$(FC) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS)
 
 $(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
-	$(FC) justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS)
+	$(CC) justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS)
 
 module_obj:
 	cd $(VPATH); make objects
@@ -64,8 +64,3 @@ clean ::
 tilde :
 	rm ./*~
 
-test: changesacdb.c
-	gcc -g -o changesacdb changesacdb.c -I $(VPATH)
-
-testtest:
-	./changesacdb

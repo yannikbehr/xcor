@@ -198,14 +198,14 @@ int do_cor( SAC_DB *sdb, int lag)
     for( jsta1 = 0; jsta1 < sdb->nst; jsta1++ ) {  
       /* extract location for correlations */
       /* and create COR-dir if necessary   */
-      strncpy(filename,sdb->rec[ine][jsta1].ft_fname,199);
+      strncpy(filename,sdb->rec[ine][jsta1].ft_fname,LINEL-1);
       cutptr=strrchr(filename,'/');
       if(cutptr != NULL){
 	*(cutptr) = '\0';
 	cutptr=strrchr(filename,'/');
 	if(cutptr != NULL){
 	  *(cutptr+1) = '\0';
-	  strncpy(cordir,filename,199);
+	  strncpy(cordir,filename,LINEL-1);
 	  strcat(cordir,"COR");
 	  if(mkdir(cordir, MODUS) == -1){
 	    fprintf(stdout,"directory %s already exists \n", cordir); 
@@ -215,7 +215,7 @@ int do_cor( SAC_DB *sdb, int lag)
       strcpy(name1_E,sdb->rec[ine][jsta1].ft_fname);
       for(j=0;j<=strlen(name1_E);j++)
 	{
-	  if(name1_E[j]=='E' && name1_E[j-1]=='H' && name1_E[j-2]=='B')
+	  if(name1_E[j]=='E' && name1_E[j-1]=='H' && name1_E[j-2]=='L')
 	    name1_N[j]='N';
 	  else
 	    name1_N[j]=name1_E[j];
@@ -450,7 +450,7 @@ int walk_dir(char *dirname)
 	return EXIT_FAILURE;
       }
       while((dirpointer2=readdir(dir2)) != NULL){
-	strncpy(oldname,tmp,199);
+	strncpy(oldname,tmp,LINEL-1);
 	strcat(oldname,"/");
 	strcat(oldname,(*dirpointer2).d_name);
 	if(stat(oldname, &attribut) == -1){
@@ -458,7 +458,7 @@ int walk_dir(char *dirname)
 	  return EXIT_FAILURE;
 	}
 	if(attribut.st_mode & S_IFREG && strstr((*dirpointer2).d_name,".prelim") != NULL){
-	  strncpy(newname,oldname,199);
+	  strncpy(newname,oldname,LINEL-1);
 	  cutptr = strrchr(newname,'.');
 	  *(cutptr) = '\0';
 	  printf("--> rename %s to %s\n",oldname, newname);

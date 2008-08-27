@@ -275,28 +275,39 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
   fprintf(ff,"rtrend\n");
   fprintf(ff,"transfer from evalresp fname %sresp1 to vel freqlimits %f %f %f %f\n",tmpdir, fl1, fl2, fl3, fl4 );
 
-  if(sd->rec[ne][ns].dt!=1.0){
+  if(sd->rec[ne][ns].dt < 1.0){
     /*****************************************************************/
     /* The following part was edited by Z. Rawlinson in order to     */
     /* automatically downsample traces with sample frequencies       */
     /* higher than 1 Hz                                              */
+    /* the sac-manual says that only numbers between 2 and 7 can be  */
+    /* used with the command 'decimate'; factor 4 and 6 can be       */
+    /* substituted by 2 and 3                                        */
     /* 01/08                                                         */
     freq1=(1.0f/sd->rec[ne][ns].dt);
     freq=(int)freq1;
     printf("sampling rate is %f.\n",sd->rec[ne][ns].dt);
-    while ((freq/5) % 2 == 0 && freq>5){
+    while (freq % 7 == 0 && freq > 1){
+      freq=freq/7;
+      factor = factor * 7;
+      fprintf(ff,"decimate 7 filter on\n");
+    }
+    while (freq % 5 == 0 && freq > 1){
       freq=freq/5;
       factor = factor * 5;
       fprintf(ff,"decimate 5 filter on\n");
     }
-    while ((freq/2)!=1 && freq>=2){
+    while (freq % 3 == 0 && freq > 1){
+      freq=freq/3;
+      factor = factor * 3;
+      fprintf(ff,"decimate 3 filter on\n");
+    }
+    while (freq % 2 == 0 && freq > 1){
       freq=freq/2;
       factor = factor * 2;
       fprintf(ff,"decimate 2 filter on\n");
     }
-    freq=freq/2;
-    factor = factor * 2;
-    fprintf(ff,"decimate 2 filter on\n");
+    
     sd->rec[ne][ns].dt = 1.0;
     sd->rec[ne][ns].n  = (int)(sd->rec[ne][ns].n/factor);
   }
@@ -353,10 +364,12 @@ int main (int argc, char **argv)
   strncpy(sdb.conf,conffile,149);
 
   /* REMOVE INSTRUMENT RESPONSE AND CUT TO DESIRED LENGTH */
-  for ( ns = 0; ns < sdb.nst; ns++ ) for ( ne = 0; ne < sdb.nev; ne++ ) {
+  for ( ns = 0; ns < sdb.nst; ns++ ){
+    for ( ne = 0; ne < sdb.nev; ne++ ) {
     one_rec_trans( &sdb, ne, ns, sacdir);
     fprintf(stderr,"back to main prog\n");
     one_rec_cut( &sdb, ne, ns, t1, npts);
+    }
   }
   sprintf(str,"%ssac_db.out\0", tmpdir);
   ff = fopen(str,"wb");
@@ -366,3 +379,4 @@ int main (int argc, char **argv)
   iniparser_free(dd);
   return 0;
 }
+

@@ -1,12 +1,23 @@
 #!/usr/bin/env python
 """script to extract all available data from seed-files into daylong
-sacfiles and put them in the right directory structure"""
+sacfiles and put them in the right directory structure\n
+The script accounts for 3 different cases: \n
+1. the seed file contains data for one day only\n
+2. the seed file contains data for several days\n
+3. several seed files contain data for the same day\n
+
+In the last case it is decided whether to merge, or delete one
+of the sac files that correspond to the same date"""
 
 import seed_info
+import sys
 from pylab import *
 import os, os.path
 import subprocess as sp
 import time, glob, re
+sys.path.append('./modules')
+import pysacio as p
+import pytutil as pt
 
 class SaFromSeed(seed_info.SeedInfo):
     def __init__(self, rdseedir, bindir, sacroot):
@@ -73,15 +84,54 @@ class SaFromSeed(seed_info.SeedInfo):
         else:
             return 1
     
-    
+
+    def comp_sac(self, oldfile, newfile):
+        """if there are two sac-files for the same date decide
+        whether to merge them or delete the shorter one"""
+        [hf1,hi1,hs1,ok1] = p.ReadSacHeader(oldfile)
+        [hf2,hi2,hs2,ok2] = p.ReadSacHeader(newfile)
+        if ok1 and ok2:
+            T1 = p.GetHvalue('user0',hf1,hi1,hs1)
+            T2 = p.GetHvalue('user1',hf1,hi1,hs1)
+            year = p.GetHvalue('nzyear',hf2,hi2,hs2)
+            yday = p.GetHvalue('nzjday',hf2,hi2,hs2)
+            hour = p.GetHvalue('nzhour',hf2,hi2,hs2)
+            mint = p.GetHvalue('nzmin',hf2,hi2,hs2)
+            sec  = p.GetHvalue('nzsec',hf2,hi2,hs2)
+            msec = p.GetHvalue('nzmsec',hf2,hi2,hs2)
+            npts = p.GetHvalue('npts',hf2,hi2,hs2)
+            delta = p.GetHvalue('delta',hf2,hi2,hs2)
+            sec = sec + msec/1000
+            T21, ok = pt.dt2seconds(year,yday,hour,mint,sec)
+            T22 = T21 + npts*delta
+            if T2<T21 or T1>T22:
+                return 1
+            elif (T2-T1) > (T22 - T21):
+                return 2
+            elif (T2-T1) < (T22 - T21):
+                return 3
+            else:
+                return -1
+        elif not ok1:
+            print "ERROR: cannot read ", oldfile
+            return -1
+        elif not ok2:
+            print "ERROR: cannot read ", newfile
+            return -1
+        
+        
     
     def extract_sac(self,filelist):
         """get seed-file info and based on that extract everything
         (every station, every channel) into daylong sacfiles"""
         for fn in filelist:
+            print fn
             g = self.extract_sd(fn)
+            if g == 0:
+                print "ERROR: cannot extract seed file meta information for %s" %(fn)
+                continue
             a = g.start; b = g.end
-            for i in range(int(a),int(b)):
+            for i in range(int(a),int(b)+1):
                 for stat in g.records.keys():
                     for comp in g.records[stat].keys():
                         respattern = r'RESP.\w*.%s.\w*.%s' %(stat,comp)
@@ -109,9 +159,26 @@ class SaFromSeed(seed_info.SeedInfo):
                             if os.path.isfile(outputfn) and not \
                                    os.path.isfile(os.path.join(daydir,outputfn)):
                                 os.rename(outputfn,os.path.join(daydir,outputfn))
+                            elif os.path.isfile(os.path.join(daydir,outputfn)):
+                                oldfile = os.path.join(daydir,outputfn)
+                                newfile = outputfn
+                                retval = self.comp_sac(oldfile, newfile)
+                                if retval == 1:
+                                    self.merge_sac([oldfile, newfile], newfile+'_tmp')
+                                    if os.path.isfile(newfile+'_tmp'):
+                                        os.rename(newfile+'_tmp',
+                                                  os.path.join(daydir,newfile+'_tmp'))
+                                elif retval == 2:
+                                    pass
+                                elif retval == 3:
+                                    os.rename(newfile,os.path.join(daydir,newfile))
+                                elif retval == -1:
+                                    print "ERROR: unexpected error while comparing sac files"
                             for rf in glob.glob('./RESP*'):
                                 match = re.search(respattern,rf)
-                                if match and not os.path.isfile(os.path.join(daydir,os.path.basename(rf))):
+                                if match and not \
+                                       os.path.isfile(os.path.join(daydir,os.path.basename(rf)))\
+                                       and os.path.isfile(os.path.join(daydir,outputfn)):
                                     os.rename(rf,os.path.join(daydir,os.path.basename(rf)))
                                 else:
                                     for rf in glob.glob('./RESP*'):

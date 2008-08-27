@@ -54,6 +54,13 @@ int main (int argc, char *argv[])
        * ==========================================================
        */
       f1 = 1.0/t1; f2 = 1.0/t2; f3 = 1.0/t3; f4 = 1.0/t4;
+      fprintf(stderr,"Parameters for filter 4 are:\n");
+      fprintf(stderr,"--> f1: %f\n", f1);
+      fprintf(stderr,"--> f2: %f\n", f2);
+      fprintf(stderr,"--> f3: %f\n", f3);
+      fprintf(stderr,"--> f4: %f\n", f4);
+      fprintf(stderr,"--> filein: %s\n", name_in);
+      fprintf(stderr,"--> fileout: %s\n", name_out);
       filter4_(&f1,&f2,&f3,&f4,&npow,&dt,&n,seis_in,seis_out);
 
       /*write results to SAC file*/

@@ -54,7 +54,7 @@ options = -pg -D DEBUG
 	$(CC) -g -c  $<  
 
 #all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
-all: cut filter4 whiteout ftan stack lag initsacdb sacseed whiteout1cmp newfilter4 whiteout2cmp
+all: cut filter4 whiteout ftan stack lag initsacdb sacseed whiteout1cmp newfilter4 whiteout2cmp justcor mergesac
 
 sacseed: module_obj sa_from_seed_new.c $(hfiles)
 	$(CC)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
@@ -62,8 +62,8 @@ sacseed: module_obj sa_from_seed_new.c $(hfiles)
 cut: 	module_obj cut_trans_mod.c
 	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
 
-initsacdb: initsac_db.c
-	$(CC) -g  -I $(VPATH) initsac_db.c -o initsac_db $(ofiles)
+initsacdb: module_obj initsac_db.c
+	$(CC) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
 justcor: 
 	cd ./xcorr; make
@@ -88,6 +88,9 @@ stack:  newstack.c module_obj $(hfiles)
 
 lag:    new_ch_lag.c module_obj $(hfiles)
 	$(CC) -g -D DEBUG -I $(VPATH) new_ch_lag.c -o new_ch_lag $(ofiles)
+
+mergesac: merge_sac.c module_obj $(hfiles)
+	$(CC) -Wall -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)
 
 ftan:	ftan-module
 	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)
@@ -115,7 +118,8 @@ install:
 	install	ftandriver $(BINDIR);\
 	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
-	install white_2cmp $(BINDIR)
+	install white_2cmp $(BINDIR);\
+	install merge_sac $(BINDIR)
 
 clean:
 	rm sa_from_seed_mod read_sac_db initsac_db new_ch_lag newstack \

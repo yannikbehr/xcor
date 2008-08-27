@@ -101,13 +101,16 @@ class SeedInfo:
         child_stdout = p.stdout
         data = p.stdout.readlines()
         err = p.stdout.close()
-        if err:
-                raise RuntimeError, '%r failed with exit code %d' %(rdseedcmd, err)
+        rcode = p.wait()
+        if err or rcode != 0:
+                print '%r failed with exit code %d' %(rdseedcmd, err)
+                return 0
         # get station + lat/lon/elev information 
         command =self.rdseedir+'rdseed -Sf '+filename+' 2>/dev/null'
         a=os.system(command)
-        if a != 0:
-            print "WARNING: cannot read station list from ",i
+        if a != 0 and not os.path.isfile('rdseed.stations'):
+            print "WARNING: cannot read station list from ",filename
+            return 0
         # remove rdseed error log
         for ii in glob.glob('./rdseed.err_log*'):
             os.remove(ii)
@@ -118,43 +121,46 @@ class SeedInfo:
         """main-function that gets passed the seed-filename and returns a structure that
         contains all the information on seed-volume"""
         data = self.run_rdseed(filename)
-        # extract lines by seed key
-        pattern = r'^B074F03-16'
-        patterns = r'^B010F05'
-        patterne = r'^B010F06'
-        patternst = r'^B011F04-05'
-        g = SeedStr()
-        g.stations = {}
-        g.records = {}
-        for line in data:
-            matchstat = re.search(pattern, line)
-            if matchstat:
-                if not self.get_stat_inf(line, g):
-                    print filename
-                    print '-->', line
-                    continue
-            matchstat = re.search(patterns, line)
-            if matchstat:
-                g.start = self.get_time(line.split()[6])
-            matchstat = re.search(patterne, line)
-            if matchstat:
-                g.end = self.get_time(line.split()[6])
-            matchstat = re.search(patternst, line)
-            if matchstat:
-                stat = line.split()[1]
-                if stat not in g.stations.keys():
-                    g.stations[stat] = {}
+        if data != 0:
+            # extract lines by seed key
+            pattern = r'^B074F03-16'
+            patterns = r'^B010F05'
+            patterne = r'^B010F06'
+            patternst = r'^B011F04-05'
+            g = SeedStr()
+            g.stations = {}
+            g.records = {}
+            for line in data:
+                matchstat = re.search(pattern, line)
+                if matchstat:
+                    if not self.get_stat_inf(line, g):
+                        print filename
+                        print '-->', line
+                        continue
+                matchstat = re.search(patterns, line)
+                if matchstat:
+                    g.start = self.get_time(line.split()[6])
+                matchstat = re.search(patterne, line)
+                if matchstat:
+                    g.end = self.get_time(line.split()[6])
+                matchstat = re.search(patternst, line)
+                if matchstat:
+                    stat = line.split()[1]
+                    if stat not in g.stations.keys():
+                        g.stations[stat] = {}
                     
-        for line in open('rdseed.stations').readlines():
-            tmpline = line.split()
-            if tmpline[0] in g.stations.keys():
-                g.stations[tmpline[0]]['lat'] = tmpline[2]
-                g.stations[tmpline[0]]['lon'] = tmpline[3]
-                g.stations[tmpline[0]]['elv'] = tmpline[4]
-            else:
-                print "station %s not in station-list" %(tmpline[0])
-        os.unlink('rdseed.stations')
-        return g
+            for line in open('rdseed.stations').readlines():
+                tmpline = line.split()
+                if tmpline[0] in g.stations.keys():
+                    g.stations[tmpline[0]]['lat'] = tmpline[2]
+                    g.stations[tmpline[0]]['lon'] = tmpline[3]
+                    g.stations[tmpline[0]]['elv'] = tmpline[4]
+                else:
+                    print "station %s not in station-list" %(tmpline[0])
+            os.unlink('rdseed.stations')
+            return g
+        else:
+            return 0
 
 
 

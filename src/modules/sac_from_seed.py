@@ -12,7 +12,7 @@ of the sac files that correspond to the same date"""
 import seed_info
 import sys
 from pylab import *
-import os, os.path
+import os, os.path, shutil
 import subprocess as sp
 import time, glob, re
 sys.path.append('./modules')
@@ -24,11 +24,17 @@ class SaFromSeed(seed_info.SeedInfo):
         self.rdseedir = rdseedir
         self.sacroot = sacroot
         self.bindir  = bindir
+        self.resp_only = False
         seed_info.SeedInfo.__init__(self,rdseedir)
 
 
-    def __call__(self, filelist):
-        self.extract_sac(filelist)
+    def __call__(self, filelist, **kw):
+        if kw.has_key('resp_only'):
+            self.resp_only = kw['resp_only']
+        if self.resp_only:
+            self.put_response(filelist)
+        else:
+            self.extract_sac(filelist)
 
 
     def rdseed_extr(self,filename, station, channel, date1, date2):
@@ -49,7 +55,7 @@ class SaFromSeed(seed_info.SeedInfo):
         print >>child, ''                   # Loc Ids
         print >>child, '1'                  # Output format
         print >>child, 'N'                  # Output filenames include endtime?
-        print >>child, 'N'                  # Output poles and zeroes?
+        print >>child, 'Y'                  # Output poles and zeroes?
         print >>child, '0'                  # Check Reversal
         print >>child, ''                   # Select Data Type
         print >>child, '%s' %(date1)        # Start time(s)
@@ -60,6 +66,17 @@ class SaFromSeed(seed_info.SeedInfo):
         err = p.stdin.close()
         rcode = p.wait()
         if err or rcode != 0:
+            raise RuntimeError, '%r failed with exit code %d' %(command, err)
+        else:
+            return 1
+
+
+    def rdseed_resp(self,filename):
+        """run rdseed-command to extract evalresp-compatible\n
+        response files + pole-zero files"""
+        command = self.rdseedir+'rdseed -f %s -p -R 2>/dev/null 1>/dev/null' %(filename)
+        err = os.system(command)
+        if err != 0:
             raise RuntimeError, '%r failed with exit code %d' %(command, err)
         else:
             return 1
@@ -110,6 +127,8 @@ class SaFromSeed(seed_info.SeedInfo):
                 return 2
             elif (T2-T1) < (T22 - T21):
                 return 3
+            elif (T2-T1) == (T22 - T21):
+                return 4
             else:
                 return -1
         elif not ok1:
@@ -118,12 +137,104 @@ class SaFromSeed(seed_info.SeedInfo):
         elif not ok2:
             print "ERROR: cannot read ", newfile
             return -1
-        
-        
+
+
+    def move_resp(self, station, comp, directory, sacfile, **kw):
+        """either move or copy evalresp-compatible response for station, and component
+        to the given directory if the corresponding sacfile already exists"""
+        err = 0
+        move = True
+        if kw.has_key('move'):
+            move = kw['move']
+        respattern = r'RESP.\w*.%s.\w*.%s' %(station, comp)
+        for rf in glob.glob('./RESP*'):
+            match = re.search(respattern,rf)
+            targetfn = os.path.join(directory,os.path.basename(rf))
+            if match and not os.path.isfile(targetfn)\
+                   and os.path.isfile(os.path.join(directory,sacfile)):
+                err = 1
+                if move:
+                    print "move file %s to %s" %(rf, targetfn)
+                    os.rename(rf,targetfn)
+                else:
+                    print "copy file %s to %s" %(rf, targetfn)
+                    shutil.copy2(rf,targetfn)
+        return err
+
+
+    def move_pz(self, station, comp, directory, sacfile, **kw):
+        """either move or copy pole-zero  response file for station, and component
+        to the given directory if the corresponding sacfile already exists"""
+        err = 0
+        move = True
+        if kw.has_key('move'):
+            move = kw['move']
+        pzpattern  = r'SAC_PZs_\w*_%s_%s_\w*' %(station,comp)
+        for pzf in glob.glob('./SAC_PZs_*'):
+            match = re.search(pzpattern,pzf)
+            targetfn = os.path.join(directory,os.path.basename(pzf))
+            if match and not os.path.isfile(targetfn)\
+                   and os.path.isfile(os.path.join(directory,sacfile)):
+                err = 1
+                if move:
+                    print "move file %s to %s" %(pzf, targetfn)
+                    os.rename(pzf,targetfn)
+                else:
+                    print "copy file %s to %s" %(pzf, targetfn)
+                    shutil.copy2(pzf,targetfn)
+        return err
     
+
+    def put_response(self, filelist):
+        """get seed-file info and based on that extract only instrument
+        response (evalresp-compatible + pole-zero files) and put it in the
+        right directory"""
+        if not os.path.isdir(self.sacroot):
+            print "creating ", self.sacroot
+            os.mkdir(self.sacroot)
+        for fn in filelist:
+            print fn
+            self.rdseed_resp(fn)
+            g = self.extract_sd(fn)
+            if g == 0:
+                print "ERROR: cannot extract seed file meta information for %s" %(fn)
+                continue
+            a = g.start; b = g.end
+            for i in range(int(a),int(b)+1):
+                for stat in g.records.keys():
+                    for comp in g.records[stat].keys():
+                        sacfn = stat+'.'+comp+'.SAC'
+                        respattern = r'RESP.\w*.%s.\w*.%s' %(stat,comp)
+                        pzpattern  = r'SAC_PZs_\w*_%s_%s_\w*' %(stat,comp)
+                        j = num2date(i)
+                        dlist1 = j.utctimetuple()
+                        yeardir = self.sacroot+'/'+`dlist1[0]`
+                        if not os.path.isdir(yeardir):
+                            print "creating ", yeardir
+                            os.mkdir(yeardir)
+                        daydir = self.sacroot+'/'+`dlist1[0]`+'/'+`dlist1[0]`+\
+                                 '_'+`dlist1[1]`+'_'+`dlist1[2]`+'_0_0_0'
+                        if not os.path.isdir(daydir):
+                                print "creating ", daydir
+                                os.mkdir(daydir)
+                        self.move_resp(stat, comp, daydir, sacfn, move=False)
+                        self.move_pz(stat, comp, daydir, sacfn, move=False)
+        
+            for rf in glob.glob('./RESP*'):
+                os.remove(rf)
+            for pzf in glob.glob('./SAC_PZs_*'):
+                os.remove(pzf)
+        for rderr in glob.glob('./rdseed.err_log*'):
+            os.remove(rderr)
+
+
+        
     def extract_sac(self,filelist):
         """get seed-file info and based on that extract everything
         (every station, every channel) into daylong sacfiles"""
+        if not os.path.isdir(self.sacroot):
+            print "creating ", self.sacroot
+            os.mkdir(self.sacroot)
         for fn in filelist:
             print fn
             g = self.extract_sd(fn)
@@ -143,9 +254,6 @@ class SaFromSeed(seed_info.SeedInfo):
                         self.rdseed_extr(fn, stat, comp, date1, date2)
                         sacfiles = glob.glob('*.SAC')
                         if len(sacfiles) > 0:
-                            if not os.path.isdir(self.sacroot):
-                                print "creating ", self.sacroot
-                                os.mkdir(self.sacroot)
                             yeardir = self.sacroot+'/'+`dlist1[0]`
                             if not os.path.isdir(yeardir):
                                 print "creating ", yeardir
@@ -167,28 +275,22 @@ class SaFromSeed(seed_info.SeedInfo):
                                     self.merge_sac([oldfile, newfile], newfile+'_tmp')
                                     if os.path.isfile(newfile+'_tmp'):
                                         os.rename(newfile+'_tmp',
-                                                  os.path.join(daydir,newfile+'_tmp'))
-                                elif retval == 2:
+                                                  os.path.join(daydir,newfile))
+                                elif retval == 2 or retval ==4:
                                     pass
                                 elif retval == 3:
                                     os.rename(newfile,os.path.join(daydir,newfile))
                                 elif retval == -1:
                                     print "ERROR: unexpected error while comparing sac files"
-                            for rf in glob.glob('./RESP*'):
-                                match = re.search(respattern,rf)
-                                if match and not \
-                                       os.path.isfile(os.path.join(daydir,os.path.basename(rf)))\
-                                       and os.path.isfile(os.path.join(daydir,outputfn)):
-                                    os.rename(rf,os.path.join(daydir,os.path.basename(rf)))
-                                else:
-                                    for rf in glob.glob('./RESP*'):
-                                        os.remove(rf)
+                            self.move_resp(stat, comp, daydir, outputfn, move=True)
+                            self.move_pz(stat, comp, daydir, outputfn, move=True)
                                     
                             for sf in glob.glob('./*.SAC'):
                                 os.remove(sf)
-                        else:
-                            for rf in glob.glob('./RESP*'):
-                                os.remove(rf)
+                        for rf in glob.glob('./RESP*'):
+                            os.remove(rf)
+                        for pzf in glob.glob('SAC_PZs*'):
+                            os.remove(pzf)
         for errf in glob.glob('./rdseed.err_log.*'):
             os.remove(errf)
 
@@ -197,8 +299,9 @@ if __name__ == '__main__':
     bindir   = '/home/behrya/dev/auto/bin/'
     sacroot  = './testsac'
     filelist = ['/data/hawea/yannik/SAPSE/xc/SAPSE_XC.10.20115']
+    filelist1 = ['/Volumes/stage/yannik78/datasets/cnipse/tapes/dlt_tapes/dlt_seed/S20010625.000000']
     t = SaFromSeed(rdseedir, bindir, sacroot)
-    t(filelist)
+    t(filelist1, resp_only=False)
 
 #This is the specification for the date format given by the
 #rdseed-manual:

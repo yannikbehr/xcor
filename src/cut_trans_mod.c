@@ -24,16 +24,67 @@
 #include <sac_db.h>
 
 
-
-
 /* FUNCTION PROTOTYPES */
-SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax);
-void write_sac (char *fname, float *sig, SAC_HD *SHD);
-void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir);
-void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n);
+void one_rec_trans(int ne, int ns, char *sacdir, int respflag);
+void one_rec_cut(int ne, int ns, float t1, float n);
 void get_args(int argc, char** argv, char* conffile);
 
 char str[300];
+
+SAC_DB sdb;
+
+/*////////////////////////////////////////////////////////////////////////*/
+int main (int argc, char **argv)
+{
+  FILE *ff;
+  int ne, ns;
+  float t1, npts;
+  char conffile[150];
+  dictionary *dd;
+  char *tmpdir;
+  char *sacdir;
+  int respflag = 1;
+  /* CHECK INPUT ARGUMENTS */
+  strncpy(conffile,"./config.txt",149);
+  get_args(argc,argv,conffile);
+  sscanf(argv[1],"%f",&t1);
+  sscanf(argv[2],"%f",&npts);
+
+  fprintf(stderr,"t1-%f. npts-%f.\n", t1, npts);
+  fprintf(stderr,"The program assumes the results are within the 1-5 s period band.\n");
+
+  /* OPEN SAC DATABASE FILE AND READ IN TO MEMORY */
+  dd = iniparser_new(conffile);
+  tmpdir = iniparser_getstr(dd, "database:tmpdir");
+  sprintf(str,"%ssac_db.out\0", tmpdir);
+
+  if((ff = fopen(str, "rb"))==NULL) {
+    fprintf(stderr,"sac_db.out file not found\n");
+    exit(1);
+  }
+
+  fread(&sdb, sizeof(SAC_DB), 1, ff);
+  fclose(ff);
+  sacdir = iniparser_getstr(dd, "database:sacdir");
+  strncpy(sdb.conf,conffile,149);
+
+  /* REMOVE INSTRUMENT RESPONSE AND CUT TO DESIRED LENGTH */
+  for ( ns = 0; ns < sdb.nst; ns++ ){
+    for ( ne = 0; ne < sdb.nev; ne++ ) {
+    one_rec_trans(ne, ns, sacdir, respflag);
+    fprintf(stderr,"back to main prog\n");
+    one_rec_cut(ne, ns, t1, npts);
+    }
+  }
+  sprintf(str,"%ssac_db.out\0", tmpdir);
+  ff = fopen(str,"wb");
+  fwrite(&sdb, sizeof(SAC_DB), 1, ff );
+  fclose(ff);
+
+  iniparser_free(dd);
+  return 0;
+}
+
 
 /*--------------------------------------------------------------------------
   reading and checking commandline arguments
@@ -74,98 +125,6 @@ void get_args(int argc, char** argv, char* conffile)
 
 
 /*--------------------------------------------------------------------------
-  reads sac-files fname with maximum length nmax into signal sig and \
-  header SHD
-  --------------------------------------------------------------------------*/
-SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax)
-{
-  FILE *fsac;
-
-  if((fsac = fopen(fname, "rb")) == NULL) {
-    printf("could not open sac file to read%s \n", fname);
-    exit(1);
-  }
-
-  if ( !fsac ) {
-    /*fprintf(stderr,"file %s not found\n", fname);*/
-    return NULL;
-  }
-
-  if ( !SHD ) SHD = &SAC_HEADER;
-
-  fread(SHD,sizeof(SAC_HD),1,fsac);
-
-  if ( SHD->npts > nmax ) {
-    fprintf(stderr,"ATTENTION !!! dans le fichier %s npts est limite a %d",fname,nmax);
-    SHD->npts = nmax;
-  }
-
-  fread(sig,sizeof(float),(int)(SHD->npts),fsac);
-  fclose (fsac);
-
-  /*-------------  calcule de t0  ----------------*/
-  {
-    int eh, em ,i;
-    float fes;
-    char koo[9];
-
-    for ( i = 0; i < 8; i++ ) {
-      koo[i] = SHD->ko[i];
-    }
-    koo[8] = '\0';
-
-    SHD->o = SHD->b + SHD->nzhour*3600. + SHD->nzmin*60 +
-      SHD->nzsec + SHD->nzmsec*.001;
-
-    //sscanf(koo,"%d%*[^0123456789]%d%*[^.0123456789]%g",&eh,&em,&fes);
-
-    //SHD->o  -= (eh*3600. + em*60. + fes);
-    /*-------------------------------------------*/}
-
-  return SHD;
-}
-
-
-/*--------------------------------------------------------------------------
-  writes sac file with name fname from signal sig with header SHD 
-  --------------------------------------------------------------------------*/
-void write_sac (char *fname, float *sig, SAC_HD *SHD)
-{
-  FILE *fsac;
-  int i;
-  if((fsac = fopen(fname, "wb"))==NULL) {
-    printf("could not open sac file to write\n");
-    exit(1);
-  }
-
-  if ( !SHD ) {
-    SHD = &SAC_HEADER;
-  }
-
-  SHD->iftype = (long)ITIME;
-  SHD->leven = (long)TRUE;
-  SHD->lovrok = (long)TRUE;
-  SHD->internal4 = 6L;
-  SHD->depmin = sig[0];
-  SHD->depmax = sig[0];
-
-  for ( i = 0; i < SHD->npts ; i++ ) {
-    if ( SHD->depmin > sig[i] ) {
-      SHD->depmin = sig[i];
-    }
-    if ( SHD->depmax < sig[i] ) {
-      SHD->depmax = sig[i];
-    }
-  }
-
-  fwrite(SHD,sizeof(SAC_HD),1,fsac);
-  fwrite(sig,sizeof(float),(int)(SHD->npts),fsac);
-
-  fclose (fsac);
-}
-
-
-/*--------------------------------------------------------------------------
   cuts signal "s1.sac" from one_rec_trans between borders given
   by commandline arguments
   ne = number of event
@@ -174,7 +133,7 @@ void write_sac (char *fname, float *sig, SAC_HD *SHD)
   t1 = lower boundary [s]
   n  = number of samples between lower and upper boundary
   --------------------------------------------------------------------------*/
-void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
+void one_rec_cut(int ne, int ns, float t1, float n)
 {
   float sig1[200000]; 
   double t1b, t1e, t2b, t2e, t2;
@@ -184,29 +143,29 @@ void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
   SAC_HD shd1;
   dictionary *d;
 
-  d = iniparser_new(sd->conf);
+  d = iniparser_new(sdb.conf);
   tmpdir = iniparser_getstr(d, "database:tmpdir");
 
-  t2 = t1 + (n-1)*sd->rec[ne][ns].dt;
+  t2 = t1 + (n-1)*sdb.rec[ne][ns].dt;
 
   /* ATTENTION: THE FOLLOWING TEST IS HARD-WIRED TO 1s!!!! */
-  t1b = sd->rec[ne][ns].t0 - sd->ev[ne].t0;
-  t1e = t1b + (sd->rec[ne][ns].n-1)*sd->rec[ne][ns].dt;
+  t1b = sdb.rec[ne][ns].t0 - sdb.ev[ne].t0;
+  t1e = t1b + (sdb.rec[ne][ns].n-1)*sdb.rec[ne][ns].dt;
 
   fprintf(stderr,"t1 %lg  t2 %lg   t1b %lg  t1e %lg\n", t1, t2, t1b, t1e);
 
   if ( (t1b>t1) || (t1e<t2) ) {
-    fprintf(stderr,"incompatible time limits for station %s and event %s\n", sd->st[ns].name, sd->ev[ne].name );
+    fprintf(stderr,"incompatible time limits for station %s and event %s\n", sdb.st[ns].name, sdb.ev[ne].name );
     return;
   }
 
   sprintf(str,"%ss1.sac\0",tmpdir );
   if ( !read_sac (str, sig1, &shd1, 1000000 ) ) {
-    fprintf(stderr,"file %s not found\n", sd->rec[ne][ns].fname );
+    fprintf(stderr,"file %s not found\n", sdb.rec[ne][ns].fname );
     return;
   }
 
-  n1 = (long)((t1-t1b)/sd->rec[ne][ns].dt);
+  n1 = (long)((t1-t1b)/sdb.rec[ne][ns].dt);
 
   shd1.npts = n;
   shd1.nzyear = 2000;
@@ -217,7 +176,7 @@ void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
   shd1.nzmsec = 0;
   shd1.b = 0.;
 
-  strcpy(ft_name, sd->rec[ne][ns].ft_fname);
+  strcpy(ft_name, sdb.rec[ne][ns].ft_fname);
   write_sac (ft_name, &(sig1[n1]), &shd1 );
   sprintf(str,"/bin/rm %ss1.sac",tmpdir );
   system(str);
@@ -232,7 +191,7 @@ void one_rec_cut(SAC_DB *sd, int ne, int ns, float t1, float n)
   sd = SAC_DB structure written by sa_from_seed_mod
   sacdir = pointer to dir of sac-binaries
   ---------------------------------------------------------------------------*/
-void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
+void one_rec_trans(int ne, int ns, char *sacdir, int respflag)
 {
   FILE *ff;
   float fl1, fl2, fl3, fl4, freq1, factor=1;
@@ -240,7 +199,7 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
   long n1, n2;
   char *tmpdir;
   dictionary *d;
-  d = iniparser_new(sd->conf);
+  d = iniparser_new(sdb.conf);
   tmpdir = iniparser_getstr(d, "database:tmpdir");
 
   /* ASSUME THAT THE DATA ARE WITHIN THE FOLLOWING FILTER BAND */
@@ -256,16 +215,21 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
     fprintf(stderr,"Frequency limits: %f %f %f %f\n", fl1, fl2, fl3, fl4);
   }
 
-  if ( ne >= sd->nev ) return;
-  if ( ns >= sd->nst  ) return;
-  if ( sd->rec[ne][ns].n <= 0 ) return;
+  if ( ne >= sdb.nev ) return;
+  if ( ns >= sdb.nst  ) return;
+  if ( sdb.rec[ne][ns].n <= 0 ) return;
 
-  sprintf(str,"/bin/cp %s %ss1.sac\0", sd->rec[ne][ns].fname,tmpdir ); 
+  sprintf(str,"/bin/cp %s %ss1.sac\0", sdb.rec[ne][ns].fname,tmpdir ); 
   system(str);
 
   /* GENERATE TEMPORARY FILES */
-  sprintf(str,"/bin/cp %s %sresp1\0", sd->rec[ne][ns].resp_fname,tmpdir );
-  system(str);
+  if(respflag == 1){
+    sprintf(str,"/bin/cp %s %sresp1\0", sdb.rec[ne][ns].resp_fname,tmpdir );
+    system(str);
+  }else if(respflag == 0){
+    sprintf(str,"/bin/cp %s %sresp1\0", sdb.rec[ne][ns].pz_fname,tmpdir );
+    system(str);
+  }
    
   sprintf(str,"%ssac_bp_respcor\0",tmpdir);
   ff = fopen(str,"w");
@@ -273,9 +237,15 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
   fprintf(ff,"r %ss1.sac\n",tmpdir);
   fprintf(ff,"rmean\n");
   fprintf(ff,"rtrend\n");
-  fprintf(ff,"transfer from evalresp fname %sresp1 to vel freqlimits %f %f %f %f\n",tmpdir, fl1, fl2, fl3, fl4 );
+  if(respflag == 1){
+    fprintf(ff,"transfer from evalresp fname %sresp1 to vel freqlimits %f %f %f %f\n",
+	    tmpdir, fl1, fl2, fl3, fl4 );
+  }else if(respflag == 0){
+    fprintf(ff,"transfer from polezero subtype %sresp1 to vel freqlimits %f %f %f %f\n",
+	    tmpdir, fl1, fl2, fl3, fl4 );
+  }
 
-  if(sd->rec[ne][ns].dt < 1.0){
+  if(sdb.rec[ne][ns].dt < 1.0){
     /*****************************************************************/
     /* The following part was edited by Z. Rawlinson in order to     */
     /* automatically downsample traces with sample frequencies       */
@@ -284,9 +254,13 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
     /* used with the command 'decimate'; factor 4 and 6 can be       */
     /* substituted by 2 and 3                                        */
     /* 01/08                                                         */
-    freq1=(1.0f/sd->rec[ne][ns].dt);
-    freq=(int)freq1;
-    printf("sampling rate is %f.\n",sd->rec[ne][ns].dt);
+
+    /* in order to prevent rounding errors i.e. int(1./0.0250041) be-*/
+    /* coming 39 instead of 40 we'll disregard any decimal numbers   */
+    /* smaller than 0.0001 */
+    /* Y.Behr 08/08 */
+    freq  = 100000/(int)floor(sdb.rec[ne][ns].dt*100000.);
+    printf("sampling rate is %d.\n",freq);
     while (freq % 7 == 0 && freq > 1){
       freq=freq/7;
       factor = factor * 7;
@@ -308,8 +282,8 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
       fprintf(ff,"decimate 2 filter on\n");
     }
     
-    sd->rec[ne][ns].dt = 1.0;
-    sd->rec[ne][ns].n  = (int)(sd->rec[ne][ns].n/factor);
+    sdb.rec[ne][ns].dt = 1.0;
+    sdb.rec[ne][ns].n  = (int)(sdb.rec[ne][ns].n/factor);
   }
   /*******************************************************************/
 
@@ -323,60 +297,5 @@ void one_rec_trans( SAC_DB *sd, int ne, int ns, char *sacdir)
   sprintf(str,"/bin/rm %sresp1\0",tmpdir );
   system(str);
   iniparser_free(d);
-}
-
-SAC_DB sdb;
-
-
-/*////////////////////////////////////////////////////////////////////////*/
-int main (int argc, char **argv)
-{
-  FILE *ff;
-  int ne, ns;
-  float t1, npts;
-  char conffile[150];
-  dictionary *dd;
-  char *tmpdir;
-  char *sacdir;
-  
-  /* CHECK INPUT ARGUMENTS */
-  strncpy(conffile,"./config.txt",149);
-  get_args(argc,argv,conffile);
-  sscanf(argv[1],"%f",&t1);
-  sscanf(argv[2],"%f",&npts);
-
-  fprintf(stderr,"t1-%f. npts-%f.\n", t1, npts);
-  fprintf(stderr,"The program assumes the results are within the 1-5 s period band.\n");
-
-  /* OPEN SAC DATABASE FILE AND READ IN TO MEMORY */
-  dd = iniparser_new(conffile);
-  tmpdir = iniparser_getstr(dd, "database:tmpdir");
-  sprintf(str,"%ssac_db.out\0", tmpdir);
-
-  if((ff = fopen(str, "rb"))==NULL) {
-    fprintf(stderr,"sac_db.out file not found\n");
-    exit(1);
-  }
-
-  fread(&sdb, sizeof(SAC_DB), 1, ff);
-  fclose(ff);
-  sacdir = iniparser_getstr(dd, "database:sacdir");
-  strncpy(sdb.conf,conffile,149);
-
-  /* REMOVE INSTRUMENT RESPONSE AND CUT TO DESIRED LENGTH */
-  for ( ns = 0; ns < sdb.nst; ns++ ){
-    for ( ne = 0; ne < sdb.nev; ne++ ) {
-    one_rec_trans( &sdb, ne, ns, sacdir);
-    fprintf(stderr,"back to main prog\n");
-    one_rec_cut( &sdb, ne, ns, t1, npts);
-    }
-  }
-  sprintf(str,"%ssac_db.out\0", tmpdir);
-  ff = fopen(str,"wb");
-  fwrite(&sdb, sizeof(SAC_DB), 1, ff );
-  fclose(ff);
-
-  iniparser_free(dd);
-  return 0;
 }
 

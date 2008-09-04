@@ -9,6 +9,8 @@
   ---------------------------------------------------------------------------*/
 
 #define MAIN
+#define _XOPEN_SOURCE 500
+#include <ftw.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -19,114 +21,134 @@
 #include <strtok_mod.h>
 #include <mysac.h>
 #include <sac_db.h>
-
-/* os-dependent includes for dir-manipulation */
+#include <glob.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
-
+#include <assert.h>
 
 #define STRING 300
+#define SSTRING 150
 #define MODUS 0711
-
+#define DEBUG
 
 /* function prototypes */
-void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname);
-int walk_dir(char *dirname, SAC_DB *sdb);
-int search_stat(char *statname, SAC_DB *sdb);
+void extr_sac_hd(char *sacfile, const char *pathname);
+int search_stat(char *statname);
 void month_day(int year, int yearday, int *pmonth, int *pday);
 double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms );
 void get_args(int argc, char** argv, SAC_DB *sdb, char *filename);
-void read_resp(char *resppath, SAC_DB *sdb, char *respfile);
-void sort_sac_db(SAC_DB *sdb);
-void count_ev(char *newname, char *tmp, char *oldname, SAC_DB *sdb);
-void print_sac_db(SAC_DB *sdb);
+void sort_sac_db(void);
+void print_sac_db(void);
+static int glob_this(const char *fpath, const struct stat *sb,
+		     int tflag, struct FTW *ftwbuf);
+int search_ev(float t);
 
 
-/*------------------------------------------------------------------------
-  function to find all '*.SAC' and 'RESP.*' files
-  needs following headers: sys/types.h, sys/stat.h, dirent.h, string.h, 
-  stdio.h, stdlib.h
-  ------------------------------------------------------------------------*/
-int walk_dir(char *dirname, SAC_DB *sdb){
+SAC_DB sdb;
 
-  DIR *dir, *dir2;
-  struct dirent *dirpointer, *dirpointer2;
-  struct stat attribut;
-  char tmp[STRING],oldname[STRING],newname[STRING];
-  char *cutptr;
+int main (int argc, char **argv){
 
-  strncpy(oldname,"dummy",STRING-1);
+  FILE *ff;
+  int N, i, j;
+  int flags = 0;
+  char filename[STRING];
+  char *dirname, *tmpdir;
+  dictionary *dd;
 
-  /* open directory */
-  if((dir=opendir(dirname)) == NULL) {
-    fprintf(stderr,"ERROR in opendir ...\n");
-    return EXIT_FAILURE;
+  strncpy(sdb.conf,"./config.txt",149);
+  strncpy(filename,"./dummy.out",STRING-1);
+  get_args(argc,argv,&sdb,filename);
+
+  /*opening config file*/
+  dd = iniparser_new(sdb.conf);
+  dirname = iniparser_getstr(dd, "database:sacdirroot");
+
+  if(!strcmp(filename,"./dummy.out")){
+    tmpdir = iniparser_getstr(dd, "database:tmpdir");
+    strncpy(filename,tmpdir,STRING-1);
+    if(mkdir(tmpdir, MODUS) == -1)
+      fprintf(stdout,"directory %s already exists \n", tmpdir); 
+    strcat(filename,"sac_db.out");
   }
-  /* read directory and recursive call of this function to find 
-     '*.SAC'-files*/
-  while((dirpointer=readdir(dir)) != NULL){
-    strncpy(tmp,dirname,STRING-1);
-    strcat(tmp,(*dirpointer).d_name);
-    if(stat(tmp, &attribut) == -1){
-      fprintf(stderr,"ERROR in stat ...\n");
-      return EXIT_FAILURE;
-    }
 
-    /* if filename has ending '.SAC' and is a regular file but does neither 
-       contain the string 'COR' nor 'stack' nor 'ft_' than go on*/
-    if(strstr((*dirpointer).d_name,"BHZ.SAC") !=0 &&
-       strstr((*dirpointer).d_name,"ft_") ==0 
-       &&strstr((*dirpointer).d_name,"COR") ==0 
-       &&strstr((*dirpointer).d_name,"stack") ==0 
-       && attribut.st_mode & S_IFREG){
-      count_ev(newname, tmp, oldname, sdb);
-      extr_sac_hd(tmp,sdb,newname);
-
-    }
-    /* if filename contains 'RESP' string and is regular file */
-    else if(strstr((*dirpointer).d_name,"RESP") !=0 && 
-	    strstr((*dirpointer).d_name,".BHZ") !=0 && 
-	    attribut.st_mode & S_IFREG){
-      count_ev(newname, tmp, oldname, sdb);
-      read_resp(tmp,sdb,dirpointer->d_name);
-
-    }
-    /* else if dir-entry is directory but not .svn dir, then 
-       function calls itself again */
-    else if(attribut.st_mode & S_IFDIR && strcmp((*dirpointer).d_name,".") != 0 
-	    && strcmp((*dirpointer).d_name,"..") != 0
-	    && strcmp((*dirpointer).d_name,".svn") !=0 
-	    && strcmp((*dirpointer).d_name,"5to100") !=0){
-      strcat(tmp,"/");
-      walk_dir(tmp,sdb);
-    }
-
+  /* setting initial values */
+  sdb.nev = 0;
+  sdb.nst = 0;
+  N=sizeof(sdb.st)/sizeof(struct station);
+  for(i=0;i<N;i++){
+    strncpy(sdb.st[i].name,"init",9);
   }
-  /* close directory */
-  if(closedir(dir) == -1){
-    fprintf(stderr,"ERROR while closing %s\n", dirname);
-    return EXIT_SUCCESS;
+
+  /* searching for SAC-files */
+  if (nftw(dirname, glob_this, 20, flags) == -1) {
+    perror("nftw");
+    exit(EXIT_FAILURE);
   }
+  sdb.cntev = sdb.nev;
+  sdb.cntst = sdb.nst;
+
+#ifdef DEBUG
+  print_sac_db();
+#endif
+
+  /* sorting SAC-files according to their date */
+  sort_sac_db();
+
+  /* writing sac_db structure to file */
+  ff = fopen(filename,"wb");
+  fwrite(&sdb, sizeof(SAC_DB), 1, ff );
+  fclose(ff);
+
+  iniparser_free(dd);
+  return EXIT_SUCCESS;
 }
+
+
+/*------------------------------------------------------------ 
+ *  call-back function for nftw()
+  ------------------------------------------------------------*/
+static int glob_this(const char *fpath, const struct stat *sb,
+		     int tflag, struct FTW *ftwbuf){
+  const char pattern[] = "*BHE.SAC";
+  char localpattern[STRING];
+  glob_t match;
+  int err, i;
+
+  assert((strlen(fpath)+strlen(pattern))<STRING-1);
+  sprintf(localpattern,"%s/%s",fpath, pattern);
+
+  if(glob(localpattern, 0, NULL, &match) == 0){
+    for(i=0;i<match.gl_pathc;i++){
+      printf("%s\n",match.gl_pathv[i]);
+      extr_sac_hd(match.gl_pathv[i],fpath);
+    }
+  }
+  globfree(&match);
+  return 0;
+}
+
+
 
 /*------------------------------------------------------------ 
  *  function to read sac-header information and write them 
  *  into the corresponding fields of the SAC_DB structure
  *
  *  sacfile = name of sac file
- *  sdb     = SAC_DB structure to write in
- *  newname = dirname of sac file 
+ *  pathname = dirname of sac file 
   ------------------------------------------------------------*/
-void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
+void extr_sac_hd(char *sacfile, const char *pathname){
   FILE *f;
-  int i, index, ns, cnt=0, nrows=10;
+  int i, index, ns, ne, cnt=0, nrows=10;
+  float t0;
   int year, month, day, yday;
   SAC_HD shd;
   char dummy[8];
   char *ptr;
   char **dirtokens, **datetokens;
   char tokens[nrows][STRING];
+  char respattern[STRING];
+  glob_t match;
 
   f = fopen(sacfile,"rb");
   fread(&shd, sizeof(SAC_HD),1,f);
@@ -138,12 +160,12 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   ptr = strtok(shd.kcmpnm," ");
   strncpy(shd.kcmpnm,ptr,7);
 
-  index = search_stat(shd.kstnm,sdb);
+  index = search_stat(shd.kstnm);
   if(index == -1){
-    ns = sdb->nst;
-    sdb->st[sdb->nst].lat = shd.stla;
-    sdb->st[sdb->nst].lon = shd.stlo;
-    strncpy(sdb->st[sdb->nst++].name,shd.kstnm,9);
+    ns = sdb.nst;
+    sdb.st[sdb.nst].lat = shd.stla;
+    sdb.st[sdb.nst].lon = shd.stlo;
+    strncpy(sdb.st[sdb.nst++].name,shd.kstnm,9);
   }else{
    ns = index;
   }
@@ -158,118 +180,59 @@ void extr_sac_hd(char *sacfile, SAC_DB *sdb, char *newname){
   month = atoi(dirtokens[1]);
   day   = atoi(dirtokens[2]);
   yday  = day_of_year(year, month, day);
-
-  strncpy(sdb->rec[sdb->cntev][ns].fname,sacfile,149);
-  printf("%s\n", sdb->rec[sdb->cntev][ns].fname);
-  sprintf(sdb->rec[sdb->cntev][ns].ft_fname,"%s/ft_%s.%s.SAC\0", newname, shd.kstnm, shd.kcmpnm);
-  strncpy(sdb->rec[sdb->cntev][ns].chan,shd.kcmpnm,6);
-  sdb->ev[sdb->cntev].yy = year;
-  sdb->ev[sdb->cntev].jday = yday;
-  month_day(year, yday, &sdb->ev[sdb->cntev].mm, &sdb->ev[sdb->cntev].dd);
-  sdb->ev[sdb->cntev].h = 0;
-  sdb->ev[sdb->cntev].m = 0;
-  sdb->ev[sdb->cntev].s = 0;
-  sdb->ev[sdb->cntev].ms = 0;
-  sdb->ev[sdb->cntev].ms = 10.*sdb->ev[sdb->cntev].ms;
-  sdb->ev[sdb->cntev].t0 = abs_time ( year,yday,0,0,0,0 );
-  sdb->rec[sdb->cntev][ns].dt = (double)shd.delta;
-  //  sdb->rec[sdb->cntev][ns].dt = 1.0;
-  sdb->rec[sdb->cntev][ns].n  = shd.npts;
-  sdb->rec[sdb->cntev][ns].t0 = abs_time ( shd.nzyear,shd.nzjday,shd.nzhour,shd.nzmin,shd.nzsec,shd.nzmsec );
- 
-}
-
-/*------------------------------------------------------
- *function to extract station name and response file 
- *path from file name
- *
- *resppath = parent dir of response file
- *sdb      = SAC_DB structure
- *respfile = full path of response file
- -------------------------------------------------------*/
-void read_resp(char *resppath, SAC_DB *sdb, char *respfile){
-
-  FILE *f;
-  int  i, ns, index, m=0, j, nrows = 10;
-  char chan[5];
-  char *ptr;
-  char name[6];
-  char sacfile[STRING],dirname[STRING];
-  char tokens[nrows][STRING];
-  SAC_HD shd;
-
-  strtok_mod(respfile,'.',tokens, &nrows);
-  if(nrows >= 3){
-    strncpy(chan,tokens[nrows],4);
-    ptr = NULL;
-    ptr = strrchr(respfile,'.');
-    *ptr = '\0';
-    ptr = strrchr(respfile,'.');
-    *ptr = '\0';
-    strtok_mod(respfile,'.',tokens, &nrows);
-    strncpy(name,tokens[nrows],5); 
-    name[strlen(tokens[nrows])] = '\0';
-  }
-
-
-
-  index = search_stat(name,sdb);
+  t0 = abs_time ( year,yday,0,0,0,0 );
+  index = search_ev(t0);
   if(index == -1){
-    ns = sdb->nst;
-    ptr = NULL;
-    strncpy(dirname,resppath,STRING-1);
-    ptr = strrchr(dirname,'/');
-    *(ptr+1) = '\0';
-    printf("%s %s %s\n", dirname, name, chan);
-    sprintf(sacfile,"%s%s.%s.SAC",dirname,name,chan);
-    /*strncpy(sacfile,dirname,STRING-1);
-    strcat(sacfile,name);
-    strcat(sacfile,".");
-    strcat(sacfile,chan);
-    strcat(sacfile,".SAC");*/
-      
-    f = fopen(sacfile,"rb");
-    if(NULL == f) {
-      printf("fatal error!couldn't find %s\n",sacfile);
-      exit(1);
-    }else{
-      fread(&shd, sizeof(SAC_HD),1,f);
-      fclose(f);
-    }
-    sdb->st[sdb->nst].lat = shd.stla;
-    sdb->st[sdb->nst].lon = shd.stlo;
-    strncpy(sdb->st[sdb->nst++].name,name,9);
+    ne = sdb.nev;
+    sdb.nev++;
   }else{
-   ns = index;
+    ne = index;
   }
-  /*******************************************************/
 
-  strncpy(sdb->rec[sdb->cntev][ns].resp_fname,resppath,149);
+  strncpy(sdb.rec[ne][ns].fname,sacfile,SSTRING-1);
+  printf("%s\n", sdb.rec[ne][ns].fname);
+  sprintf(sdb.rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC\0", pathname, shd.kstnm, shd.kcmpnm);
+  strncpy(sdb.rec[ne][ns].chan,shd.kcmpnm,6);
+  sdb.ev[ne].yy = year;
+  sdb.ev[ne].jday = yday;
+  month_day(year, yday, &sdb.ev[ne].mm, &sdb.ev[ne].dd);
+  sdb.ev[ne].h = 0;
+  sdb.ev[ne].m = 0;
+  sdb.ev[ne].s = 0;
+  sdb.ev[ne].ms = 0;
+  sdb.ev[ne].ms = 10.*sdb.ev[ne].ms;
+  sdb.ev[ne].t0 = t0;
+  sdb.rec[ne][ns].dt = (double)shd.delta;
+  //  sdb.rec[ne][ns].dt = 1.0;
+  sdb.rec[ne][ns].n  = shd.npts;
+  sdb.rec[ne][ns].t0 = abs_time(shd.nzyear,shd.nzjday,shd.nzhour,shd.nzmin,shd.nzsec,shd.nzmsec );
+  /* find corresponding response file */
+  assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+7)<STRING-1);
+  sprintf(respattern,"%s/RESP*%s*%s",pathname, shd.kstnm, shd.kcmpnm);
 
-}
-
-/*----------------------------------------------------
- *function to count number of events i.e. number of
- *days
- *
- *newname = current directory
- *tmp     = full path to current file
- *oldname = previous directory
- *sdb     = SAC_DB structure
- -----------------------------------------------------*/
-void count_ev(char *newname, char *tmp, char *oldname, SAC_DB *sdb){
-
-  char *cutptr;
-  strncpy(newname,tmp,STRING-1);
-  cutptr = strrchr(newname,'/');
-  *cutptr = '\0';
-  if (strcmp(oldname,newname) != 0){
-    sdb->cntev++;
-    strncpy(oldname,newname,STRING-1);
-    strncpy(sdb->ev[sdb->cntev].name,newname,150);
+  if(glob(respattern, 0, NULL, &match) == 0){
+    if(match.gl_pathc>1){
+      fprintf(stderr,"ERROR: more than 1 response file available for %s",sacfile);
+    }else{
+      printf("%s\n",match.gl_pathv[0]);
+      strncpy(sdb.rec[ne][ns].resp_fname,match.gl_pathv[0],SSTRING-1);
+    }
   }
-}
+  globfree(&match);
+  /* find corresponding pole-zero file */
+  assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+11)<STRING-1);
+  sprintf(respattern,"%s/SAC_PZs*%s*%s*",pathname, shd.kstnm, shd.kcmpnm);
 
+  if(glob(respattern, 0, NULL, &match) == 0){
+    if(match.gl_pathc>1){
+      fprintf(stderr,"ERROR: more than 1 pole-zero file available for %s",sacfile);
+    }else{
+      printf("%s\n",match.gl_pathv[0]);
+      strncpy(sdb.rec[ne][ns].pz_fname,match.gl_pathv[0],SSTRING-1);
+   }
+  }
+  globfree(&match);
+}
 /*------------------------------------------------
  *function to check if entry for station name 
  *already exists; if not, writes station name 
@@ -279,13 +242,13 @@ void count_ev(char *newname, char *tmp, char *oldname, SAC_DB *sdb){
  *statname = name of station
  *sdb      = SAC_DB structure
  --------------------------------------------------*/
-int search_stat(char *statname, SAC_DB *sdb){
+int search_stat(char *statname){
 
   int i,N,cnt=-1;
 
-  N=sizeof(sdb->st)/sizeof(struct station);
+  N=sizeof(sdb.st)/sizeof(struct station);
   for(i=0;i<N;i++){
-    if(strstr(sdb->st[i].name,statname)!=0){
+    if(strstr(sdb.st[i].name,statname)!=0){
       cnt=i;
       break;
     }
@@ -293,32 +256,53 @@ int search_stat(char *statname, SAC_DB *sdb){
   return cnt;
 }
 
+
+
+/*------------------------------------------------
+ *function to check if entry for event name 
+ *already exists; if not, count up number of events
+ --------------------------------------------------*/
+int search_ev(float t){
+
+  int i,N,cnt=-1;
+
+  N=sizeof(sdb.ev)/sizeof(struct event);
+  for(i=0;i<N;i++){
+    if(fabs((sdb.ev[i].t0 - t)) < 0.0001){
+      cnt=i;
+      break;
+    }
+  }
+  return cnt;
+}
+
+
 /*-----------------------------------------------------
  *sort sdb-entries according to the date
  -----------------------------------------------------*/
-void sort_sac_db(SAC_DB *sdb){
+void sort_sac_db(void){
 
   int i,j,value,index;  
   static SAC_DB buff;
 
-  for(i=0;i<sdb->nev;i++){
+  for(i=0;i<sdb.nev;i++){
     value=i;
-    for(index=i+1;index<=sdb->nev;index++){
-      for(j=0;j<sdb->nst;j++){
-	if(sdb->rec[index][j].t0<sdb->rec[value][j].t0 && sdb->rec[index][j].t0 !=0){
+    for(index=i+1;index<=sdb.nev;index++){
+      for(j=0;j<sdb.nst;j++){
+	if(sdb.rec[index][j].t0<sdb.rec[value][j].t0 && sdb.rec[index][j].t0 !=0){
 	  value=index;
 	}
       }
     }
     if(value != i){
-      for(j=0;j<sdb->nst;j++){
-	buff.rec[1][j]=sdb->rec[value][j];
-	sdb->rec[value][j]=sdb->rec[i][j];
-	sdb->rec[i][j]=buff.rec[1][j];
+      for(j=0;j<sdb.nst;j++){
+	buff.rec[1][j]=sdb.rec[value][j];
+	sdb.rec[value][j]=sdb.rec[i][j];
+	sdb.rec[i][j]=buff.rec[1][j];
       }
-      buff.ev[1]=sdb->ev[value];
-      sdb->ev[value]=sdb->ev[i];
-      sdb->ev[i]=buff.ev[1];
+      buff.ev[1]=sdb.ev[value];
+      sdb.ev[value]=sdb.ev[i];
+      sdb.ev[i]=buff.ev[1];
     }
   }
 }
@@ -328,34 +312,35 @@ void sort_sac_db(SAC_DB *sdb){
  *debug-function to print entries of SAC_DB structure 
  *to stdout
  -----------------------------------------------------*/
-void print_sac_db(SAC_DB *sdb){
+void print_sac_db(void){
 
   int i,j;  
 
-  for(i=0;i<sdb->nst;i++){
-    printf("station number %d is %s\n",i,sdb->st[i].name);
+  for(i=0;i<sdb.nst;i++){
+    printf("station number %d is %s\n",i,sdb.st[i].name);
   }
-  for(i=0;i<=sdb->cntev;i++){
-    for(j=0;j<sdb->nst;j++){
+  for(i=0;i<sdb.nev;i++){
+    for(j=0;j<sdb.nst;j++){
       printf("event number: %d   station number: %d\n", i,j);
-      printf("--> station name       :%s\n", sdb->st[j].name);
-      printf("--> station latitude   :%f\n", sdb->st[j].lat);
-      printf("--> station longitude  :%f\n", sdb->st[j].lon);
-      printf("--> eventname          :%s\n", sdb->ev[i].name);
-      printf("--> channel name       :%s\n", sdb->rec[i][j].chan);
-      printf("--> sample interval    :%f\n", sdb->rec[i][j].dt);
-      printf("--> julian day         :%d\n", sdb->ev[i].jday);
-      printf("--> month              :%d\n", sdb->ev[i].mm);
-      printf("--> month day          :%d\n", sdb->ev[i].dd);
-      printf("--> hour               :%d\n", sdb->ev[i].h);
-      printf("--> minute             :%d\n", sdb->ev[i].m);
-      printf("--> second             :%d\n", sdb->ev[i].s);
-      printf("--> millisecond        :%d\n", sdb->ev[i].ms);
-      printf("--> absolute time      :%f\n", sdb->rec[i][j].t0);
-      printf("--> number of points   :%d\n", sdb->rec[i][j].n);
-      printf("--> record name        :%s\n", sdb->rec[i][j].fname);
-      printf("--> record ft-name     :%s\n", sdb->rec[i][j].ft_fname);
-      printf("--> response filename  :%s\n", sdb->rec[i][j].resp_fname);
+      printf("--> station name       :%s\n", sdb.st[j].name);
+      printf("--> station latitude   :%f\n", sdb.st[j].lat);
+      printf("--> station longitude  :%f\n", sdb.st[j].lon);
+      printf("--> eventname          :%s\n", sdb.ev[i].name);
+      printf("--> channel name       :%s\n", sdb.rec[i][j].chan);
+      printf("--> sample interval    :%f\n", sdb.rec[i][j].dt);
+      printf("--> julian day         :%d\n", sdb.ev[i].jday);
+      printf("--> month              :%d\n", sdb.ev[i].mm);
+      printf("--> month day          :%d\n", sdb.ev[i].dd);
+      printf("--> hour               :%d\n", sdb.ev[i].h);
+      printf("--> minute             :%d\n", sdb.ev[i].m);
+      printf("--> second             :%d\n", sdb.ev[i].s);
+      printf("--> millisecond        :%d\n", sdb.ev[i].ms);
+      printf("--> absolute time      :%f\n", sdb.rec[i][j].t0);
+      printf("--> number of points   :%d\n", sdb.rec[i][j].n);
+      printf("--> record name        :%s\n", sdb.rec[i][j].fname);
+      printf("--> record ft-name     :%s\n", sdb.rec[i][j].ft_fname);
+      printf("--> response filename  :%s\n", sdb.rec[i][j].resp_fname);
+      printf("--> pole-zero filename :%s\n", sdb.rec[i][j].pz_fname);
     }
   }
 
@@ -463,59 +448,4 @@ void get_args(int argc, char** argv, SAC_DB *sdb, char *filename){
       }
     }
   }
-}
-
-
-int main (int argc, char **argv){
-
-  FILE *ff;
-  int N, i, j;
-  char filename[STRING];
-  char *dirname, *tmpdir;
-  static SAC_DB sdb;
-  dictionary *dd;
-
-  strncpy(sdb.conf,"./config.txt",149);
-  strncpy(filename,"./dummy.out",STRING-1);
-  get_args(argc,argv,&sdb,filename);
-
-  /*opening config file*/
-  dd = iniparser_new(sdb.conf);
-  dirname = iniparser_getstr(dd, "database:sacdirroot");
-
-  if(!strcmp(filename,"./dummy.out")){
-    tmpdir = iniparser_getstr(dd, "database:tmpdir");
-    strncpy(filename,tmpdir,STRING-1);
-    if(mkdir(tmpdir, MODUS) == -1)
-      fprintf(stdout,"directory %s already exists \n", tmpdir); 
-    strcat(filename,"sac_db.out");
-  }
-
-  /* setting initial values */
-  sdb.nev = 0;
-  sdb.nst = 0;
-  sdb.cntev = -1;
-  sdb.cntst = -1;
-  N=sizeof(sdb.st)/sizeof(struct station);
-  for(i=0;i<N;i++){
-    strncpy(sdb.st[i].name,"init",9);
-  }
-
-  /* searching for SAC-files */
-  walk_dir(dirname, &sdb);
-  sdb.nev = sdb.cntev+1;
-#ifdef DEBUG
-  print_sac_db(&sdb);
-#endif
-
-  /* sorting SAC-files according to their date */
-  sort_sac_db(&sdb);
-
-  /* writing sac_db structure to file */
-  ff = fopen(filename,"wb");
-  fwrite(&sdb, sizeof(SAC_DB), 1, ff );
-  fclose(ff);
-
-  iniparser_free(dd);
-  return EXIT_SUCCESS;
 }

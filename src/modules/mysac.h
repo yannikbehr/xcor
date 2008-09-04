@@ -154,5 +154,6 @@ static SAC_HD sac_null = {
 SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax);
 void write_sac (char *fname, float *sig, SAC_HD *SHD);
 SAC_HD *read_sac_header(char *fname, SAC_HD *SHD);
+float *read_sac_dyn (char *fname, SAC_HD *SHD);
 
 #endif

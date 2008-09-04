@@ -38,6 +38,7 @@ typedef struct record
   char fname[HLINE];
   char ft_fname[HLINE];
   char resp_fname[HLINE];
+  char pz_fname[HLINE];
   char chan[7];
   double t0;
   float dt;

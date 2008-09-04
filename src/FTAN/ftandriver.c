@@ -1,12 +1,14 @@
 /*
  * The sample of test driver for FTAN with phase match filter (aftan4i)
  */
+#define MAIN
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <iniparser.h>
 #include "aftan.h"
+#include <mysac.h>
 
 /* os-dependent includes for dir-manipulation */
 #include <sys/types.h>

@@ -56,7 +56,8 @@ c compute ifft
 c extract correlatio
 
       do k = 1,ns
-        seis_out(k) = 2.0*real(dreal(temp2(k)))/ns
+C        seis_out(k) = 2.0*real(dreal(temp2(k)))/ns
+        seis_out(k) = real(dreal(temp2(k)))/ns
       enddo
 
       return

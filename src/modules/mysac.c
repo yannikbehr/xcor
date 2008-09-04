@@ -122,3 +122,47 @@ void write_sac (char *fname, float *sig, SAC_HD *SHD){
 
   fclose (fsac);
 }
+
+
+/*--------------------------------------------------------------------------
+  reads sac-files fname with maximum length nmax into signal sig and \
+  header SHD
+  --------------------------------------------------------------------------*/
+float *read_sac_dyn (char *fname, SAC_HD *SHD){
+
+  FILE *fsac;
+  float *sig;
+  fsac = fopen(fname, "rb");
+  if ( !fsac )
+    {
+      fclose (fsac);
+      return NULL;
+    }
+  if ( !SHD ) SHD = &SAC_HEADER;
+  fread(SHD,sizeof(SAC_HD),1,fsac);
+  sig = (float *)malloc(SHD->npts*sizeof(float));
+  if(sig != NULL){
+    fread(sig,sizeof(float),(int)(SHD->npts),fsac);
+  }else{
+    printf("ERROR: nomore virtual RAM available!\n");
+    return NULL;
+  } 
+  fclose (fsac);
+
+  /*-------------  calcule de t0  ----------------*/
+  {
+    int i;
+    char koo[9];
+
+    for ( i = 0; i < 8; i++ ) koo[i] = SHD->ko[i];
+    koo[8] = '\0';
+
+    SHD->o = SHD->b + SHD->nzhour*3600. + SHD->nzmin*60 +
+      SHD->nzsec + SHD->nzmsec*.001;
+
+
+    return sig;
+  }
+}
+
+

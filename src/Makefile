@@ -44,6 +44,7 @@ hfiles = \
 
 ofiles = \
 	$(VPATH)/iniparser.o\
+	$(VPATH)/mysac.o\
 	$(VPATH)/strtok_alt.o\
 	$(VPATH)/strtok_mod.o
 
@@ -54,13 +55,13 @@ options = -pg -D DEBUG
 	$(CC) -g -c  $<  
 
 #all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
-all: cut filter4 whiteout ftan stack lag initsacdb sacseed whiteout1cmp newfilter4 whiteout2cmp justcor mergesac
+all: cut filter4 whiteout stack lag initsacdb sacseed whiteout1cmp newfilter4 whiteout2cmp justcor mergesac ftan 
 
 sacseed: module_obj sa_from_seed_new.c $(hfiles)
 	$(CC)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
 
 cut: 	module_obj cut_trans_mod.c
-	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles)
+	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm
 
 initsacdb: module_obj initsac_db.c
 	$(CC) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)

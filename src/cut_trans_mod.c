@@ -25,8 +25,8 @@
 
 
 /* FUNCTION PROTOTYPES */
-void one_rec_trans(int ne, int ns, char *sacdir, int respflag);
-void one_rec_cut(int ne, int ns, float t1, float n);
+int one_rec_trans(int ne, int ns, char *sacdir, int respflag);
+int one_rec_cut(int ne, int ns, float t1, float n);
 void get_args(int argc, char** argv, char* conffile);
 
 char str[300];
@@ -71,9 +71,14 @@ int main (int argc, char **argv)
   /* REMOVE INSTRUMENT RESPONSE AND CUT TO DESIRED LENGTH */
   for ( ns = 0; ns < sdb.nst; ns++ ){
     for ( ne = 0; ne < sdb.nev; ne++ ) {
-    one_rec_trans(ne, ns, sacdir, respflag);
-    fprintf(stderr,"back to main prog\n");
-    one_rec_cut(ne, ns, t1, npts);
+      if(!one_rec_trans(ne, ns, sacdir, respflag)){
+	fprintf(stderr,"ERROR: removing instrument response failed.");
+	continue;
+      }
+      if(!one_rec_cut(ne, ns, t1, npts)){
+	fprintf(stderr,"ERROR: cutting trace failed.");
+	continue;
+      }
     }
   }
   sprintf(str,"%ssac_db.out\0", tmpdir);
@@ -133,7 +138,7 @@ void get_args(int argc, char** argv, char* conffile)
   t1 = lower boundary [s]
   n  = number of samples between lower and upper boundary
   --------------------------------------------------------------------------*/
-void one_rec_cut(int ne, int ns, float t1, float n)
+int one_rec_cut(int ne, int ns, float t1, float n)
 {
   float sig1[200000]; 
   double t1b, t1e, t2b, t2e, t2;
@@ -156,13 +161,13 @@ void one_rec_cut(int ne, int ns, float t1, float n)
 
   if ( (t1b>t1) || (t1e<t2) ) {
     fprintf(stderr,"incompatible time limits for station %s and event %s\n", sdb.st[ns].name, sdb.ev[ne].name );
-    return;
+    return 0;
   }
 
   sprintf(str,"%ss1.sac\0",tmpdir );
   if ( !read_sac (str, sig1, &shd1, 1000000 ) ) {
     fprintf(stderr,"file %s not found\n", sdb.rec[ne][ns].fname );
-    return;
+    return 0;
   }
 
   n1 = (long)((t1-t1b)/sdb.rec[ne][ns].dt);
@@ -181,6 +186,7 @@ void one_rec_cut(int ne, int ns, float t1, float n)
   sprintf(str,"/bin/rm %ss1.sac",tmpdir );
   system(str);
   iniparser_free(d);
+  return 1;
 }
 
 
@@ -191,11 +197,11 @@ void one_rec_cut(int ne, int ns, float t1, float n)
   sd = SAC_DB structure written by sa_from_seed_mod
   sacdir = pointer to dir of sac-binaries
   ---------------------------------------------------------------------------*/
-void one_rec_trans(int ne, int ns, char *sacdir, int respflag)
+int one_rec_trans(int ne, int ns, char *sacdir, int respflag)
 {
   FILE *ff;
   float fl1, fl2, fl3, fl4, freq1, factor=1;
-  int freq, i;
+  int freq, i, err;
   long n1, n2;
   char *tmpdir;
   dictionary *d;
@@ -215,9 +221,9 @@ void one_rec_trans(int ne, int ns, char *sacdir, int respflag)
     fprintf(stderr,"Frequency limits: %f %f %f %f\n", fl1, fl2, fl3, fl4);
   }
 
-  if ( ne >= sdb.nev ) return;
-  if ( ns >= sdb.nst  ) return;
-  if ( sdb.rec[ne][ns].n <= 0 ) return;
+  if ( ne >= sdb.nev ) return 0;
+  if ( ns >= sdb.nst  ) return 0;
+  if ( sdb.rec[ne][ns].n <= 0 ) return 0;
 
   sprintf(str,"/bin/cp %s %ss1.sac\0", sdb.rec[ne][ns].fname,tmpdir ); 
   system(str);
@@ -293,9 +299,11 @@ void one_rec_trans(int ne, int ns, char *sacdir, int respflag)
   fclose(ff);
 
   sprintf(str,"sh %ssac_bp_respcor\0",tmpdir );
-  system(str);
+  err = system(str);
   sprintf(str,"/bin/rm %sresp1\0",tmpdir );
   system(str);
+  if(err != 0) return 0;
   iniparser_free(d);
+  return 1;
 }
 

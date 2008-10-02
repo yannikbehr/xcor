@@ -10,8 +10,8 @@ Revision 1.2  2007-07-05 06:10:59  behrya
 conf element for config filename added
 
 */
-#define NSTATION 220
-#define NEVENTS 788
+#define NSTATION 500
+#define NEVENTS 1500
 #define LINEL 300
 #define HLINE 150
 #define SLINE 10

@@ -13,23 +13,24 @@ LDLIBS = -L/usr/lib -L/usr/local/packages/fftw/lib -lgcc -lfftw3
 
 FFLAGS_all = $(FFLAGS) $(fflags) $(DBG) 
 
-CFLAGS_all = $(CFLAGS) $(cflags) $(DBG) 
+CFLAGS_all = $(CFLAGS) $(cflags_loc) $(DBG) 
 
 
 COBJS =	driver_c.o\
 	swapn.o\
 	$(VPATH)/iniparser.o
 
-FOBJS = filter4.o
+FOBJS = \
+	filter4.o
 
 %.o:%.f 
 	$(FC) $(DBG) -c $<
 
 %.o:%.c 
-	$(CC) $(DBG) $(cflags) -c $<
+	$(CC) $(DBG) -c $<
 
-$(BIN) : $(COBJS) $(FOBJS) module_obj
-	$(FC) $(FFLAGS) $(CFLAGS) $(COBJS) $(FOBJS) -o $(BIN) $(LDLIBS) 
+$(BIN) : $(FOBJS) $(COBJS) module_obj
+	$(FC) $(FFLAGS) $(CFLAGS_all) $(COBJS) $(FOBJS) -o $(BIN) $(LDLIBS) 
 
 module_obj:
 	cd $(VPATH); make objects

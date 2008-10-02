@@ -6,7 +6,7 @@ directory structure together with their corresponding response files"""
 import glob, os, string, sys, os.path, time, shutil
 import subprocess as sp
 import pysacio as p
-
+from ConfigParser import SafeConfigParser
 
 class SaFromMseed:
     def __init__(self, dataless, respdir, outputdir, bindir, rdseedir):
@@ -20,7 +20,7 @@ class SaFromMseed:
                           11:'Nov',12:'Dec'}
 
     def __call__(self, mseedir, sacdiroot):
-        self.proc_mseed(mseedir, sacdirroot)
+        self.proc_mseed(mseedir, sacdiroot)
 
 
 
@@ -44,7 +44,7 @@ class SaFromMseed:
 
     def mk_fn(self, stn, chan, d, sacdir):
         """construct filename out of station-, channel-, date-info"""
-        monstr = monthdict[d.tm_mon]
+        monstr = self.monthdict[d.tm_mon]
         ydir = sacdir+'/'+`d.tm_year`
         mdir = sacdir+'/'+`d.tm_year`+'/'+monstr
         ddir = sacdir+'/'+`d.tm_year`+'/'+monstr+'/'+\
@@ -117,9 +117,9 @@ class SaFromMseed:
     def cp_resp(self, stn, chan, sacfn):
         """copy response file for station(stn) channel(chan) to
         appropriate location"""
-        if len(self.resp_file_dict(seedrespdir)[stn][chan]) > 1:
+        if len(self.resp_file_dict(self.respdir)[stn][chan]) > 1:
             print "WARNING: there are several response files available"
-        respfile = self.resp_file_dict(seedrespdir)[stn][chan][0]
+        respfile = self.resp_file_dict(self.respdir)[stn][chan][0]
         outdir = os.path.dirname(sacfn)
         target = os.path.join(outdir,os.path.basename(respfile))
         shutil.copy(respfile, target)
@@ -136,27 +136,45 @@ class SaFromMseed:
                 command = self.rdseedir+'rdseed -f '+mseedir+file+' -g '+self.dataless+' -q '+\
                           mseedir+self.outputdir+' -o 1 -d 1>/dev/null 2>/dev/null '
                 os.system(command)
-                g = get_ms_cont(mseedir+outputdir)
+                g = self.get_ms_cont(mseedir+outputdir)
                 for i in g.keys():
                     for j in g[i].keys():
                         if j != 'date':
-                            filename = mk_fn(i,j,g[i]['date'], sacdir)
+                            filename = self.mk_fn(i,j,g[i]['date'], sacdir)
                             print "--> writing file ", filename
-                            if merge_sac(g[i][j],filename):
-                                cp_resp(i, j, filename)
+                            if self.merge_sac(g[i][j],filename):
+                                self.cp_resp(i, j, filename)
                             for k in g[i][j]:
                                 os.remove(k)
 
 
 if __name__ == '__main__':
-    
-    rdseedir = '/home/behrya/src/rdseed4.7.5/'
-    bindir   = '/home/behrya/dev/auto/bin/'
-    mseedir  = '/Volumes/stage/stage/yannik78/datasets/geonet/geonet_xcorr/2005/'
-    sacdir   = './testsac/'
-    dataless = '/Volumes/stage/stage/yannik78/nord-geonet/nz.dataless.seed.national'
-    respdir = '/Volumes/stage/stage/yannik78/nord-geonet/respfiles/'
-    outputdir = 'sacfiles'
 
-    t = SaFromMseed(dataless, respdir, outputdir, bindir, rdseedir)
-    t(mseedir, sacdir)
+    try:
+        if string.find(sys.argv[1],'-c')!=-1:
+            config=sys.argv[2]
+            print "config file is: ",sys.argv[2]
+            cp = SafeConfigParser()
+            cp.read(config)
+            rdseedir = cp.get('raw2sac','rdseedir')
+            bindir   = cp.get('raw2sac','bindir')
+            mseedir  = cp.get('raw2sac','mseedir')
+            sacfiles = cp.get('raw2sac','sacfiles')
+            dataless = cp.get('raw2sac','dataless')
+            respfiles= cp.get('raw2sac','respfiles')
+            outputdir = 'sacfiles'
+        else:
+            print "encountered unknown command line argument"
+            raise Exception
+    except Exception:
+        print "using standard parameters"
+        rdseedir = '/home/behrya/src/rdseed4.7.5/'
+        bindir   = '/home/behrya/dev/auto/bin/'
+        mseedir  = './2003/'
+        sacfiles = './SacFiles/'
+        dataless = '/home/behrya/dev/proc-scripts/wsdl/gsoap/miniseed/C/example/dataless/nz.dataless.seed'
+        respfiles= './respfiles/'
+        outputdir= 'sacfiles'
+
+    t = SaFromMseed(dataless, respfiles, outputdir, bindir, rdseedir)
+    t(mseedir, sacfiles)

@@ -17,8 +17,6 @@
 #include <string.h>
 #include <math.h>
 #include <iniparser.h>
-#include <strtok_alt.h>
-#include <strtok_mod.h>
 #include <mysac.h>
 #include <sac_db.h>
 #include <glob.h>
@@ -26,46 +24,90 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <assert.h>
+#include <libgen.h>
 
 #define STRING 300
 #define SSTRING 150
 #define MODUS 0711
-#define DEBUG
 
 /* function prototypes */
+struct sopts{
+  int n1, n2, n3;
+  char *search_str[50];
+  char *skip_dirs[50];
+  char *search_dirs[50];
+} search_opts;
+
 void extr_sac_hd(char *sacfile, const char *pathname);
 int search_stat(char *statname);
 void month_day(int year, int yearday, int *pmonth, int *pday);
 double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms );
-void get_args(int argc, char** argv, SAC_DB *sdb, char *filename);
+void get_args(int argc, char** argv, char *filename);
 void sort_sac_db(void);
 void print_sac_db(void);
 static int glob_this(const char *fpath, const struct stat *sb,
 		     int tflag, struct FTW *ftwbuf);
 int search_ev(float t);
-
+int day_of_year(int year, int month, int day);
 
 SAC_DB sdb;
 
 int main (int argc, char **argv){
 
   FILE *ff;
-  int N, i, j;
-  int flags = 0;
+  int N, i;
+  int flags = 16;
   char filename[STRING];
-  char *dirname, *tmpdir;
+  char delimiters[] = " ,;";
+  char *search_dirs, *skip_dirs, *search_str, *tmpdir, *buf, *ptr;
   dictionary *dd;
 
   strncpy(sdb.conf,"./config.txt",149);
   strncpy(filename,"./dummy.out",STRING-1);
-  get_args(argc,argv,&sdb,filename);
+  get_args(argc,argv,filename);
 
   /*opening config file*/
   dd = iniparser_new(sdb.conf);
-  dirname = iniparser_getstr(dd, "database:sacdirroot");
+  search_dirs = iniparser_getstr(dd, "init_sacdb:search_directories");
+  skip_dirs   = iniparser_getstr(dd, "init_sacdb:skip_directories");
+  search_str = iniparser_getstr(dd, "init_sacdb:search_string");
+
+  buf = strdup(search_dirs);
+  ptr  = strtok(buf, delimiters);
+  i = 0;
+  while(ptr != NULL && i < 50){
+    search_opts.search_dirs[i] = strdup(ptr);
+    ptr = strtok(NULL,delimiters);
+    i++;
+  }
+  search_opts.n1 = i;
+  free(buf);
+
+  buf = strdup(skip_dirs);
+  ptr  = strtok(buf, delimiters);
+  i = 0;
+  while(ptr != NULL && i < 50){
+    search_opts.skip_dirs[i] = strdup(ptr);
+    ptr = strtok(NULL,delimiters);
+    i++;
+  }
+  search_opts.n2 = i;
+  free(buf);
+
+  buf = strdup(search_str);
+  ptr  = strtok(buf, delimiters);
+  i = 0;
+  while(ptr != NULL && i < 50){
+    search_opts.search_str[i] = strdup(ptr);
+    ptr = strtok(NULL,delimiters);
+    i++;
+  }
+  search_opts.n3 = i;
+  free(buf);
 
   if(!strcmp(filename,"./dummy.out")){
-    tmpdir = iniparser_getstr(dd, "database:tmpdir");
+    tmpdir = iniparser_getstr(dd, "init_sacdb:tmpdir");
+    assert((strlen(tmpdir)+10)<STRING);
     strncpy(filename,tmpdir,STRING-1);
     if(mkdir(tmpdir, MODUS) == -1)
       fprintf(stdout,"directory %s already exists \n", tmpdir); 
@@ -81,19 +123,21 @@ int main (int argc, char **argv){
   }
 
   /* searching for SAC-files */
-  if (nftw(dirname, glob_this, 20, flags) == -1) {
-    perror("nftw");
-    exit(EXIT_FAILURE);
+  for(i=0;i<search_opts.n1;i++){
+    if (nftw(search_opts.search_dirs[i], glob_this, 20, flags) == -1) {
+      perror("nftw");
+      exit(EXIT_FAILURE);
+    }
   }
   sdb.cntev = sdb.nev;
   sdb.cntst = sdb.nst;
 
+  /* sorting SAC-files according to their date */
+  sort_sac_db();
+
 #ifdef DEBUG
   print_sac_db();
 #endif
-
-  /* sorting SAC-files according to their date */
-  sort_sac_db();
 
   /* writing sac_db structure to file */
   ff = fopen(filename,"wb");
@@ -110,21 +154,30 @@ int main (int argc, char **argv){
   ------------------------------------------------------------*/
 static int glob_this(const char *fpath, const struct stat *sb,
 		     int tflag, struct FTW *ftwbuf){
-  const char pattern[] = "*BHE.SAC";
+  //  const char pattern[] = "*BHZ.SAC";
   char localpattern[STRING];
   glob_t match;
-  int err, i;
+  int i, j;
 
-  assert((strlen(fpath)+strlen(pattern))<STRING-1);
-  sprintf(localpattern,"%s/%s",fpath, pattern);
-
-  if(glob(localpattern, 0, NULL, &match) == 0){
-    for(i=0;i<match.gl_pathc;i++){
-      printf("%s\n",match.gl_pathv[i]);
-      extr_sac_hd(match.gl_pathv[i],fpath);
+  for(i=0;i<search_opts.n2;i++){
+    if(strstr(fpath,search_opts.skip_dirs[i]) != NULL){
+      return 2;
     }
   }
-  globfree(&match);
+
+  for(i=0;i<search_opts.n3;i++){
+    assert((strlen(fpath)+strlen(search_opts.search_str[i]))<STRING-1);
+    sprintf(localpattern,"%s/%s",fpath, search_opts.search_str[i]);
+    //    printf("%s\n", localpattern);
+
+    if(glob(localpattern, 0, NULL, &match) == 0){
+      for(j=0;j<match.gl_pathc;j++){
+	//      printf("%s\n",match.gl_pathv[j]);
+	extr_sac_hd(match.gl_pathv[j],fpath);
+      }
+    }
+    globfree(&match);
+  }
   return 0;
 }
 
@@ -139,17 +192,16 @@ static int glob_this(const char *fpath, const struct stat *sb,
   ------------------------------------------------------------*/
 void extr_sac_hd(char *sacfile, const char *pathname){
   FILE *f;
-  int i, index, ns, ne, cnt=0, nrows=10;
+  int index, ns, ne;
   float t0;
   int year, month, day, yday;
   SAC_HD shd;
-  char dummy[8];
   char *ptr;
-  char **dirtokens, **datetokens;
-  char tokens[nrows][STRING];
+  char buffer[STRING];
   char respattern[STRING];
   glob_t match;
 
+  printf("%s\n",sacfile);
   f = fopen(sacfile,"rb");
   fread(&shd, sizeof(SAC_HD),1,f);
   fclose(f);
@@ -160,6 +212,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   ptr = strtok(shd.kcmpnm," ");
   strncpy(shd.kcmpnm,ptr,7);
 
+    
   index = search_stat(shd.kstnm);
   if(index == -1){
     ns = sdb.nst;
@@ -172,26 +225,32 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 
   /* extract date of day from directory name; this has to be done as the seismogram itself might 
      start a day earlier at for example 23:59:48 */
-  ex_tokens(sacfile,'/',&dirtokens);
-  /* count the number of tokens between '/' */
-  while(dirtokens[cnt] != NULL) cnt++;
-  ex_tokens(dirtokens[cnt-2],'_',&dirtokens);
-  year  = atoi(dirtokens[0]);
-  month = atoi(dirtokens[1]);
-  day   = atoi(dirtokens[2]);
+  assert(strlen(sacfile) < STRING-1);
+  strncpy(buffer, sacfile, STRING-1);
+  ptr = dirname(buffer);
+  ptr = basename(ptr);
+  year  = atoi(strtok(ptr, "_"));
+  month = atoi(strtok(NULL,"_"));
+  day   = atoi(strtok(NULL,"_"));
   yday  = day_of_year(year, month, day);
   t0 = abs_time ( year,yday,0,0,0,0 );
+  strncpy(buffer, sacfile, STRING-1);
   index = search_ev(t0);
   if(index == -1){
     ne = sdb.nev;
-    sdb.nev++;
+    ptr = dirname(buffer);
+    assert(strlen(ptr) < SSTRING -1);
+    strncpy(sdb.ev[sdb.nev++].name, ptr, SSTRING-1);
   }else{
     ne = index;
+    ptr = dirname(buffer);
+    assert(strlen(ptr) < SSTRING -1);
+    strncpy(sdb.ev[ne].name, ptr, SSTRING-1);
   }
 
   strncpy(sdb.rec[ne][ns].fname,sacfile,SSTRING-1);
   printf("%s\n", sdb.rec[ne][ns].fname);
-  sprintf(sdb.rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC\0", pathname, shd.kstnm, shd.kcmpnm);
+  sprintf(sdb.rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC", pathname, shd.kstnm, shd.kcmpnm);
   strncpy(sdb.rec[ne][ns].chan,shd.kcmpnm,6);
   sdb.ev[ne].yy = year;
   sdb.ev[ne].jday = yday;
@@ -212,10 +271,14 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 
   if(glob(respattern, 0, NULL, &match) == 0){
     if(match.gl_pathc>1){
-      fprintf(stderr,"ERROR: more than 1 response file available for %s",sacfile);
-    }else{
-      printf("%s\n",match.gl_pathv[0]);
+      fprintf(stderr,"WARNING: more than 1 response file available for %s\n",sacfile);
+      fprintf(stderr,"  --->  taking the first one\n");
       strncpy(sdb.rec[ne][ns].resp_fname,match.gl_pathv[0],SSTRING-1);
+    }else if((match.gl_pathc - 1)< 0.0001) {
+      //      printf("%s\n",match.gl_pathv[0]);
+      strncpy(sdb.rec[ne][ns].resp_fname,match.gl_pathv[0],SSTRING-1);
+    }else{
+      fprintf(stderr,"ERROR: no response file found for %s\n",sacfile);
     }
   }
   globfree(&match);
@@ -225,14 +288,21 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 
   if(glob(respattern, 0, NULL, &match) == 0){
     if(match.gl_pathc>1){
-      fprintf(stderr,"ERROR: more than 1 pole-zero file available for %s",sacfile);
-    }else{
-      printf("%s\n",match.gl_pathv[0]);
+      fprintf(stderr,"WARNING: more than 1 pole-zero file available for %s\n",sacfile);
+      fprintf(stderr,"  --->  taking the first one\n");
       strncpy(sdb.rec[ne][ns].pz_fname,match.gl_pathv[0],SSTRING-1);
-   }
+    }else if((match.gl_pathc - 1)< 0.0001){
+      //      printf("%s\n",match.gl_pathv[0]);
+      strncpy(sdb.rec[ne][ns].pz_fname,match.gl_pathv[0],SSTRING-1);
+    }else{
+      fprintf(stderr,"ERROR: no pole-zero file found for %s\n",sacfile);
+    }
+
   }
   globfree(&match);
 }
+
+
 /*------------------------------------------------
  *function to check if entry for station name 
  *already exists; if not, writes station name 
@@ -255,7 +325,6 @@ int search_stat(char *statname){
   }
   return cnt;
 }
-
 
 
 /*------------------------------------------------
@@ -336,7 +405,7 @@ void print_sac_db(void){
       printf("--> second             :%d\n", sdb.ev[i].s);
       printf("--> millisecond        :%d\n", sdb.ev[i].ms);
       printf("--> absolute time      :%f\n", sdb.rec[i][j].t0);
-      printf("--> number of points   :%d\n", sdb.rec[i][j].n);
+      printf("--> number of points   :%ld\n", sdb.rec[i][j].n);
       printf("--> record name        :%s\n", sdb.rec[i][j].fname);
       printf("--> record ft-name     :%s\n", sdb.rec[i][j].ft_fname);
       printf("--> response filename  :%s\n", sdb.rec[i][j].resp_fname);
@@ -405,11 +474,11 @@ double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms ){
 /*--------------------------------------------------------------------------
   reading and checking commandline arguments
   --------------------------------------------------------------------------*/
-void get_args(int argc, char** argv, SAC_DB *sdb, char *filename){
+void get_args(int argc, char** argv, char *filename){
 
   int i;
 
-  if (argc > 5){
+  if (argc > 3){
     fprintf(stderr,"USAGE: %s [-o output file -c path/to/alt/configfile]\n", argv[0]);
     exit(1);
   }
@@ -425,7 +494,7 @@ void get_args(int argc, char** argv, SAC_DB *sdb, char *filename){
 
       switch (argv[i][1]) {
 
-      case 'c':	strncpy(sdb->conf,argv[++i],149);
+      case 'c':	strncpy(sdb.conf,argv[++i],149);
 	break;
 
       case 'o':	strncpy(filename,argv[++i],STRING-1);
@@ -433,13 +502,6 @@ void get_args(int argc, char** argv, SAC_DB *sdb, char *filename){
 
       case 'h': 
 	printf("USAGE: %s [-o output file -c path/to/alt/configfile]\n", argv[0]);
-	printf("-------------------------------\n");
-	printf("program to initialize sac_db.out\n");
-	printf("file by scanning directory structure\n");
-	printf("under path/to/directory/ for existing\n");
-	printf("*.SAC files and writing their header\n");
-	printf("properties into a sac_db structure.\n");
-	
 	exit(0);
 	break;
 

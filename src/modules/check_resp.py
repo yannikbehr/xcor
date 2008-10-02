@@ -7,7 +7,7 @@ $LastChangedDate: 2008-01-28 16:41:35 +1300 (Mon, 28 Jan 2008) $
 """
 import sys
 sys.path.append('./modules')
-import  os, os.path, string, pysacio
+import  os, os.path, string, pysacio, glob, re
 
 class CheckResp:
     """class to check and, if necessary, modify response files"""
@@ -15,146 +15,95 @@ class CheckResp:
         pass
 
     def __call__(self, dirname):
-        self.walk_dir(dirname)
+        os.path.walk(dirname, self.check_resp, None)
         
 
-    def check_resp(self, file1):
-        try:
-            stat1 = os.stat(file1)
-        except Exception, e:
-            "Cannot check resp-file ", file1
-        else:
-            try:
-                dirname, basename = os.path.split(file1)
-                explode = string.split(basename,'.')
-            except Exception, e:
-                print e
+    def check_resp(self, arg, dirname, files):
+        print dirname
+        for fn in glob.glob(dirname+'/*.SAC'):
+            [hf,hi,hs,ok] = pysacio.ReadSacHeader(fn)
+            if ok == 0:
+                print "ERROR: cannot read in SAC-file-header for %s"%(fn)
+                return
             else:
-                try:
-                    for ffile in os.listdir(dirname):
-                        if string.find(ffile, 'SAC')!=-1 and string.find(ffile, explode[2])!=-1:
-                            ffile = dirname+'/'+ffile
-                            [hf,hi,hs,ok] = pysacio.ReadSacHeader(ffile)
-			    khole = pysacio.GetHvalue('khole', hf, hi, hs)
-                            if ok == 0:
-                                message = "Cannot read in SAC-file-header"
-                                raise Exception, message
-                except Exception,e:
-                    print "Error in pysacio-part: ", message
-                else:
-                    try:
-                        tempfile = file1+'_tmp'
-                        output = open(tempfile,'w')
-                        input = open(file1,'r')
-                        outlines = []
-                    except Exception,e:
-                        print "problems to open input/output-files ",e
-                    else:
-                        try:
-                            # processing the RESP-file
-                            alllines = input.readlines()
-                            if len(alllines) < 20:
-                                message = "corrupt response file: "+file1
-                                output.close()
-                                os.remove(tempfile)
-                                raise Exception, message
-                            
-                            for lines in alllines:
-			  
-                                if string.find(lines,'Location')!=-1:
-				    loc_resp1 = string.split(lines)
-                                    if len(khole.rstrip()) > 0:
-                                        newline = loc_resp1[0]+'     '+loc_resp1[1]+\
-                                                  '    '+khole.rstrip()+'\n'
-                                        outlines.append(newline)
-                                    else:
-                                        newline = loc_resp1[0]+'     '+loc_resp1[1]+\
-                                                  '    '+'??'+'\n'
-                                        outlines.append(newline)
-
-                                elif string.find(lines,'Start date')!=-1:
-                                    date_resp1 = string.split(lines)	
-                                    date_resp2 = string.split(date_resp1[3],',')
-                                    # following line-layout is exactly the one
-                                    # from the seed-RESP-file;
-                                    hi[1] = hi[1]-1
-                                    if hi[1]<10:
-                                        yday = '00'+`hi[1]`
-                                    elif hi[1]<100:
-                                        yday = '0'+`hi[1]`
-                                    else:
-                                        yday = `hi[1]`
-                                    newline = date_resp1[0]+'     '+date_resp1[1]+\
-                                              ' '+date_resp1[2]+'  '+`hi[0]`+','+\
-                                              yday+','+'00:00:00\n'
-                                    outlines.append(newline)
-                                #elif string.find(lines,'No Ending Time')!=-1:
-                                    #outlines.append(lines)
-                                elif string.find(lines,'End date')!=-1:
-				    
-                                    date_resp1 = string.split(lines)
-                                    
-				    #date_resp2 = string.split(date_resp1[3],',')
-                                    if not 'Not' in (date_resp1[3]):
-				       # following line-layout is exactly the one
-                                       # from the seed-RESP-file;
-                                       hi[1] = hi[1]+2
-                                       if hi[1]<10:
-                                          yday = '00'+`hi[1]`
-                                       elif hi[1]<100:
-                                          yday = '0'+`hi[1]`
-                                       else:
-                                          yday = `hi[1]`
-                                       newline = date_resp1[0]+'     '+date_resp1[1]+\
-                                              ' '+date_resp1[2]+'    '+`hi[0]`+','\
-                                              +yday+','+'23:59:59\n'
-                                       outlines.append(newline)
-				    else:
-				       yday = yday+2
-				       newline = date_resp1[0]+'     '+date_resp1[1]+\
-                                              ' '+date_resp1[2]+'    '+`hi[0]`+','\
-                                              +yday+','+'23:59:59\n'
-                                       outlines.append(newline)
-                                else:
-                                    outlines.append(lines)
-                        except Exception,e:
-                            print "problems with processing the RESP-files ",e
-                            return
+                stat  = pysacio.GetHvalue('kstnm', hf, hi, hs).rstrip()
+                comp  = pysacio.GetHvalue('kcmpnm', hf, hi, hs).rstrip()
+                khole = pysacio.GetHvalue('khole', hf, hi, hs).rstrip()
+            respfiles = glob.glob(dirname+'/RESP*'+stat+'*'+comp+'*')
+            if len(respfiles) > 1:
+                print 'ERROR: more than one response file for the same station/channel'
+                print respfiles
+                return 0
+            for f in respfiles:
+                tempfile = f + '_tmp'
+                output = open(tempfile,'w')
+                input = open(f,'r')
+                outlines = []
+                # processing the RESP-file
+                alllines = input.readlines()
+                if len(alllines) < 20:
+                    print "corrupt response file: "+file1
+                    output.close()
+                    os.remove(tempfile)
+                    return 0
+                for lines in alllines:
+                    if string.find(lines,'Location')!=-1:
+                        loc_resp1 = string.split(lines)
+                        if len(khole.rstrip()) > 0:
+                            newline = loc_resp1[0]+'     '+loc_resp1[1]+\
+                                      '    '+khole.rstrip()+'\n'
                         else:
-                            try:
-                                # writing new temporary RESP-file and
-                                # copying it to the original one
-                                input.close()
-                                output.writelines(outlines)
-                                output.close()
-                                os.rename(tempfile,file1)
-                            except Exception,e:
-                                print "problems with closing or writing ",e
-                        
-    def walk_dir(self, sac1):
-        try:
-            print "checking: ", sac1
-            os.path.isdir(sac1)
-        except Exception, e:
-            print "ERROR: directory doesn't exist: ", e
-        else:
-            try:
-                list1 = os.listdir(sac1)
-                for a in list1:
-                    newsac1 = sac1+'/'+a
-                    if string.find(a, 'SAC')!=-1:                        
-                        pass
-                    elif string.find(a, 'RESP')!=-1:
-                        #print a
-                        self.check_resp(newsac1)
-                    elif os.path.isfile(newsac1):
-                        continue
+                            newline = loc_resp1[0]+'     '+loc_resp1[1]+\
+                                      '    '+'??'+'\n'
+                        outlines.append(newline)
+                    elif string.find(lines,'Start date')!=-1:
+                        date_resp1 = string.split(lines)	
+                        date_resp2 = string.split(date_resp1[3],',')
+                        # following line-layout is exactly the one
+                        # from the seed-RESP-file;
+                        hi[1] = hi[1]-1
+                        if hi[1]<10:
+                            yday = '00'+`hi[1]`
+                        elif hi[1]<100:
+                            yday = '0'+`hi[1]`
+                        else:
+                            yday = `hi[1]`
+                        newline = date_resp1[0]+'     '+date_resp1[1]+\
+                                  ' '+date_resp1[2]+'  '+`hi[0]`+','+\
+                                  yday+','+'00:00:00\n'
+                        outlines.append(newline)
+                        #elif string.find(lines,'No Ending Time')!=-1:
+                        #outlines.append(lines)
+                    elif string.find(lines,'End date')!=-1:
+                        date_resp1 = string.split(lines)
+                        if not 'Not' in (date_resp1[3]):
+                            # following line-layout is exactly the one
+                            # from the seed-RESP-file;
+                            hi[1] = hi[1]+2
+                            if hi[1]<10:
+                                yday = '00'+`hi[1]`
+                            elif hi[1]<100:
+                                yday = '0'+`hi[1]`
+                            else:
+                                yday = `hi[1]`
+                            newline = date_resp1[0]+'     '+date_resp1[1]+\
+                                      ' '+date_resp1[2]+'    '+`hi[0]`+','\
+                                      +yday+','+'23:59:59\n'
+                        else:
+                            yday = yday+2
+                            newline = date_resp1[0]+'     '+date_resp1[1]+\
+                                      ' '+date_resp1[2]+'    '+`hi[0]`+','\
+                                      +yday+','+'23:59:59\n'
+                        outlines.append(newline)
                     else:
-                        self.walk_dir(newsac1)
-            except Exception, e:
-                print "ERROR in comparing lists", e
-
-
+                        outlines.append(lines)
+                # writing new temporary RESP-file and
+                # copying it to the original one
+                input.close()
+                output.writelines(outlines)
+                output.close()
+                os.rename(tempfile,f)
+                        
 
 if __name__ == '__main__':
     test = CheckResp()

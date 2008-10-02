@@ -38,24 +38,19 @@ VPATH = modules
 
 hfiles = \
 	$(VPATH)/iniparser.h\
-	$(VPATH)/sac_db.h\
-	$(VPATH)/strtok_alt.h\
-	$(VPATH)/strtok_mod.h
+	$(VPATH)/sac_db.h
 
 ofiles = \
 	$(VPATH)/iniparser.o\
-	$(VPATH)/mysac.o\
-	$(VPATH)/strtok_alt.o\
-	$(VPATH)/strtok_mod.o
+	$(VPATH)/mysac.o
 
-
-options = -pg -D DEBUG
+options = -g -Wall
 
 %.o:%.c
 	$(CC) -g -c  $<  
 
 #all: cut justcor filter4 whiteout ftan stack lag initsacdb sacseed
-all: cut filter4 whiteout stack lag initsacdb sacseed whiteout1cmp newfilter4 whiteout2cmp justcor mergesac ftan 
+all: cut filter4 whiteout stack lag initsacdb whiteout1cmp newfilter4 whiteout2cmp justcor mergesac ftan 
 
 sacseed: module_obj sa_from_seed_new.c $(hfiles)
 	$(CC)  -g -I $(VPATH) sa_from_seed_new.c -o sa_from_seed_new $(ofiles)
@@ -107,7 +102,6 @@ module_obj:
 	cd $(VPATH); make objects
 
 install:
-	install sa_from_seed_new $(BINDIR);\
 	install	cut_trans_mod $(BINDIR);\
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\

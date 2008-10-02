@@ -35,18 +35,18 @@ class DoWhiten:
     def __init__(self, cnffile):
         conf = SafeConfigParser()
         conf.read(cnffile)
-        self.sacdir = conf.get("database", "sacdirroot")
-        self.sacbin = conf.get("database", "sacdir")
-        self.bindir = conf.get("local_settings", "bindir")
+        self.sacdir = conf.get("whitening", "sacfiles")
+        self.sacbin = conf.get("whitening", "sacdir")
+        self.bindir = conf.get("whitening", "bindir")
         # frequency band +- 20% as taper
-        self.upperp = int(conf.get("processing", "upperperiod"))
-        self.lowerp = int(conf.get("processing", "lowerperiod"))
+        self.upperp = int(conf.get("whitening", "upperperiod"))
+        self.lowerp = int(conf.get("whitening", "lowerperiod"))
         self.eqband = [50, 15]
         self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 	self.cnffilename = cnffile
         self.npow = 1
         self.tb = TwirlyBar()
-        self.complst = ['BHN', 'BHE']
+        self.complst = ['BHZ']
         self.proclst = ProcLst()
         self.proclst.ydaydir = []
         self.cnt = -1
@@ -264,7 +264,16 @@ class DoWhiten:
         
 
 if __name__ == '__main__':
-    config = 'config.txt' 
+    try:
+        if string.find(sys.argv[1],'-c')!=-1:
+            config=sys.argv[2]
+            print "config file is: ",sys.argv[2]
+        else:
+            print "encountered unknown command line argument"
+            raise Exception
+    except Exception:
+        config = 'config.txt' 
+        print "config file is", config
     test = DoWhiten(config)
     os.path.walk(test.sacdir, test.dir_walk, 0)
     test.process()

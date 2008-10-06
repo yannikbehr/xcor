@@ -20,15 +20,10 @@ VPATH = ../modules
 fflags = -O2 -Wall -c -ffixed-line-length-none
 
 cflags = -O2 -Wall -c -I $(VPATH)
-#fflags = -fast -Mextend -Msave
-#fflags =  -O -e
-
-# if you don't use shared libraries comment the next line
-#shlib = -R/opt/SUNWspro/lib
 
 DBG = -g
 
-FFLAGS = $(DBG)  $(fflags) $(shlib)
+FFLAGS = $(DBG)  $(fflags)
 
 CFLAGS = $(DBG) $(cflags)
 
@@ -39,7 +34,8 @@ FOBJS = dcommon.o dmultifft.o
 binofiles = justCOR.o\
 	    justCOR_EE_EN.o
 
-ofiles = $(VPATH)/iniparser.o
+ofiles = $(VPATH)/iniparser.o\
+	 $(VPATH)/mysac.o
 
 %.o:%.c 
 	$(CC) $(CFLAGS) $<
@@ -50,7 +46,7 @@ ofiles = $(VPATH)/iniparser.o
 all: $(BIN1) $(BIN2)
 
 $(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj 
-	$(FC) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS)
+	$(CC) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS)
 
 $(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
 	$(CC) justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS)
@@ -59,7 +55,7 @@ module_obj:
 	cd $(VPATH); make objects
 
 clean ::
-	rm -f $(BIN) core *.o
+	rm -f $(BIN1) $(BIN2) core *.o
 
 tilde :
 	rm ./*~

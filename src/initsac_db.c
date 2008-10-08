@@ -261,8 +261,8 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   sdb.ev[ne].ms = 0;
   sdb.ev[ne].ms = 10.*sdb.ev[ne].ms;
   sdb.ev[ne].t0 = t0;
-  sdb.rec[ne][ns].dt = (double)shd.delta;
-  //  sdb.rec[ne][ns].dt = 1.0;
+  //sdb.rec[ne][ns].dt = (double)shd.delta;
+  sdb.rec[ne][ns].dt = 1.0;
   sdb.rec[ne][ns].n  = shd.npts;
   sdb.rec[ne][ns].t0 = abs_time(shd.nzyear,shd.nzjday,shd.nzhour,shd.nzmin,shd.nzsec,shd.nzmsec );
   /* find corresponding response file */
@@ -294,6 +294,32 @@ void extr_sac_hd(char *sacfile, const char *pathname){
     }else if((match.gl_pathc - 1)< 0.0001){
       //      printf("%s\n",match.gl_pathv[0]);
       strncpy(sdb.rec[ne][ns].pz_fname,match.gl_pathv[0],SSTRING-1);
+    }else{
+      fprintf(stderr,"ERROR: no pole-zero file found for %s\n",sacfile);
+    }
+
+  }
+  globfree(&match);
+
+  /* find ft_* files */
+  assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+6)<STRING-1);
+  sprintf(respattern,"%s/ft*%s*%s*",pathname, shd.kstnm, shd.kcmpnm);
+
+  if(glob(respattern, 0, NULL, &match) == 0){
+    if(match.gl_pathc>1){
+      fprintf(stderr,"WARNING: more than ft file available for %s\n",sacfile);
+      fprintf(stderr,"  --->  taking the first one\n");
+      printf("%s\n", match.gl_pathv[0]);
+      f = fopen(match.gl_pathv[0],"rb");
+      fread(&shd, sizeof(SAC_HD),1,f);
+      fclose(f);
+      sdb.rec[ne][ns].n  = shd.npts;
+    }else if((match.gl_pathc - 1)< 0.0001){
+      printf("%s\n", match.gl_pathv[0]);
+      f = fopen(match.gl_pathv[0],"rb");
+      fread(&shd, sizeof(SAC_HD),1,f);
+      fclose(f);
+      sdb.rec[ne][ns].n  = shd.npts;
     }else{
       fprintf(stderr,"ERROR: no pole-zero file found for %s\n",sacfile);
     }

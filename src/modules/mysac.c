@@ -11,7 +11,6 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
   fsac = fopen(fname, "rb");
   if ( !fsac )
     {
-      fclose (fsac);
       return NULL;
     }
 
@@ -135,7 +134,6 @@ float *read_sac_dyn (char *fname, SAC_HD *SHD){
   fsac = fopen(fname, "rb");
   if ( !fsac )
     {
-      fclose (fsac);
       return NULL;
     }
   if ( !SHD ) SHD = &SAC_HEADER;

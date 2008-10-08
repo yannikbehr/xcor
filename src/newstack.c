@@ -344,10 +344,10 @@ int main(int argc, char **argv)
   strncpy(altrootdir,"dummy",199);
   get_args(argc,argv,configfile,altrootdir);
   dd = iniparser_new(configfile);
-  tmpdir = iniparser_getstr(dd, "database:tmpdir");
-  sacdir = iniparser_getstr(dd, "database:sacdir");
+  tmpdir = iniparser_getstr(dd, "stack:tmpdir");
+  sacdir = iniparser_getstr(dd, "stack:sacdir");
   if(strcmp(altrootdir,"dummy")==0){
-    rootdir = iniparser_getstr(dd, "database:sacdirroot");
+    rootdir = iniparser_getstr(dd, "stack:cordir");
   }else{
     rootdir=&altrootdir[0];
   }

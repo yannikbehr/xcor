@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""script to stack horizontal component cross-correlation results"""
+
 import numpy as np
 import array as a
 import c_stack as c

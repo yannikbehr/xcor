@@ -13,19 +13,6 @@ from ConfigParser import SafeConfigParser
 
 import pysacio as p
 
-class TwirlyBar:
-    """show progress of program"""
-    def __init__(self):
-        self.__state = 0
-        self.__bar = ('[|]', '[/]', '[-]', '[\\]')
-
-    def ShowProgress(self):
-        sys.stdout.write('\b\b\b' +self.__bar[self.__state])
-        sys.stdout.flush()
-        self.__state = self.__state + 1
-        if self.__state > 3: self.__state = 0
-
-
 class ProcLst: pass
 
 
@@ -45,8 +32,7 @@ class DoWhiten:
         self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 	self.cnffilename = cnffile
         self.npow = 1
-        self.tb = TwirlyBar()
-        self.complst = ['BHZ']
+        self.complst = string.split(conf.get("whitening","complist"),',')
         self.proclst = ProcLst()
         self.proclst.ydaydir = []
         self.cnt = -1
@@ -60,7 +46,6 @@ class DoWhiten:
         eqltaper = self.eqband[0] + (float(self.eqband[0])/100)*20
         filtercmd = self.bindir+"/filter4"
         for i in self.proclst.ydaydir:
-            self.tb.ShowProgress()
             if len(i.keys()) == len(self.complst) + 1:
                 for j in self.complst:
                     for k in i[j]:
@@ -153,7 +138,6 @@ class DoWhiten:
         whitefilter = self.bindir+'/white_2cmp'
         saccmd = self.sacbin+'/sac'
         for i in self.proclst.ydaydir:
-            self.tb.ShowProgress()
             if len(i.keys()) == len(self.complst) +1:
                 for j in i[self.complst[0]]:
                     for k in i[self.complst[1]]:
@@ -213,7 +197,6 @@ class DoWhiten:
             print "Creating dir structure: ", month
         for day in dirlist:
             if day != bpfile and string.find(day, '.svn') == -1 and string.find(day, '5to100') == -1 and string.find(day, '5to100_EN') == -1:
-                self.tb.ShowProgress()
                 self.cnt = self.cnt + 1
                 self.proclst.ydaydir.append({})
                 self.proclst.ydaydir[self.cnt]['name'] = day

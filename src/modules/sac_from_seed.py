@@ -18,8 +18,9 @@ import time, glob, re
 sys.path.append('./modules')
 import pysacio as p
 import pytutil as pt
+from ConfigParser import SafeConfigParser
 
-class SaFromSeed(seed_info.SeedInfo):
+class SacFromSeed(seed_info.SeedInfo):
     def __init__(self, rdseedir, bindir, sacroot):
         self.rdseedir = rdseedir
         self.sacroot = sacroot
@@ -248,7 +249,7 @@ class SaFromSeed(seed_info.SeedInfo):
                         respattern = r'RESP.\w*.%s.\w*.%s' %(stat,comp)
                         j = num2date(i)
                         dlist1 = j.utctimetuple()
-                        date1 = `dlist1[0]`+'.'+`dlist1[7]`+'.00:00:01'
+                        date1 = `dlist1[0]`+'.'+`dlist1[7]`+'.00:00:00'
                         date2 = `dlist1[0]`+'.'+`dlist1[7]`+'.23:59:59'
                         print "extracting %s (%s) between %s and %s" %(stat,comp,date1,date2)
                         self.rdseed_extr(fn, stat, comp, date1, date2)
@@ -295,13 +296,33 @@ class SaFromSeed(seed_info.SeedInfo):
             os.remove(errf)
 
 if __name__ == '__main__':
-    rdseedir = '/home/behrya/src/rdseed4.7.5/'
-    bindir   = '/home/behrya/dev/auto/bin/'
-    sacroot  = './testsac'
-    filelist = ['/data/hawea/yannik/SAPSE/xc/SAPSE_XC.10.20115']
-    filelist1 = ['/Volumes/stage/yannik78/datasets/cnipse/tapes/dlt_tapes/dlt_seed/S20010625.000000']
-    t = SaFromSeed(rdseedir, bindir, sacroot)
-    t(filelist1, resp_only=False)
+    
+    try:
+        if string.find(sys.argv[1],'-c')!=-1:
+            config=sys.argv[2]
+            print "config file is: ",sys.argv[2]
+            cp = SafeConfigParser()
+            cp.read(config)
+            rdseedir  = cp.get('seed2sac','rdseedir')
+            bindir    = cp.get('seed2sac','bindir')
+            sacfiles  = cp.get('seed2sac','sacfiles')
+            seedfiles = cp.get('seed2sac','seedfiles')
+            seedfilere= cp.get('seed2sac','seedfilere')
+        else:
+            print "encountered unknown command line argument"
+            raise Exception
+    except Exception:
+        print "using standard parameters"
+        rdseedir   = '/home/behrya/src/rdseed4.7.5/'
+        bindir     = '/home/behrya/dev/auto/bin/'
+        sacfiles   = './testsac'
+        seedfiles  = '/data/hawea/yannik/SAPSE/xc/'
+        seedfilere = 'SAPSE_XC.10.20115'
+    t = SacFromSeed(rdseedir, bindir, sacfiles)
+    for sf in glob.glob(seedir+seedfilere):
+        t(sf)
+
+    t(filelist, resp_only=False)
 
 #This is the specification for the date format given by the
 #rdseed-manual:

@@ -195,11 +195,10 @@ int main (int argc, char **argv)
   snr = iniparser_getdouble(dd,"FTAN:snr",initerror);
 
   if(strcmp(altsacroot,"dummy")==0){
-    sacroot = iniparser_getstr(dd,"database:sacdirroot");
+    sacroot = iniparser_getstr(dd,"FTAN:corfiles");
   }else{
     sacroot=&altsacroot[0];
   }
-  strcat(sacroot,"STACK/");
   count_files(sacroot,&counter);
   printf("number of files is: %d\n",counter);
 

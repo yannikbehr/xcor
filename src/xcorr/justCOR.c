@@ -56,7 +56,7 @@ int main (int na, char **arg)
   int flags = 1;
   char str[600];
   dictionary *dd;
-  char *tmpdir, *sacdirroot, *cordir, *pbdir;
+  char *tmpdir, *cordir, *pbdir;
   strcpy(sdb.conf,"./config.txt");
 
   get_args(na, arg);
@@ -64,7 +64,6 @@ int main (int na, char **arg)
   /* OPEN SAC DATABASE FILE AND READ IN TO MEMORY */
   dd         = iniparser_new(sdb.conf);
   tmpdir     = iniparser_getstr(dd, "xcor:tmpdir");
-  sacdirroot = iniparser_getstr(dd, "xcor:sacfiles");
   cordir     = iniparser_getstr(dd, "xcor:cordir");
   lag        = iniparser_getint(dd, "xcor:lag", 3000);
   pbdir      = iniparser_getstr(dd, "xcor:pbdir");
@@ -160,6 +159,10 @@ int do_cor(int lag, char *cordir)
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
 
       if(sdb.rec[ine][jsta1].n > 0){
+	if(sdb.rec[ine][jsta1].n > 84000){
+	  fprintf(stderr,"ERROR: trace longer than 84000 pts; %s\n",sdb.rec[ine][jsta1].ft_fname);
+	  continue;
+	}
         sprintf( amp_sac, "%s.am", sdb.rec[ine][jsta1].ft_fname );
         sprintf( phase_sac, "%s.ph", sdb.rec[ine][jsta1].ft_fname );
 
@@ -180,6 +183,10 @@ int do_cor(int lag, char *cordir)
 	for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
 
   	  if(sdb.rec[ine][jsta2].n > 0){
+	    if(sdb.rec[ine][jsta2].n > 84000){
+	      fprintf(stderr,"ERROR: trace longer than 84000 pts; %s\n",sdb.rec[ine][jsta2].ft_fname);
+	      continue;
+	    }
 
 	    // compute correlation
 	    sprintf(amp_sac, "%s.am", sdb.rec[ine][jsta2].ft_fname);

@@ -20,7 +20,7 @@ class CheckResp:
 
     def check_resp(self, arg, dirname, files):
         print dirname
-        for fn in glob.glob(dirname+'/*.SAC'):
+        for fn in glob.glob(dirname+'/[!^ft]*HZ.SAC'):
             [hf,hi,hs,ok] = pysacio.ReadSacHeader(fn)
             if ok == 0:
                 print "ERROR: cannot read in SAC-file-header for %s"%(fn)
@@ -42,7 +42,7 @@ class CheckResp:
                 # processing the RESP-file
                 alllines = input.readlines()
                 if len(alllines) < 20:
-                    print "corrupt response file: "+file1
+                    print "corrupt response file: "+fn
                     output.close()
                     os.remove(tempfile)
                     return 0
@@ -95,6 +95,14 @@ class CheckResp:
                                       ' '+date_resp1[2]+'    '+`hi[0]`+','\
                                       +yday+','+'23:59:59\n'
                         outlines.append(newline)
+                    elif string.find(lines,'Station')!=-1:
+                        stat_resp1 = string.split(lines)
+                        if len(stat.rstrip()) > 0:
+                            newline = stat_resp1[0]+'     '+stat_resp1[1]+\
+                                      '     '+stat.rstrip()+'\n'
+                        else:
+                            newline = lines
+                        outlines.append(newline)
                     else:
                         outlines.append(lines)
                 # writing new temporary RESP-file and
@@ -107,4 +115,4 @@ class CheckResp:
 
 if __name__ == '__main__':
     test = CheckResp()
-    test('/data/hawea/yannik/SAPSE/sacfiles/')
+    test('/data/hawea/yannik/nord/nord-sac-EN/2003/May/')

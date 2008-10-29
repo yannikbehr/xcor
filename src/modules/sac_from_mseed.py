@@ -156,12 +156,12 @@ if __name__ == '__main__':
             print "config file is: ",sys.argv[2]
             cp = SafeConfigParser()
             cp.read(config)
-            rdseedir = cp.get('raw2sac','rdseedir')
-            bindir   = cp.get('raw2sac','bindir')
-            mseedir  = cp.get('raw2sac','mseedir')
-            sacfiles = cp.get('raw2sac','sacfiles')
-            dataless = cp.get('raw2sac','dataless')
-            respfiles= cp.get('raw2sac','respfiles')
+            rdseedir = cp.get('mseed2sac','rdseedir')
+            bindir   = cp.get('mseed2sac','bindir')
+            mseedir  = cp.get('mseed2sac','mseedir')
+            sacfiles = cp.get('mseed2sac','sacfiles')
+            dataless = cp.get('mseed2sac','dataless')
+            respfiles= cp.get('mseed2sac','respfiles')
             outputdir = 'sacfiles'
         else:
             print "encountered unknown command line argument"

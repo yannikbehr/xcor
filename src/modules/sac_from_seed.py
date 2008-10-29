@@ -14,7 +14,7 @@ import sys
 from pylab import *
 import os, os.path, shutil
 import subprocess as sp
-import time, glob, re
+import time, glob, re, string
 sys.path.append('./modules')
 import pysacio as p
 import pytutil as pt
@@ -26,6 +26,9 @@ class SacFromSeed(seed_info.SeedInfo):
         self.sacroot = sacroot
         self.bindir  = bindir
         self.resp_only = False
+        self.monthdict = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May', \
+                          6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct', \
+                          11:'Nov',12:'Dec'}
         seed_info.SeedInfo.__init__(self,rdseedir)
 
 
@@ -213,8 +216,11 @@ class SacFromSeed(seed_info.SeedInfo):
                         if not os.path.isdir(yeardir):
                             print "creating ", yeardir
                             os.mkdir(yeardir)
-                        daydir = self.sacroot+'/'+`dlist1[0]`+'/'+`dlist1[0]`+\
-                                 '_'+`dlist1[1]`+'_'+`dlist1[2]`+'_0_0_0'
+                        monthdir = yeardir+'/'+self.monthdict[dlist1[1]]
+                        if not os.path.isdir(monthdir):
+                            print "creating ", monthdir
+                            os.mkdir(monthdir)
+                        daydir = monthdir+'/'+`dlist1[0]`+'_'+`dlist1[1]`+'_'+`dlist1[2]`+'_0_0_0'
                         if not os.path.isdir(daydir):
                                 print "creating ", daydir
                                 os.mkdir(daydir)
@@ -249,6 +255,7 @@ class SacFromSeed(seed_info.SeedInfo):
                         respattern = r'RESP.\w*.%s.\w*.%s' %(stat,comp)
                         j = num2date(i)
                         dlist1 = j.utctimetuple()
+                        print dlist1
                         date1 = `dlist1[0]`+'.'+`dlist1[7]`+'.00:00:00'
                         date2 = `dlist1[0]`+'.'+`dlist1[7]`+'.23:59:59'
                         print "extracting %s (%s) between %s and %s" %(stat,comp,date1,date2)
@@ -259,7 +266,11 @@ class SacFromSeed(seed_info.SeedInfo):
                             if not os.path.isdir(yeardir):
                                 print "creating ", yeardir
                                 os.mkdir(yeardir)
-                            daydir = self.sacroot+'/'+`dlist1[0]`+'/'+`dlist1[0]`+'_'+`dlist1[1]`+'_'+`dlist1[2]`+'_0_0_0'
+                            monthdir = yeardir+'/'+self.monthdict[dlist1[1]]
+                            if not os.path.isdir(monthdir):
+                                print "creating ", monthdir
+                                os.mkdir(monthdir)
+                            daydir = monthdir+'/'+`dlist1[0]`+'_'+`dlist1[1]`+'_'+`dlist1[2]`+'_0_0_0'
                             if not os.path.isdir(daydir):
                                 print "creating ", daydir
                                 os.mkdir(daydir)
@@ -318,11 +329,20 @@ if __name__ == '__main__':
         sacfiles   = './testsac'
         seedfiles  = '/data/hawea/yannik/SAPSE/xc/'
         seedfilere = 'SAPSE_XC.10.20115'
-    t = SacFromSeed(rdseedir, bindir, sacfiles)
-    for sf in glob.glob(seedir+seedfilere):
-        t(sf)
 
-    t(filelist, resp_only=False)
+    t  = SacFromSeed(rdseedir, bindir, sacfiles)
+
+    def getfilist(arg, dirname, files):
+        flist = glob.glob(dirname+'/S*')
+        if len(flist)>0:
+            for i in flist:
+                arg.append(i)
+            
+    sf = []
+    os.path.walk(seedfiles,getfilist,sf)
+    t(sf)
+
+#    t(filelist, resp_only=False)
 
 #This is the specification for the date format given by the
 #rdseed-manual:

@@ -71,9 +71,8 @@ if __name__ == '__main__':
     if not os.path.isdir(stackdir):
         os.mkdir(stackdir)
     for stat in mystack.keys():
-        outputfile = stackdir+'/COR_'+stat+'.SAC_s'
-        print 'writing',outputfile
         #print mystack[stat]
+        # write stacked correlation
         seis = mystack[stat]['trace']
         hf = mystack[stat]['hf']
         hs = mystack[stat]['hs']
@@ -89,6 +88,11 @@ if __name__ == '__main__':
         dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
         dist = dist*math.pi*6372/180
         p.SetHvalue('dist',dist,hf,hi,hs)
+        outputfile = stackdir+'/COR_'+stat+'.SAC'
+        print 'writing',outputfile
+        p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))
+
+        # write causal part only
         delta = p.GetHvalue('delta',hf,hi,hs)
         null = -1*b/delta
         reversed = seis[-1::-1]
@@ -96,4 +100,6 @@ if __name__ == '__main__':
         p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
         p.SetHvalue('b',0,hf,hi,hs)
         p.SetHvalue('o',0, hf,hi,hs)
+        outputfile = stackdir+'/COR_'+stat+'.SAC_s'
+        print 'writing',outputfile
         p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',newseis[null:]))

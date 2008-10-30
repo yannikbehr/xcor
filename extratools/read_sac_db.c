@@ -95,6 +95,7 @@ void print_sac_db(SAC_DB *sdb){
       printf("--> record name        :%s\n", sdb->rec[i][j].fname);
       printf("--> record ft-name     :%s\n", sdb->rec[i][j].ft_fname);
       printf("--> response filename  :%s\n", sdb->rec[i][j].resp_fname);
+      printf("--> pole-zero filename :%s\n", sdb->rec[i][j].pz_fname);
     }
   }
 

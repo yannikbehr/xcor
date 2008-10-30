@@ -36,6 +36,7 @@ struct sopts{
   char *search_str[50];
   char *skip_dirs[50];
   char *search_dirs[50];
+  int flag;
 } search_opts;
 
 void extr_sac_hd(char *sacfile, const char *pathname);
@@ -71,7 +72,7 @@ int main (int argc, char **argv){
   search_dirs = iniparser_getstr(dd, "init_sacdb:search_directories");
   skip_dirs   = iniparser_getstr(dd, "init_sacdb:skip_directories");
   search_str = iniparser_getstr(dd, "init_sacdb:search_string");
-
+  search_opts.flag = iniparser_getint(dd, "init_sacdb:flag", 0);
   buf = strdup(search_dirs);
   ptr  = strtok(buf, delimiters);
   i = 0;
@@ -261,8 +262,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   sdb.ev[ne].ms = 0;
   sdb.ev[ne].ms = 10.*sdb.ev[ne].ms;
   sdb.ev[ne].t0 = t0;
-  //sdb.rec[ne][ns].dt = (double)shd.delta;
-  sdb.rec[ne][ns].dt = 1.0;
+  sdb.rec[ne][ns].dt = (double)shd.delta;
   sdb.rec[ne][ns].n  = shd.npts;
   sdb.rec[ne][ns].t0 = abs_time(shd.nzyear,shd.nzjday,shd.nzhour,shd.nzmin,shd.nzsec,shd.nzmsec );
   /* find corresponding response file */
@@ -301,31 +301,37 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   }
   globfree(&match);
 
-  /* find ft_* files */
-  assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+6)<STRING-1);
-  sprintf(respattern,"%s/ft*%s*%s*",pathname, shd.kstnm, shd.kcmpnm);
+  /* find ft_* files if flag is set to '1'*/
+  if(search_opts.flag == 1){
+    assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+6)<STRING-1);
+    sprintf(respattern,"%s/ft*%s*%s*",pathname, shd.kstnm, shd.kcmpnm);
 
-  if(glob(respattern, 0, NULL, &match) == 0){
-    if(match.gl_pathc>1){
-      fprintf(stderr,"WARNING: more than ft file available for %s\n",sacfile);
-      fprintf(stderr,"  --->  taking the first one\n");
-      printf("%s\n", match.gl_pathv[0]);
-      f = fopen(match.gl_pathv[0],"rb");
-      fread(&shd, sizeof(SAC_HD),1,f);
-      fclose(f);
-      sdb.rec[ne][ns].n  = shd.npts;
-    }else if((match.gl_pathc - 1)< 0.0001){
-      printf("%s\n", match.gl_pathv[0]);
-      f = fopen(match.gl_pathv[0],"rb");
-      fread(&shd, sizeof(SAC_HD),1,f);
-      fclose(f);
-      sdb.rec[ne][ns].n  = shd.npts;
+    if(glob(respattern, 0, NULL, &match) == 0){
+      if(match.gl_pathc>1){
+	fprintf(stderr,"WARNING: more than ft file available for %s\n",sacfile);
+	fprintf(stderr,"  --->  taking the first one\n");
+	printf("%s\n", match.gl_pathv[0]);
+	f = fopen(match.gl_pathv[0],"rb");
+	fread(&shd, sizeof(SAC_HD),1,f);
+	fclose(f);
+	sdb.rec[ne][ns].n  = shd.npts;
+	sdb.rec[ne][ns].dt = (double)shd.delta;
+      }else if((match.gl_pathc - 1)< 0.0001){
+	printf("%s\n", match.gl_pathv[0]);
+	f = fopen(match.gl_pathv[0],"rb");
+	fread(&shd, sizeof(SAC_HD),1,f);
+	fclose(f);
+	sdb.rec[ne][ns].n  = shd.npts;
+	sdb.rec[ne][ns].dt = (double)shd.delta;
+      }else{
+	fprintf(stderr,"ERROR: no ft-file found for %s\n",sacfile);
+      }
+
     }else{
-      fprintf(stderr,"ERROR: no pole-zero file found for %s\n",sacfile);
+	fprintf(stderr,"ERROR: no ft-file found for %s\n",sacfile);
     }
-
+    globfree(&match);
   }
-  globfree(&match);
 }
 
 

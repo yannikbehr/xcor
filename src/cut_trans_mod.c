@@ -77,11 +77,11 @@ int main (int argc, char **argv)
   for ( ns = 0; ns < sdb.nst; ns++ ){
     for ( ne = 0; ne < sdb.nev; ne++ ) {
       if(!one_rec_trans(ne, ns, sacdir, tmpdir, respflag)){
-	fprintf(stderr,"ERROR: removing instrument response failed.");
+	fprintf(stderr,"ERROR: removing instrument response failed.\n");
 	continue;
       }
       if(!one_rec_cut(ne, ns, t1, npts, tmpdir)){
-	fprintf(stderr,"ERROR: cutting trace failed.");
+	fprintf(stderr,"ERROR: cutting trace failed.\n");
 	continue;
       }
     }
@@ -161,6 +161,9 @@ int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir)
 
   if ( (t1b>t1) || (t1e<t2) ) {
     fprintf(stderr,"incompatible time limits for station %s and event %s\n", sdb.st[ns].name, sdb.ev[ne].name );
+    assert((strlen(tmpdir)+14) < STRING);
+    sprintf(str,"/bin/rm %ss1.sac",tmpdir );
+    system(str);
     return 0;
   }
 

@@ -168,10 +168,7 @@ int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir)
   }
 
   sprintf(str,"%ss1.sac",tmpdir );
-  if ( !read_sac (str, sig1, &shd1, 1000000 ) ) {
-    fprintf(stderr,"file %s not found\n", sdb.rec[ne][ns].fname );
-    return 0;
-  }
+  if ( !read_sac (str, sig1, &shd1, 1000000 ) ) return 0;
 
   n1 = (long)((t1-t1b)/sdb.rec[ne][ns].dt);
 

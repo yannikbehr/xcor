@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <math.h>
 #include "aftan.h"
 
@@ -129,20 +130,24 @@ void printres(double dt,int nfout1,double arr1[100][7],int nfout2,
   strcat(name2,"_AMP");
  
 
-  if(ii==0)
-    {
+  if(ii==0){
       if((out = fopen(name2,"w")) == NULL) {
 	printf("Can not open file %s.\n",name2);
 	exit(1);
       }
-    }
-  else out = fopen(name2,"a");
-  for(i = 0; i < nrow; ++i)
-    for(j = 0; j < ncol; ++j)
-      fprintf(out,"%8.3lf %8.3lf %15.6e\n", arr2[i][0],(delta/(tamp+j*dt)),ampo[i][j]);
+      for(i = 0; i < nrow; ++i)
+      for(j = 0; j < ncol; ++j)
+	fprintf(out,"%8.3lf %8.3lf %15.6e\n", arr2[i][0],(delta/(tamp+j*dt)),ampo[i][j]);
+      fclose(out);
+  }else if (access(name2, F_OK) == 0) {
+    out = fopen(name2,"a");
+    for(i = 0; i < nrow; ++i)
+      for(j = 0; j < ncol; ++j)
+	fprintf(out,"%8.3lf %8.3lf %15.6e\n", arr2[i][0],(delta/(tamp+j*dt)),ampo[i][j]);
 
-  // fprintf(out,"%8.3lf %8.3lf %15.6e\n", (double)(i+1),tamp+j*dt,ampo[i][j]);
-
-  fclose(out);
+    fclose(out);
+  }else{
+    fprintf(stderr,"ERROR: file doesn't exist!\n");
+  }
   
 }

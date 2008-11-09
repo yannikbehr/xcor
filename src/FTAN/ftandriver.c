@@ -172,7 +172,7 @@ int main (int argc, char **argv)
   char configfile[STRING];
   char **filelist, *sacroot;
   char  name[160], altsacroot[STRING];//str[160];
-  int   i,j;//nn
+  int   i,j, ii;//nn
   int   sac = 1; // =1 - SAC, =0 - ftat files
   int counter=0;
   double initerror=0;
@@ -187,8 +187,8 @@ int main (int argc, char **argv)
   dd = iniparser_new(configfile);
   vmin = iniparser_getdouble(dd,"FTAN:vmin",initerror);
   vmax = iniparser_getdouble(dd,"FTAN:vmax",initerror);
-  tmin = iniparser_getdouble(dd,"FTAN:tmin",initerror);
-  tmax = iniparser_getdouble(dd,"FTAN:tmax",initerror);
+  //  tmin = iniparser_getdouble(dd,"FTAN:tmin",initerror);
+  //  tmax = iniparser_getdouble(dd,"FTAN:tmax",initerror);
   tresh = iniparser_getdouble(dd,"FTAN:thresh",initerror);
   ffact = iniparser_getdouble(dd,"FTAN:ffact",initerror);
   taperl = iniparser_getdouble(dd,"FTAN:taperl",initerror);
@@ -240,7 +240,7 @@ int main (int argc, char **argv)
     printf("--> length of trace = %d\n",n);
     printf("--> sampling interval = %lf\n",dt);
     printf("--> vmin = %lf, vmax = %lf\n",vmin,vmax);
-    printf("--> tmin = %lf, tmax = %lf\n",tmin,tmax);
+    //printf("--> tmin = %lf, tmax = %lf\n",tmin,tmax);
     printf("--> threshhold = %lf\n",tresh);
     printf("--> filter-factor = %lf\n",ffact);
     printf("--> taper length = %lf\n",taperl);
@@ -251,8 +251,8 @@ int main (int argc, char **argv)
     printf("--> t0 = %lf\n",t0);
     /* Call aftan4i function, FTAN + prediction         */
     printf("FTAN + prediction curve\n");
-    int ii; 
-    for(ii=0;ii<=3;ii++)
+    ii = 0;
+    while(ii<=3)
       {
 	if(ii==0)
 	  {
@@ -269,7 +269,7 @@ int main (int argc, char **argv)
 	    tmin=15;
 	    tmax=35;
 	  }
-	else
+	else if(ii==3)
 	  {
 	    tmin=20;
 	    tmax=50;
@@ -283,8 +283,9 @@ int main (int argc, char **argv)
 	aftan4_(&n,sei,&t0,&dt,&delta,&vmin,&vmax,&tmin,&tmax,&tresh,
 		&ffact,&perc,&npoints,&taperl,&nfin,&snr,&nfout1,arr1,
 		&nfout2,arr2,&tamp,&nrow,&ncol,ampo,&ierr);
+	if(ierr == 2 || ierr == 1) break;
 	printres(dt,nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,ampo,ierr,name,"_1",delta,ii);
-	if(nfout2 == 0) continue;   // break aftan sequence
+	//	if(nfout2 == 0) break;   // break aftan sequence
       
 	/* Make prediction based on the first iteration               */
 	if(nfout1==nfout2)
@@ -304,6 +305,7 @@ int main (int argc, char **argv)
 		     &nfout2,arr2,&tamp,&nrow,&ncol,ampo,&ierr);
 	    printres(dt,nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,ampo,ierr,name,"_2",delta,ii);
 	  }
+	ii++;
       }
   }
 

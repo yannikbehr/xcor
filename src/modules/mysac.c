@@ -11,6 +11,7 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
   fsac = fopen(fname, "rb");
   if ( !fsac )
     {
+      fprintf(stderr,"file %s not found\n",fname);
       return NULL;
     }
 
@@ -21,13 +22,13 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
   if ( SHD->npts > nmax )
     {
       fprintf(stderr,"WARNING: in file %s npts is limited to %d",fname,nmax);
-
-      SHD->npts = nmax;
+      fclose (fsac);
+      return NULL;
+      //SHD->npts = nmax;
     }
 
   fread(sig,sizeof(float),(int)(SHD->npts),fsac);
 
-  fclose (fsac);
 
   /*-------------  calcule de t0  ----------------*/
   {

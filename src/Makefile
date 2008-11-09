@@ -89,7 +89,7 @@ mergesac: merge_sac.c module_obj $(hfiles)
 	$(CC) -Wall -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)
 
 ftan:	ftan-module
-	$(FC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles)
+	$(CC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles) -u MAIN__ -lf2c 
 
 testing: module_obj test_sa_from_seed.c test_cut_trans_mod.c $(hfiles)
 	$(CC)  -g -I $(VPATH) test_sa_from_seed.c -o test_sa_from_seed $(ofiles);

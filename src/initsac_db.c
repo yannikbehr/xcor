@@ -251,7 +251,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 
   strncpy(sdb.rec[ne][ns].fname,sacfile,SSTRING-1);
   printf("%s\n", sdb.rec[ne][ns].fname);
-  sprintf(sdb.rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC", pathname, shd.kstnm, shd.kcmpnm);
+  sprintf(sdb.rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC_cut", pathname, shd.kstnm, shd.kcmpnm);
   strncpy(sdb.rec[ne][ns].chan,shd.kcmpnm,6);
   sdb.ev[ne].yy = year;
   sdb.ev[ne].jday = yday;
@@ -304,7 +304,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   /* find ft_* files if flag is set to '1'*/
   if(search_opts.flag == 1){
     assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+6)<STRING-1);
-    sprintf(respattern,"%s/ft*%s*%s*",pathname, shd.kstnm, shd.kcmpnm);
+    sprintf(respattern,"%s/ft*%s*%s*_cut",pathname, shd.kstnm, shd.kcmpnm);
 
     if(glob(respattern, 0, NULL, &match) == 0){
       if(match.gl_pathc>1){
@@ -325,10 +325,12 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 	sdb.rec[ne][ns].dt = (double)shd.delta;
       }else{
 	fprintf(stderr,"ERROR: no ft-file found for %s\n",sacfile);
+	sdb.rec[ne][ns].n  = 0;
       }
 
     }else{
 	fprintf(stderr,"ERROR: no ft-file found for %s\n",sacfile);
+	sdb.rec[ne][ns].n  = 0;
     }
     globfree(&match);
   }

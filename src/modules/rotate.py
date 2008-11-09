@@ -2,14 +2,14 @@
 import numpy as np
 import array as a
 import pysacio as p
-import os.path, glob, re, sys
+import os.path, glob, re, sys, string
+from ConfigParser import SafeConfigParser
 from math import *
 sys.path.append('/home/behrya/dev/proc-scripts/')
 import delaz
 
-def one_pair(sacfile, stat1, stat2):
-    sacbin = '/Volumes/data/yannik78/src/linux/sac/bin/'
-    saccmd = sacbin+'/sac 1>/dev/null'
+def one_pair(sacfile, stat1, stat2, sacdir):
+    saccmd = sacdir+'/sac 1>/dev/null'
     child = os.popen(saccmd, 'w')
     print >>child, "r %s" %(sacfile)
     print >>child, "ch kevnm %s" %(stat1)
@@ -32,6 +32,7 @@ def one_pair(sacfile, stat1, stat2):
     print >>child, "ch o 0"
     print >>child, "div 2"
     print >>child, "w %s_s" %(sacfile)
+    print >>child, "quit"
     err = child.close()
     if err:
         raise RuntimeError, '%r failed with exit code %d' %(saccmd, err)
@@ -41,7 +42,21 @@ def one_pair(sacfile, stat1, stat2):
 
 if __name__ == '__main__':
 
-    stackdir = '/home/behrya/dev/auto/testing/testdata/fanchi_horiz/STACK'
+    try:
+        if string.find(sys.argv[1],'-c')!=-1:
+            config=sys.argv[2]
+            print "config file is: ",sys.argv[2]
+            cp = SafeConfigParser()
+            cp.read(config)
+            stackdir = cp.get('rotate','stackdir')
+            sacdir   = cp.get('rotate','sacdir')
+        else:
+            print "encountered unknown command line argument"
+            raise Exception
+    except Exception:
+        print "no configuration file found"
+        sys.exit(1)
+
     pattern  = r'COR_(\w*_\w*).SAC_(\w*)'
     statpair = {}
     for myfile in glob.glob(stackdir+'/COR*.SAC*'):
@@ -101,9 +116,9 @@ if __name__ == '__main__':
         p.WriteSacBinary(fileRT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[3]))
         stations = i.split('_')
         stat1 = stations[0]; stat2 = stations[1]
-        one_pair(fileTT, stat1, stat2)
-        one_pair(fileRR, stat1, stat2)
-        one_pair(fileTR, stat1, stat2)
-        one_pair(fileRT, stat1, stat2)
+        one_pair(fileTT, stat1, stat2, sacdir)
+        one_pair(fileRR, stat1, stat2, sacdir)
+        one_pair(fileTR, stat1, stat2, sacdir)
+        one_pair(fileRT, stat1, stat2, sacdir)
         
             

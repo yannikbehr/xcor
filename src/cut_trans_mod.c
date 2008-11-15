@@ -224,7 +224,7 @@ int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag)
   assert((strlen(sacdir)+3) < STRING);
   sprintf(str,"%ssac",sacdir);
   ff = popen(str, "w");
-  if (!ff){
+  if (NULL == ff){
       fprintf (stderr,"ERROR: cannot open pipe to SAC subprocess.\n");
       return 0;
   }

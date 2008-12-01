@@ -42,7 +42,7 @@ SAC_HD *read_sac (char *fname, float *sig, SAC_HD *SHD, long nmax){
     SHD->o = SHD->b + SHD->nzhour*3600. + SHD->nzmin*60 +
       SHD->nzsec + SHD->nzmsec*.001;
 
-
+    fclose(fsac);
     return SHD;
   }
 }

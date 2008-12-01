@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <math.h>
 #include <iniparser.h>
 #include <mysac.h>
@@ -159,7 +160,7 @@ int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir)
 
   fprintf(stderr,"t1 %lg  t2 %lg   t1b %lg  t1e %lg\n", t1, t2, t1b, t1e);
 
-  if ( (t1b>t1) || (t1e<t2) ) {
+  if ( (t1b>t1) || (t1e<t2) || (t1e > 100000)) {
     fprintf(stderr,"incompatible time limits for station %s and event %s\n", sdb.st[ns].name, sdb.ev[ne].name );
     assert((strlen(tmpdir)+14) < STRING);
     sprintf(str,"/bin/rm %ss1.sac",tmpdir );
@@ -223,12 +224,15 @@ int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag)
   /* open pipe to sac-process */
   assert((strlen(sacdir)+3) < STRING);
   sprintf(str,"%ssac",sacdir);
+  errno = 0;
   ff = popen(str, "w");
   if (NULL == ff){
-      fprintf (stderr,"ERROR: cannot open pipe to SAC subprocess.\n");
-      return 0;
+    fprintf (stderr,"ERROR: cannot open pipe to SAC subprocess %s; %s.\n",
+	     str, strerror(errno));
+    exit(1);
   }
-
+  /* set buffering to line-buffering */
+  setvbuf(ff, NULL,_IOLBF, BUFSIZ);
   fprintf(ff,"r %s\n",sdb.rec[ne][ns].fname);
   fprintf(ff,"rmean\n");
   fprintf(ff,"rtrend\n");
@@ -284,6 +288,9 @@ int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag)
 
   fprintf(ff,"w %ss1.sac\n",tmpdir);
   fprintf(ff,"quit\n");
+  if(ferror(ff)){
+    fprintf (stderr, "ERROR: output to stream failed.\n");
+  } 
   if(pclose (ff) != 0){
     fprintf (stderr,"ERROR: when closing pipe.\n");
     return 0;

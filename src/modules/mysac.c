@@ -92,11 +92,14 @@ SAC_HD *read_sac_header(char *fname, SAC_HD *SHD)
 /*--------------------------------------------------------------------------
   writes sac file with name fname from signal sig with header SHD
   --------------------------------------------------------------------------*/
-void write_sac (char *fname, float *sig, SAC_HD *SHD){
+int write_sac (char *fname, float *sig, SAC_HD *SHD){
   FILE *fsac;
-  int i;
+  int i, ret;
   fsac = fopen(fname, "wb");
-
+  if( NULL == fsac ) {
+    fprintf(stderr,"could not open sac file to read\n");
+    return 0;
+   }
   if ( !SHD ) SHD = &SAC_HEADER;
 
 
@@ -115,18 +118,19 @@ void write_sac (char *fname, float *sig, SAC_HD *SHD){
       if ( SHD->depmax < sig[i] ) SHD->depmax = sig[i];
     }
 
-  fwrite(SHD,sizeof(SAC_HD),1,fsac);
+  ret = fwrite(SHD,sizeof(SAC_HD),1,fsac);
 
-  fwrite(sig,sizeof(float),(int)(SHD->npts),fsac);
+  ret = fwrite(sig,sizeof(float),(int)(SHD->npts),fsac);
 
 
   fclose (fsac);
+  return 1;
 }
 
 
 /*--------------------------------------------------------------------------
-  reads sac-files fname with maximum length nmax into signal sig and \
-  header SHD
+  reads sac-file fname and allocates memory for trace dynamically according 
+  to sac-header information
   --------------------------------------------------------------------------*/
 float *read_sac_dyn (char *fname, SAC_HD *SHD){
 
@@ -135,6 +139,7 @@ float *read_sac_dyn (char *fname, SAC_HD *SHD){
   fsac = fopen(fname, "rb");
   if ( !fsac )
     {
+      fprintf( stderr,"file %s not found\n",fname);
       return NULL;
     }
   if ( !SHD ) SHD = &SAC_HEADER;

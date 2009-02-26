@@ -36,6 +36,7 @@ struct sopts{
   char *search_str[50];
   char *skip_dirs[50];
   char *search_dirs[50];
+  char *prefix;
   int flag;
 } search_opts;
 
@@ -69,10 +70,11 @@ int main (int argc, char **argv){
 
   /*opening config file*/
   dd = iniparser_new(sdb.conf);
-  search_dirs = iniparser_getstr(dd, "init_sacdb:search_directories");
-  skip_dirs   = iniparser_getstr(dd, "init_sacdb:skip_directories");
-  search_str = iniparser_getstr(dd, "init_sacdb:search_string");
-  search_opts.flag = iniparser_getint(dd, "init_sacdb:flag", 0);
+  search_dirs        = iniparser_getstr(dd, "init_sacdb:search_directories");
+  skip_dirs          = iniparser_getstr(dd, "init_sacdb:skip_directories");
+  search_str         = iniparser_getstr(dd, "init_sacdb:search_string");
+  search_opts.flag   = iniparser_getint(dd, "init_sacdb:flag", 0);
+  search_opts.prefix = iniparser_getstr(dd, "init_sacdb:prefix");
   buf = strdup(search_dirs);
   ptr  = strtok(buf, delimiters);
   i = 0;
@@ -202,7 +204,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   char respattern[STRING];
   glob_t match;
 
-  printf("%s\n",sacfile);
+  //  printf("%s\n",sacfile);
   f = fopen(sacfile,"rb");
   fread(&shd, sizeof(SAC_HD),1,f);
   fclose(f);
@@ -251,7 +253,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 
   strncpy(sdb.rec[ne][ns].fname,sacfile,SSTRING-1);
   printf("%s\n", sdb.rec[ne][ns].fname);
-  sprintf(sdb.rec[ne][ns].ft_fname,"%s/ft_%s.%s.SAC_cut", pathname, shd.kstnm, shd.kcmpnm);
+  sprintf(sdb.rec[ne][ns].ft_fname,"%s/%s_%s.%s.SAC",pathname,search_opts.prefix,shd.kstnm, shd.kcmpnm);
   strncpy(sdb.rec[ne][ns].chan,shd.kcmpnm,6);
   sdb.ev[ne].yy = year;
   sdb.ev[ne].jday = yday;
@@ -265,6 +267,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   sdb.rec[ne][ns].dt = (double)shd.delta;
   sdb.rec[ne][ns].n  = shd.npts;
   sdb.rec[ne][ns].t0 = abs_time(shd.nzyear,shd.nzjday,shd.nzhour,shd.nzmin,shd.nzsec,shd.nzmsec );
+
   /* find corresponding response file */
   assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+7)<STRING-1);
   sprintf(respattern,"%s/RESP*%s*%s",pathname, shd.kstnm, shd.kcmpnm);
@@ -282,6 +285,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
     }
   }
   globfree(&match);
+
   /* find corresponding pole-zero file */
   assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+11)<STRING-1);
   sprintf(respattern,"%s/SAC_PZs*%s*%s*",pathname, shd.kstnm, shd.kcmpnm);
@@ -303,8 +307,8 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 
   /* find ft_* files if flag is set to '1'*/
   if(search_opts.flag == 1){
-    assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+6)<STRING-1);
-    sprintf(respattern,"%s/ft*%s*%s*_cut",pathname, shd.kstnm, shd.kcmpnm);
+    assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+strlen(search_opts.prefix)+5)<STRING-1);
+    sprintf(respattern,"%s/%s_*%s*%s*",pathname, search_opts.prefix, shd.kstnm, shd.kcmpnm);
 
     if(glob(respattern, 0, NULL, &match) == 0){
       if(match.gl_pathc>1){

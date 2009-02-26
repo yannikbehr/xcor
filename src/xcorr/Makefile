@@ -48,7 +48,7 @@ all: $(BIN1) $(BIN2)
 $(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj 
 	$(CC) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS)
 
-$(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
+$(BIN2) : justCOR_EE_EN.c $(FOBJS) $(COBJS) $(binofiles) module_obj
 	$(CC) justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS)
 
 module_obj:

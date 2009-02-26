@@ -94,7 +94,8 @@ if __name__ == '__main__':
 
         # write causal part only
         delta = p.GetHvalue('delta',hf,hi,hs)
-        null = -1*b/delta
+        #null = -1*b/delta
+        null = 3000
         reversed = seis[-1::-1]
         newseis = seis+reversed
         p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)

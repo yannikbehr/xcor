@@ -29,9 +29,10 @@
 #define SSTRING 150
 
 /* FUNCTION PROTOTYPES */
-int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag);
-int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir);
+int one_rec_trans(int ne, int ns, char *sacdir, int respflag);
+int one_rec_cut(int ne, int ns, float t1, float n);
 void get_args(int argc, char** argv, char* conffile);
+int check_exist(int ne, int ns, int respflag);
 
 char str[STRING];
 
@@ -62,8 +63,6 @@ int main (int argc, char **argv)
   npts     = iniparser_getint(dd, "rm_resp:npts", 84000);
   respflag = iniparser_getint(dd, "rm_resp:rm_opt", 1);
 
-  assert(strlen(conffile) < SSTRING);
-  strncpy(sdb.conf,conffile,SSTRING-1);
   assert((strlen(tmpdir)+11) < STRING);
   sprintf(str,"%ssac_db.out", tmpdir);
 
@@ -77,11 +76,11 @@ int main (int argc, char **argv)
   /* REMOVE INSTRUMENT RESPONSE AND CUT TO DESIRED LENGTH */
   for ( ns = 0; ns < sdb.nst; ns++ ){
     for ( ne = 0; ne < sdb.nev; ne++ ) {
-      if(!one_rec_trans(ne, ns, sacdir, tmpdir, respflag)){
+      if(!one_rec_trans(ne, ns, sacdir, respflag)){
 	fprintf(stderr,"ERROR: removing instrument response failed.\n");
 	continue;
       }
-      if(!one_rec_cut(ne, ns, t1, npts, tmpdir)){
+      if(!one_rec_cut(ne, ns, t1, npts)){
 	fprintf(stderr,"ERROR: cutting trace failed.\n");
 	continue;
       }
@@ -91,7 +90,6 @@ int main (int argc, char **argv)
   ff = fopen(str,"wb");
   fwrite(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
-
   iniparser_free(dd);
   return 0;
 }
@@ -144,13 +142,17 @@ void get_args(int argc, char** argv, char* conffile)
   t1 = lower boundary [s]
   n  = number of samples between lower and upper boundary
   --------------------------------------------------------------------------*/
-int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir)
+int one_rec_cut(int ne, int ns, float t1, float n)
 {
   float sig1[200000]; 
   double t1b, t1e, t2;
   long n1;
   char ft_name[SSTRING];
+  char tmp_file[STRING];
   SAC_HD shd1;
+
+  assert((strlen(sdb.rec[ne][ns].fname)+4)<STRING);
+  sprintf(tmp_file,"%s_tmp",sdb.rec[ne][ns].ft_fname);
 
   t2 = t1 + (n-1)*sdb.rec[ne][ns].dt;
 
@@ -162,14 +164,11 @@ int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir)
 
   if ( (t1b>t1) || (t1e<t2) || (t1e > 100000)) {
     fprintf(stderr,"incompatible time limits for station %s and event %s\n", sdb.st[ns].name, sdb.ev[ne].name );
-    assert((strlen(tmpdir)+14) < STRING);
-    sprintf(str,"/bin/rm %ss1.sac",tmpdir );
-    system(str);
+    assert(!(remove(tmp_file)< 0));
     return 0;
   }
 
-  sprintf(str,"%ss1.sac",tmpdir );
-  if ( !read_sac (str, sig1, &shd1, 1000000 ) ) return 0;
+  if ( !read_sac (tmp_file, sig1, &shd1, 1000000 ) ) return 0;
 
   n1 = (long)((t1-t1b)/sdb.rec[ne][ns].dt);
 
@@ -184,9 +183,7 @@ int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir)
   
   strcpy(ft_name, sdb.rec[ne][ns].ft_fname);
   write_sac (ft_name, &(sig1[n1]), &shd1 );
-  assert((strlen(tmpdir)+14) < STRING);
-  sprintf(str,"/bin/rm %ss1.sac",tmpdir );
-  system(str);
+  assert(!(remove(tmp_file)<0));
   return 1;
 }
 
@@ -198,11 +195,12 @@ int one_rec_cut(int ne, int ns, float t1, float n, char *tmpdir)
   sd = SAC_DB structure written by sa_from_seed_mod
   sacdir = pointer to dir of sac-binaries
   ---------------------------------------------------------------------------*/
-int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag)
+int one_rec_trans(int ne, int ns, char *sacdir, int respflag)
 {
   FILE *ff;
   float fl1, fl2, fl3, fl4, factor=1;
   int freq;
+  char tmp_file[STRING];
 
   /* ASSUME THAT THE DATA ARE WITHIN THE FOLLOWING FILTER BAND */
   fl1=1.0/170.0;		/* currently set for 5-150 s period band */
@@ -217,13 +215,17 @@ int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag)
     fprintf(stdout,"Frequency limits: %f %f %f %f\n", fl1, fl2, fl3, fl4);
   }
 
-  if ( ne >= sdb.nev ) return 0;
-  if ( ns >= sdb.nst  ) return 0;
-  if ( sdb.rec[ne][ns].n <= 0 ) return 0;
-
+  check_exist(ne,ns,respflag);
   /* open pipe to sac-process */
   assert((strlen(sacdir)+3) < STRING);
+#ifdef DBG
   sprintf(str,"%ssac",sacdir);
+#else
+  sprintf(str,"%ssac 1>/dev/null 2>/dev/null",sacdir);
+#endif
+  assert((strlen(sdb.rec[ne][ns].fname)+4)<STRING);
+  sprintf(tmp_file,"%s_tmp",sdb.rec[ne][ns].ft_fname);
+
   errno = 0;
   ff = popen(str, "w");
   if (NULL == ff){
@@ -286,7 +288,7 @@ int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag)
   }
   /*******************************************************************/
 
-  fprintf(ff,"w %ss1.sac\n",tmpdir);
+  fprintf(ff,"w %s\n",tmp_file);
   fprintf(ff,"quit\n");
   if(ferror(ff)){
     fprintf (stderr, "ERROR: output to stream failed.\n");
@@ -299,3 +301,26 @@ int one_rec_trans(int ne, int ns, char *sacdir, char *tmpdir, int respflag)
   return 1;
 }
 
+
+
+int check_exist(int ne, int ns, int respflag){
+  if ( ne >= sdb.nev ) return 0;
+  if ( ns >= sdb.nst  ) return 0;
+  if ( sdb.rec[ne][ns].n <= 0 ) return 0;
+  if(access(sdb.rec[ne][ns].fname, F_OK) != 0){
+    fprintf(stderr,"WARNING: cannot find %s\n",sdb.rec[ne][ns].fname);
+    return 0;
+  }
+  if(respflag){
+    if(access(sdb.rec[ne][ns].resp_fname, F_OK) != 0){
+      fprintf(stderr,"WARNING: cannot find %s\n",sdb.rec[ne][ns].resp_fname);
+      return 0;
+    }
+  }else if(!respflag){
+    if(access(sdb.rec[ne][ns].pz_fname, F_OK) != 0){
+      fprintf(stderr,"WARNING: cannot find %s\n",sdb.rec[ne][ns].pz_fname);
+      return 0;
+    }
+  }
+  return 1;
+}

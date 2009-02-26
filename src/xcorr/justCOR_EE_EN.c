@@ -409,6 +409,7 @@ int find_n_comp(char *nameE, char *nameN){
     ncmp[3] = '\0';
     assert((strlen(start)+strlen(ncmp)+strlen(end))<100);
     sprintf(nameN,"%s%s%s",start,ncmp,end);
+    printf("%s\n",nameN); 
     free(start);free(cmp);free(end);
   }else{
     fprintf(stderr,"ERROR: no match for regular expression %s\n",pattern);

@@ -8,11 +8,31 @@ $LastChangedDate:$
 import sys, os.path, os, getopt, string, shutil, glob
 from ConfigParser import SafeConfigParser
 from numpy import *
+from pylab import *
 
 sys.path.append('../src/modules')
-import pysacio, do_whiten_new, mk_ev_table
+import pysacio, do_whiten_new, mk_ev_table, sac_from_seed
 
+########################## WRITING CONFIG FILE ######################################
+output = open("./config.txt","w")
+outlines = """[raw2sac]
+rdseedir=/home/behrya/src/rdseed4.7.5/          
+bindir=./bin/                                   
+mseedir=./mseed/                                
+sacfiles=./SacFiles/                            
+dataless=./nz.dataless.seed                     
+respfiles=./RespFiles/                          
+
+[init_sacdb]
+search_directories=
+skip_directories=5to100, eqband, 1to40
+search_string=[!^ft]*HZ.SAC
+tmpdir=./tmp/"""
+output.writelines(outlines)
+output.close()
 ########################## COMMAND LINE ARGUMENTS ###################################
+sys.exit(0)
+
 USAGE = """usage: %s proc-step [-c] [-h]
 where:
    -c     -> alternative config file (default is './config.txt')
@@ -69,6 +89,83 @@ if __name__ == '__main__':
     configfile = args_d['cfile']
     cp = SafeConfigParser()
     cp.read(configfile)
+
+############################### TESTING SA_FROM_SEED ############################
+    if step == '0':
+        print "--------------------------------------"
+        print "TESTING: sacfrom_seed.py"
+        print "--------------------------------------"
+        err = 0
+        try:
+            print "-->creating test-directory"
+            rdseedir = cp.get('database','rdseeddir')
+            bindir   = cp.get('local_settings','bindir')
+            sacdir   = './testdata/test_sac_from_seed/'
+            if not os.path.isdir(sacdir):
+                os.mkdir(sacdir)
+        except Exception, e:
+            print "ERROR: cannot create test directory", e
+            sys.exit(1)
+        try:
+            print "-->running sac_from_seed.py"
+            t = sac_from_seed.SaFromSeed(rdseedir, bindir, sacdir)
+            flist = glob.glob('testdata/fanchi_horiz/seed/S-*')
+            #t(flist, resp_only=False)
+        except Exception:
+            print "ERROR: executing sa_from_seed_new not succesful!"
+            sys.exit(1)
+        else:
+            try:
+                print "-->comparing results with fanchi's"
+                file1 = sacdir+"/2006/2006_9_10_0_0_0/116A.LHE.SAC"
+                file2 = sacdir+"/2006/2006_9_10_0_0_0/R06C.LHE.SAC"
+                fcmp1 = "./testdata/fanchi_horiz/Sep/2006_9_10_0_0_0/116A.LHE.SAC"
+                fcmp2 = "./testdata/fanchi_horiz/Sep/2006_9_10_0_0_0/R06C.LHE.SAC"
+                [hf1,hi1,hs1,seis1,ok1] = pysacio.ReadSacFile(file1)
+                [hf2,hi2,hs2,seis2,ok2] = pysacio.ReadSacFile(file2)
+                [hf3,hi3,hs3,refseis1,ok3] = pysacio.ReadSacFile(fcmp1)
+                [hf4,hi4,hs4,refseis2,ok4] = pysacio.ReadSacFile(fcmp2)
+                if ok1==0:
+                    raise Exception, file1
+                elif ok2==0:
+                    raise Exception, file2
+                elif ok3==0:
+                    raise Exception, fcmp1
+                elif ok4==0:
+                    raise Exception, fcmp2
+            except Exception, e:
+                print "ERROR: cannot read in sac-file ", e
+            else:
+                try:
+                    if not all(seis1-refseis1 < 0.0001):
+                        raise Exception
+                    if not all(seis2 - refseis2 < 0.0001):
+                        raise Exception
+                except Exception:
+                    print "ERROR: test failed"
+                    print "       either results are not identical or"
+                    print "       test didn't work"
+                    x = where(not seis1-refseis1 < 0.0001,0,1)
+                    subplot(4,1,1)
+                    plot(seis1,'r')
+                    subplot(4,1,2)
+                    plot(refseis1,'b')
+                    subplot(4,1,3)
+                    plot(seis2,'r')
+                    subplot(4,1,4)
+                    plot(refseis2,'b')
+                    show()
+                else:
+                    print "--------------------------------------"
+                    print "-->testing sa_from_seed_new was succesful"
+                    # cleaning up
+                    #sacdir = cp.get('database','sacdirroot')
+                    #if os.path.isdir(sacdir):
+                    #    shutil.rmtree(sacdir)
+                    for i in glob.glob('./rdseed.err_log.*'):
+                        os.remove(i)
+                    print "--------------------------------------"
+
 
 ############################### TESTING SA_FROM_SEED ############################
     if step == '1':
@@ -277,25 +374,7 @@ if __name__ == '__main__':
             err = os.system('../bin/justCOR_EE_EN -c '+configfile)
 
 
-################################ TESTING ROTATION #################################
-    if step == '4':
-        print "--------------------------------------"
-        print "TESTING: rotation"
-        print "--------------------------------------"
-        print "-->writing sac_db.out file"
-        err = 0
-        try:
-            err = os.system('../bin/initsac_db -c '+configfile)
-            if err != 0:
-                raise Exception
-        except Exception:
-            print "ERROR: initsac_db didn't complete normally"
-            sys.exit(1)
-        else:
-            print "-->running justCOR_EE_EN"
-            err = os.system('../bin/justCOR_EE_EN -c '+configfile)
-
-
+#
 #        try:
 #            print "-->comparing results with fanchi's"
 #            refdir = './testdata/fanchi_horiz/Sep/5to100_EN/2006_9_27_0_0_0/'

@@ -49,10 +49,10 @@ c multiply to get correlation in freq domain
 
 
 c compute ifft 
-C      call dfftw_plan_dft_1d(plan3,ns,temp3,temp2,
-C     *                         FFTW_FORWARD, FFTW_ESTIMATE)
       call dfftw_plan_dft_1d(plan3,ns,temp3,temp2,
-     *                         FFTW_BACKWARD, FFTW_ESTIMATE)
+     *                         FFTW_FORWARD, FFTW_ESTIMATE)
+C      call dfftw_plan_dft_1d(plan3,ns,temp3,temp2,
+C     *                         FFTW_BACKWARD, FFTW_ESTIMATE)
       call dfftw_execute(plan3)
       call dfftw_destroy_plan(plan3)
 c extract correlatio

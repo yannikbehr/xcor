@@ -25,6 +25,7 @@ class DoWhiten:
         self.sacdir = conf.get("whitening", "sacfiles")
         self.sacbin = conf.get("whitening", "sacdir")
         self.bindir = conf.get("whitening", "bindir")
+        self.prefix = conf.get("whitening", "prefix")
         # frequency band +- 20% as taper
         self.upperp = int(conf.get("whitening", "upperperiod"))
         self.lowerp = int(conf.get("whitening", "lowerperiod"))
@@ -80,6 +81,7 @@ class DoWhiten:
                         p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
                         child1 = p1.stdin
                         src, tar, eqtar = k
+                        print tar
                         print >>child1, "r %s" %(eqtar)
                         print >>child1, "abs"
                         print >>child1, "smooth mean h 128"
@@ -207,8 +209,10 @@ class DoWhiten:
                 # get all ft-files with channel name given in complst;
                 # write them into strct
                 for i in range(0,len(self.complst)):
-                    tmplist = glob.glob(dirname+'/'+month+'/'+day+'/ft_*'+\
-                                        self.complst[i]+'*')
+                    pattern="%s/%s/%s/%s_*.%s.SAC"\
+                             %(dirname,month,day,self.prefix,self.complst[i])
+                    print pattern
+                    tmplist = glob.glob(pattern)
                     if len(tmplist) > 0:
                         self.proclst.ydaydir[self.cnt][self.complst[i]] = []
                         for file in tmplist:
@@ -232,6 +236,7 @@ class DoWhiten:
         else:
             print "ERROR: number of components too big or too small!"
             sys.exit(1)
+
 
     def dir_walk(self, arg, dirname, names):
         """ called by os.path.walk; checks if the directory 'dirname\n

@@ -1,42 +1,51 @@
-[local_settings]
-bindir=../../bin/
+[seed2sac]
+rdseedir=/home/behrya/src/rdseed4.7.5/          
+bindir=../bin/                                   
+seedfiles=./testdata/fanchi_horiz/seed/
+seedfilere=S-*
+sacfiles=./testdata/test_sac_from_seed/
 
-[database]
-databasedir=/Volumes/stage/stage/yannik78/datasets/geonet/geonet_xcorr/2005/Apr/
-databasefile=./tmp/event-table.txt
-rdseeddir=/home/behrya/src/rdseed4.7.5/
+[mseed2sac]
+rdseedir=/home/behrya/src/rdseed4.7.5/          
+bindir=../bin/                                   
+mseedir=./mseed/                                
+sacfiles=./SacFiles/                            
+dataless=./nz.dataless.seed                     
+respfiles=./RespFiles/                          
+
+[init_sacdb]
+search_directories=./SacFiles/                  
+skip_directories=5to100, eqband, 1to40          
+search_string=[!^ft]*HZ.SAC                     
+tmpdir=./tmp/                                   
+
+[rm_resp]
+sacdir=/home/behrya/src/sac/bin/               
+tmpdir=./tmp/                                   
+start_t=1000                                    
+npts=84000
+
+[whitening]
+sacfiles=./SacFiles/
 sacdir=/home/behrya/src/sac/bin/
-datatype=seed
-sacdirroot=/Volumes/stage/stage/yannik78/datasets/geonet/geonet_xcorr/2005/
-tmpdir=./tmp/
-
-[processing]
-seedfilere=
-#define channel (sample frequency)
-channel=LHZ
-
-#define frequency range for correlations
+bindir=../bin/
 upperperiod=5
 lowerperiod=100
+complist=LHZ
 
-# define lower and upper index value to cut
-# traces
-lowercut=1000
-uppercut=84000
+[xcor]
+tmpdir=./tmp/
+cordir=./Results/XCor/
+pbdir=5to100
+lag=3000
 
-#processing-steps
-initevtbl=0
-seed2sac=0
-initsacdb=0
-rmresp=0
-white=0
-xcorr=0
-stack=0
-sym=0
-ftan=1
-
+[stack]
+cordir=./Results/XCor/2001/
+stackdir=./Results/XCor/stack/
 
 [FTAN]
+corfiles=./Results/XCor/stack/
+
 vmin=1.5 	#minimal group velocity, km/s
 vmax=5  	#maximal value of the group velocity, km/s
 tmin=5   	#minimal period, s
@@ -44,4 +53,4 @@ tmax=50  	#maximal period, s
 thresh=10	#treshold, usualy = 10
 ffact=1  	#factor to automatic filter parameter, usualy =1
 taperl=1 	#factor for the left end seismogram tapering,taper = taperl*tmax
-snr=0.1  	#signal-to-noise ratio (not used like that in ftan-code!!!)
+snr=0.1  	#signal-to-noise ratio (not used like that in ftan-code!!!)[raw2sac]

@@ -10,10 +10,9 @@ sys.path.append('/home/behrya/dev/proc-scripts')
 import delaz as dz
 
 mystack = {}
-pattern = r'COR_(\w*_\w*).SAC'
 
-def find_match(f):
-    match = re.search(pattern,f)
+def find_match(f,spattern):
+    match = re.search(spattern,f)
     if match:
         [hf,hi,hs,seis,ok] = p.ReadSacFile(f)
         if not ok:
@@ -44,11 +43,11 @@ def find_match(f):
     else:
         return 0
     
-def find_xcor(arg, dirname, files):
+def find_xcor(spattern, dirname, files):
     corfiles = glob.glob(dirname+'/COR*')
     if len(corfiles) > 0:
         for f in corfiles:
-            find_match(f)
+            find_match(f,spattern)
 
 if __name__ == '__main__':
 
@@ -60,6 +59,7 @@ if __name__ == '__main__':
             cp.read(config)
             rootdir  = cp.get('stack','cordir')
             stackdir = cp.get('stack','stackdir')
+            spattern  = cp.get('stack','spattern')
         else:
             print "encountered unknown command line argument"
             raise Exception
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         print "no configuration file found"
         sys.exit(1)
 
-    os.path.walk(rootdir, find_xcor, None)
+    os.path.walk(rootdir, find_xcor, spattern)
     if not os.path.isdir(stackdir):
         os.mkdir(stackdir)
     for stat in mystack.keys():
@@ -94,8 +94,7 @@ if __name__ == '__main__':
 
         # write causal part only
         delta = p.GetHvalue('delta',hf,hi,hs)
-        #null = -1*b/delta
-        null = 3000
+        null = -1*b/delta
         reversed = seis[-1::-1]
         newseis = seis+reversed
         p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)

@@ -202,6 +202,15 @@ int one_rec_trans(int ne, int ns, char *sacdir, int respflag)
   int freq;
   char tmp_file[STRING];
 
+
+  if (!check_exist(ne,ns,respflag)) return 0;
+  fprintf(stdout,"removing ins-resp for: %s\n", sdb.rec[ne][ns].fname);
+  if(1==respflag){
+    fprintf(stdout,"using ins-resp: %s\n", sdb.rec[ne][ns].resp_fname);
+  }else if(0==respflag){
+    fprintf(stdout,"using ins-resp: %s\n", sdb.rec[ne][ns].pz_fname);
+  }
+
   /* ASSUME THAT THE DATA ARE WITHIN THE FOLLOWING FILTER BAND */
   fl1=1.0/170.0;		/* currently set for 5-150 s period band */
   fl2=1.0/160.0;
@@ -215,7 +224,6 @@ int one_rec_trans(int ne, int ns, char *sacdir, int respflag)
     fprintf(stdout,"Frequency limits: %f %f %f %f\n", fl1, fl2, fl3, fl4);
   }
 
-  check_exist(ne,ns,respflag);
   /* open pipe to sac-process */
   assert((strlen(sacdir)+3) < STRING);
 #ifdef DBG
@@ -304,9 +312,18 @@ int one_rec_trans(int ne, int ns, char *sacdir, int respflag)
 
 
 int check_exist(int ne, int ns, int respflag){
-  if ( ne >= sdb.nev ) return 0;
-  if ( ns >= sdb.nst  ) return 0;
-  if ( sdb.rec[ne][ns].n <= 0 ) return 0;
+  if ( ne >= sdb.nev ){
+    fprintf(stderr,"WARNING: ne out of bounds (ne=%d)\n",ne);
+    return 0;
+  }
+  if ( ns >= sdb.nst  ){
+    fprintf(stderr,"WARNING: ns out of bounds (ns=%d)\n",ns);
+    return 0;
+  }
+  if ( sdb.rec[ne][ns].n <= 0 ){
+    fprintf(stderr,"WARNING: no data available for %s\n",sdb.rec[ne][ns].fname);
+    return 0;
+  }
   if(access(sdb.rec[ne][ns].fname, F_OK) != 0){
     fprintf(stderr,"WARNING: cannot find %s\n",sdb.rec[ne][ns].fname);
     return 0;

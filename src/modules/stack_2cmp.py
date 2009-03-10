@@ -4,17 +4,19 @@
 import numpy as np
 import array as a
 import c_stack as c
+from ConfigParser import SafeConfigParser
+import os.path, glob, re, sys, string
+sys.path.append('/home/behrya/dev/proc-scripts')
 import pysacio as p
-import os.path, glob, re, sys
 
 eestack = {}
 enstack = {}
 nestack = {}
 nnstack = {}
-patternlist = [(r'COR_(\w*_\w*).SAC.prelim_NE', nestack, 'NE'),\
-               (r'COR_(\w*_\w*).SAC.prelim_EN', enstack, 'EN'),\
-               (r'COR_(\w*_\w*).SAC.prelim_NN', nnstack, 'NN'),\
-               (r'COR_(\w*_\w*).SAC.prelim_EE', eestack, 'EE')]
+patternlist = [(r'COR_(\w*_\w*).SAC_NE', nestack, 'NE'),\
+               (r'COR_(\w*_\w*).SAC_EN', enstack, 'EN'),\
+               (r'COR_(\w*_\w*).SAC_NN', nnstack, 'NN'),\
+               (r'COR_(\w*_\w*).SAC_EE', eestack, 'EE')]
 
 class TwirlyBar:
     """show progress of program"""
@@ -90,7 +92,7 @@ def find_match(tupatt, f):
         return 0
     
 def find_xcor(stackdir, dirname, files):
-    corfiles = glob.glob(dirname+'/COR*prelim*')
+    corfiles = glob.glob(dirname+'/COR*')
     if len(corfiles) > 0:
         for f in corfiles:
             for entry in patternlist:
@@ -99,15 +101,21 @@ def find_xcor(stackdir, dirname, files):
 
 
 if __name__ == '__main__':
-    file1 = '../../testing/testdata/fanchi/Jan/5to100/COR/COR_MATA_TIKO.SAC'
-    file2 = '../../testing/testdata/fanchi/Jan/5to100/COR/COR_MATA_TIKO.SAC'
-    rootdir = '/Volumes/stage/stage/yannik78/datasets/nord/nord-sac-EN/'
-    stackdir = '/Volumes/stage/stage/yannik78/datasets/nord/nord-sac-EN/STACK'
-    [hf1,hi1,hs1,seis1,ok1] = p.ReadSacFile(file1)
-    [hf2,hi2,hs2,seis2,ok2] = p.ReadSacFile(file2)
-    print seis1.typecode
-    trace1 = np.array(object=seis1)
-    trace2 = np.array(object=seis2)
+    try:
+        if string.find(sys.argv[1],'-c')!=-1:
+            config=sys.argv[2]
+            print "config file is: ",sys.argv[2]
+            cp = SafeConfigParser()
+            cp.read(config)
+            rootdir  = cp.get('stack','cordir')
+            stackdir = cp.get('stack','stackdir')
+        else:
+            print "encountered unknown command line argument"
+            raise Exception
+    except Exception:
+        print "no configuration file found"
+        sys.exit(1)
+
     os.path.walk(rootdir, find_xcor, stackdir)
     if not os.path.isdir(stackdir):
         os.mkdir(stackdir)
@@ -116,7 +124,6 @@ if __name__ == '__main__':
         for stat in mystack.keys():
             outputfile = stackdir+'/COR_'+stat+'.SAC_'+comp
             print 'writing',outputfile
-            print mystack[stat]
             seis = mystack[stat]['trace']
             hf = mystack[stat]['hf']
             hs = mystack[stat]['hs']

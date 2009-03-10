@@ -308,7 +308,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   /* find ft_* files if flag is set to '1'*/
   if(search_opts.flag == 1){
     assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+strlen(search_opts.prefix)+5)<STRING-1);
-    sprintf(respattern,"%s/%s_*%s*%s*",pathname, search_opts.prefix, shd.kstnm, shd.kcmpnm);
+    sprintf(respattern,"%s/%s_*%s*%s.SAC",pathname, search_opts.prefix, shd.kstnm, shd.kcmpnm);
 
     if(glob(respattern, 0, NULL, &match) == 0){
       if(match.gl_pathc>1){
@@ -491,6 +491,7 @@ int day_of_year(int year, int month, int day)
     day += daytab[leap][i];
   return day;
 }
+
 
 /*--------------------------------------------------------------------------
  *computes time in s relative to 1900

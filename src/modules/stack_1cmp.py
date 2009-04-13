@@ -8,11 +8,19 @@ import os.path, glob, re, sys, string, math
 from ConfigParser import SafeConfigParser
 sys.path.append('/home/behrya/dev/proc-scripts')
 import delaz as dz
+import logging
 
 class PAR: pass
 
 def find_match(par,dirname,filelist):
     """find 'COR'-files in 'dirname' and add them to global dict of 'COR'-files """
+    for dn in par.skipdir:
+        try:
+            i = filelist.index(dn)
+            del filelist[i]
+        except: pass
+
+    print '... in %s'%dirname
     corfiles = glob.glob(dirname+'/COR*')
     if len(corfiles) > 0:
         for f in corfiles:
@@ -20,9 +28,13 @@ def find_match(par,dirname,filelist):
             if match:
                 [hf,hi,hs,seis,ok] = p.ReadSacFile(f)
                 if not ok:
-                    print "ERROR: cannot read sac-file %s" %(f)
+                    par.log.error("ERROR: cannot read sac-file %s" %(f))
                     return -1
                 trace = np.array(seis, dtype=float)
+                ### check if trace has values other than 'nan'
+                if np.all(np.isnan(trace)):
+                    par.log.error('no data for %s'%f)
+                    continue
                 nstack = p.GetHvalue('mag',hf,hi,hs)
                 stat1 = match.group(1)
                 stat2 = match.group(2)
@@ -67,9 +79,9 @@ def find_match(par,dirname,filelist):
                 else:
                     par.mystack[comb1] = {}
                     par.mystack[comb1]['trace'] = trace
-                    par.mystack[comb1]['hf'] = hf
-                    par.mystack[comb1]['hs'] = hs
-                    par.mystack[comb1]['hi'] = hi
+                    par.mystack[comb1]['hf']    = hf
+                    par.mystack[comb1]['hs']    = hs
+                    par.mystack[comb1]['hi']    = hi
                     continue
 
     return 0
@@ -96,8 +108,12 @@ def write_stack(stackdir,par):
         dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
         dist = dist*math.pi*6372/180
         p.SetHvalue('dist',dist,hf,hi,hs)
-        outputfile = stackdir+'/COR_'+stat+'.SAC'
-        print 'writing',outputfile
+        try:
+            app = par.spattern.split('.SAC')[1][0:-1]
+        except:
+            app = ''
+        outputfile = stackdir+'/COR_'+stat+'.SAC'+app
+        #print 'writing',outputfile
         p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))
 
         # write symmetric part 
@@ -108,8 +124,8 @@ def write_stack(stackdir,par):
         p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
         p.SetHvalue('b',0,hf,hi,hs)
         p.SetHvalue('o',0, hf,hi,hs)
-        outputfile = stackdir+'/COR_'+stat+'.SAC_s'
-        print 'writing',outputfile
+        outputfile = stackdir+'/COR_'+stat+'.SAC'+app+'_s'
+        #print 'writing',outputfile
         p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',newseis[null:]))
 
 
@@ -123,16 +139,37 @@ if __name__ == '__main__':
             cp.read(config)
             rootdir  = cp.get('stack','cordir')
             stackdir = cp.get('stack','stackdir')
-            spattern  = cp.get('stack','spattern')
+            spattern = cp.get('stack','spattern')
+            tmpdir   = cp.get('stack','tmpdir')
+            skipdir  = cp.get('stack','skip_directories')
         else:
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
         print "no configuration file found"
         sys.exit(1)
+        
+    ######## setup logging ################
+    DBG_FILENAME = tmpdir+'/stack_1cmp.log'
+    ERR_FILENAME = tmpdir+'/stack_1cmp.err'
 
-    par = PAR()
-    par.mystack = {}
-    par.spattern = spattern
-    os.path.walk(rootdir, find_match, par)
-    write_stack(stackdir,par)
+    mylogger = logging.getLogger('MyLogger')
+    mylogger.setLevel(logging.DEBUG)
+    handlerdbg = logging.FileHandler(DBG_FILENAME,'w')
+    handlererr = logging.FileHandler(ERR_FILENAME,'w')
+    handlererr.setLevel(logging.ERROR)
+
+    mylogger.addHandler(handlerdbg)
+    mylogger.addHandler(handlererr)
+
+
+    for sp in spattern.split(','):
+        par          = PAR()
+        par.mystack  = {}
+        par.spattern = sp
+        par.skipdir  = skipdir.split(',')
+        par.log      = mylogger
+        print 'searching for files matching %s'%sp
+        os.path.walk(rootdir, find_match, par)
+        print 'writing stacks to %s'%stackdir
+        write_stack(stackdir,par)

@@ -19,8 +19,8 @@ class SaFromMseed:
                           6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct', \
                           11:'Nov',12:'Dec'}
 
-    def __call__(self, mseedir, sacdiroot):
-        self.proc_mseed(mseedir, sacdiroot)
+    def __call__(self, mseedir, sacdiroot, spat):
+        self.proc_mseed(mseedir, sacdiroot, spat)
 
 
 
@@ -126,14 +126,14 @@ class SaFromMseed:
         print "--> cp ", respfile,' ', target
         
     
-    def proc_mseed(self, mseedir, sacdir):
+    def proc_mseed(self, mseedir, sacdir, spat):
         """main function to process mseed files"""
-        files = os.listdir(mseedir)
-        for file in files:
-            if os.path.isfile(mseedir+file):
+        files = glob.glob(mseedir+'/'+spat)
+        for fn in files:
+            if os.path.isfile(fn):
                 if not os.path.isdir(mseedir+outputdir):
                     os.mkdir(mseedir+outputdir)
-                command = self.rdseedir+'rdseed -f '+mseedir+file+' -g '+self.dataless+' -q '+\
+                command = self.rdseedir+'rdseed -f '+fn+' -g '+self.dataless+' -q '+\
                           mseedir+self.outputdir+' -o 1 -d 1>/dev/null 2>/dev/null '
                 os.system(command)
                 g = self.get_ms_cont(mseedir+outputdir)
@@ -162,6 +162,7 @@ if __name__ == '__main__':
             sacfiles = cp.get('mseed2sac','sacfiles')
             dataless = cp.get('mseed2sac','dataless')
             respfiles= cp.get('mseed2sac','respfiles')
+            spat     = cp.get('mseed2sac','search_pattern')
             outputdir = 'sacfiles'
         else:
             print "encountered unknown command line argument"
@@ -175,6 +176,7 @@ if __name__ == '__main__':
         dataless = '/home/behrya/dev/proc-scripts/wsdl/gsoap/miniseed/C/example/dataless/nz.dataless.seed'
         respfiles= './respfiles/'
         outputdir= 'sacfiles'
+        spat     = '*'
 
     t = SaFromMseed(dataless, respfiles, outputdir, bindir, rdseedir)
-    t(mseedir, sacfiles)
+    t(mseedir, sacfiles, spat)

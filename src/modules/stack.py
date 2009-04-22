@@ -150,8 +150,8 @@ if __name__ == '__main__':
         sys.exit(1)
         
     ######## setup logging ################
-    DBG_FILENAME = tmpdir+'/stack_1cmp.log'
-    ERR_FILENAME = tmpdir+'/stack_1cmp.err'
+    DBG_FILENAME = tmpdir+'/stack.log'
+    ERR_FILENAME = tmpdir+'/stack.err'
 
     mylogger = logging.getLogger('MyLogger')
     mylogger.setLevel(logging.DEBUG)

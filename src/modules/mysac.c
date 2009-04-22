@@ -97,7 +97,7 @@ int write_sac (char *fname, float *sig, SAC_HD *SHD){
   int i, ret;
   fsac = fopen(fname, "wb");
   if( NULL == fsac ) {
-    fprintf(stderr,"could not open sac file to read\n");
+    fprintf(stderr,"could not open sac file to write\n");
     return 0;
    }
   if ( !SHD ) SHD = &SAC_HEADER;

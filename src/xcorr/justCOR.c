@@ -157,7 +157,6 @@ int do_cor(int lag, char *cordir)
     // loop over "base" station number, this will be stored into common memory
 
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
-
       if(sdb.rec[ine][jsta1].n > 0){
 	if(sdb.rec[ine][jsta1].n > 84000){
 	  fprintf(stderr,"ERROR: trace longer than 84000 pts; %s\n",sdb.rec[ine][jsta1].ft_fname);
@@ -181,7 +180,6 @@ int do_cor(int lag, char *cordir)
         dcommon_( &len, amp, phase ); // reads amp and phase files into common memory
 
 	for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
-
   	  if(sdb.rec[ine][jsta2].n > 0){
 	    if(sdb.rec[ine][jsta2].n > 84000){
 	      fprintf(stderr,"ERROR: trace longer than 84000 pts; %s\n",sdb.rec[ine][jsta2].ft_fname);

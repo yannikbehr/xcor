@@ -60,14 +60,15 @@ lag=3000
 [stack]
 cordir=./Results/XCor/2001/
 stackdir=./Results/XCor/stack/
+spattern=COR_(\w*_\w*).SAC
 
 [rotate]
 sacdir=/usr/local/bin/
 stackdir=./Results/XCor/stack/
 
-[FTAN]
-corfiles=./Results/XCor/stack/
-
+[ftan]
+cordir=/data/sabine/yannik/Results/stack/96_01_02_03_04_05/
+tmpdir=./tmp/
 #minimal group velocity, km/s
 vmin=1.5
 #maximal value of the group velocity, km/s
@@ -134,4 +135,4 @@ fi
 #${MAIN}/src/modules/rotate.py -c ${CONFIG}
 
 # FTAN
-#${MAIN}/bin/ftandriver -c ${CONFIG}
+${MAIN}/src/myftan.py -c ${CONFIG}

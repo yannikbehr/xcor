@@ -49,7 +49,7 @@ options = -g -Wall
 %.o:%.c
 	$(CC) -g -c  $<  
 
-all: cut filter4 whiteout stack lag initsacdb whiteout1cmp newfilter4 whiteout2cmp justcor mergesac ftan 
+all: cut filter4 initsacdb whiteout1cmp whiteout2cmp justcor mergesac ftan 
 
 cut: 	module_obj cut_trans_mod.c
 	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm
@@ -75,10 +75,6 @@ mergesac: merge_sac.c module_obj $(hfiles)
 ftan:	ftan-module
 	$(CC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles) -u MAIN__ -lf2c 
 
-testing: module_obj test_sa_from_seed.c test_cut_trans_mod.c $(hfiles)
-	$(CC)  -g -I $(VPATH) test_sa_from_seed.c -o test_sa_from_seed $(ofiles);
-	$(CC) -g -I modules test_cut_trans_mod.c -o test_cut_trans_mod $(ofiles)
-
 ftan-module:
 	cd $(FTANPATH); make objects
 
@@ -97,9 +93,13 @@ install:
 	install merge_sac $(BINDIR)
 
 clean:
-	rm initsac_db new_ch_lag ftandriver cut_trans_mod justCOR filter4 white_1cmp\
-	white_2cmp; \
-	cd ..; cd ./modules; make clean; cd ..; cd ./FTAN; make clean; cd ..
+	rm initsac_db tandriver cut_trans_mod justCOR filter4 white_1cmp\
+	white_2cmp merge_sac; \
+	cd ./modules; make clean; cd ..; cd ./FTAN; make clean; cd ..
 
 tilde: 
 	rm -f $(VPATH)/*~ ; rm -f *~; rm rdseed.err_log.*
+
+
+tar: 
+	tar -czvf ../noise_proc.tar.gz ../src

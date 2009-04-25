@@ -1,0 +1,75 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module ftanpv ! in 
+    interface  ! in :ftanpv
+        subroutine aftanpg(piover4,n,sei,t0,dt,delta,vmin,vmax,tmin,tmax,tresh,ffact,perc,npoints,taperl,nfin,fsnr,nphpr,phprper,phprvel,nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,amp,ierr) ! in :ftanpv:ftanpv.f
+            real*8 :: piover4
+            integer*4 :: n
+            real*4 dimension(32768), depend(n) :: sei
+            real*8 :: t0
+            real*8 :: dt
+            real*8 :: delta
+            real*8 :: vmin
+            real*8 :: vmax
+            real*8 :: tmin
+            real*8 :: tmax
+            real*8 :: tresh
+            real*8 :: ffact
+            real*8 :: perc
+            integer*4 :: npoints
+            real*8 :: taperl
+            integer*4 :: nfin
+            real*8 :: fsnr
+            integer*4 :: nphpr
+            real*8 dimension(300) :: phprper
+            real*8 dimension(300) :: phprvel
+            integer*4, intent(out) :: nfout1
+            real*8 dimension(8,100), intent(out) :: arr1
+            integer*4, intent(out) :: nfout2
+            real*8 dimension(7,100), intent(out) :: arr2
+            real*8, intent(out) :: tamp
+            integer*4, intent(out) :: nrow
+            integer*4, intent(out) :: ncol
+            real*8 dimension(32768,32), intent(out) :: amp
+            integer*4, intent(out) :: ierr
+        end subroutine aftanpg
+        subroutine aftanipg(piover4,n,sei,t0,dt,delta,vmin,vmax,tmin,tmax,tresh,ffact,perc,npoints,taperl,nfin,fsnr,fmatch,npred,pred,nphpr,phprper,phprvel,nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,amp,ierr) ! in :ftanpv:ftanpv.f
+            real*8 :: piover4
+            integer*4 :: n
+            real*4 dimension(32768) :: sei
+            real*8 :: t0
+            real*8 :: dt
+            real*8 :: delta
+            real*8 :: vmin
+            real*8 :: vmax
+            real*8 :: tmin
+            real*8 :: tmax
+            real*8 :: tresh
+            real*8 :: ffact
+            real*8 :: perc
+            integer*4 :: npoints
+            real*8 :: taperl
+            integer*4 :: nfin
+            real*8 :: fsnr
+            real*8 :: fmatch
+            integer*4 :: npred
+            real*8 dimension(300,2) :: pred
+            integer*4 :: nphpr
+            real*8 dimension(300) :: phprper
+            real*8 dimension(300) :: phprvel
+            integer*4, intent(out) :: nfout1
+            real*8 dimension(8,100), intent(out) :: arr1
+            integer*4, intent(out) :: nfout2
+            real*8 dimension(7,100), intent(out) :: arr2
+            real*8, intent(out) :: tamp
+            integer*4, intent(out) :: nrow
+            integer*4, intent(out) :: ncol
+            real*8 dimension(32768,32), intent(out) :: amp
+            integer*4, intent(out) :: ierr
+        end subroutine aftanipg
+    end interface 
+end python module ftanpv
+
+! This file was auto-generated with f2py (version:2_3473).
+! See http://cens.ioc.ee/projects/f2py2e/

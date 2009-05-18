@@ -5,8 +5,10 @@
 
 from pylab import *
 import os, sys, string, glob
-sys.path.append('./modules')
-sys.path.append('./FTAN/gv')
+sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
+sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/gv')
+sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/pv')
+import ftanc
 import ftangv
 import pysacio as p
 import progressbar as pg
@@ -23,6 +25,8 @@ if __name__ == '__main__':
             cp.read(config)
             cordir  = cp.get('ftan','cordir')
             tmpdir  = cp.get('ftan','tmpdir')
+            dsptype = cp.get('ftan','dsptype')
+            refdsp  = cp.get('ftan','refdsp')
         else:
             print "encountered unknown command line argument"
             raise Exception
@@ -32,6 +36,7 @@ if __name__ == '__main__':
     ########## set up log-files ##############################
     DBG_FILENAME = './%s/myftan.log'%tmpdir
     ERR_FILENAME = './%s/myftan.err'%tmpdir
+    print dsptype
 
     mylogger = logging.getLogger('MyLogger')
     mylogger.setLevel(logging.DEBUG)
@@ -48,29 +53,52 @@ if __name__ == '__main__':
 
     flist = glob.glob(cordir+'/COR*.SAC*_s')
     pbar = pg.ProgressBar(widgets=widgets, maxval=len(flist)).start()
-    cnt = 0
-    for fn in flist:
-        cnt = cnt +1
-        pbar.update(cnt)
-        outfile = '%s_2_DISP.1'%fn
-        try:
-            cper,aper,gv,gvamp,gvsnr,ampv,amps = myftan(fn)
-        except:
+
+    if dsptype == 'group':
+        cnt = 0
+        for fn in flist:
+            cnt = cnt +1
+            pbar.update(cnt)
+            outfile = '%s_2_DISP.1'%fn
             try:
-                outfile = '%s_2_DISP.2'%fn
-                cper,aper,gv,gvamp,gvsnr,ampv,amps = myftan(fn,ffact=0.5)
+                cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn)
             except:
                 try:
-                    outfile = '%s_2_DISP.3'%fn
-                    cper,aper,gv,gvamp,gvsnr,ampv,amps = myftan(fn,steps=True,phm=False)
-                except Exception, e:
-                    mylogger.error('%s: %s'%(fn,e))
-                    continue
+                    outfile = '%s_2_DISP.2'%fn
+                    cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=0.5)
+                except:
+                    try:
+                        outfile = '%s_2_DISP.3'%fn
+                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,steps=True,phm=False)
+                    except Exception, e:
+                        mylogger.error('%s: %s'%(fn,e))
+                        continue
+    
+            mylogger.debug('%s'%fn)
+            f = open(outfile,'w')
+            for ii in range(0,len(cper)):
+                print >>f,'%d\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],gvamp[ii],gvsnr[ii])
+            f.close()
+        pbar.finish()
 
-        mylogger.debug('%s'%fn)
-        f = open(outfile,'w')
-        for ii in range(0,len(cper)):
-            print >>f,'%d\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],gvamp[ii],gvsnr[ii])
-        f.close()
-    pbar.finish()
 
+    if dsptype == 'phase':
+        cnt = 0
+        for fn in flist:
+            cnt = cnt + 1
+            pbar.update(cnt)
+            outfile='%s_2_DISP.c'%fn
+            try:
+                cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp)
+            except:
+                mylogger.error('%s: %s'%(fn,e))
+                continue
+
+            mylogger.debug('%s'%fn)
+            f = open(outfile,'w')
+            for ii in range(0,len(cper)):
+                print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii])
+            f.close()
+        pbar.finish()
+                
+            

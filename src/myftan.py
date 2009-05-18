@@ -5,7 +5,6 @@
 
 from pylab import *
 import os, sys, string, glob
-sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/gv')
 sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/pv')
 import ftanc

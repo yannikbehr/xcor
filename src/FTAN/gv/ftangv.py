@@ -1,3 +1,7 @@
+import os, sys, string
+from pylab import *
+sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
+import pysacio as p
 import ftan
 def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
            vmax=4.,tmin=5,tmax=None,thresh=10,ffact=1.,taperl=1,snr=0.1,

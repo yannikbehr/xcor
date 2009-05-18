@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 
 
 """driver for ftan method to measure phase-velocities"""
@@ -79,23 +79,25 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.,
     gvsnr = array(arr2[5][0:nrow])
     ampv  = array(vels)
     amps  = amp[0:len(vels),0:nrow]
-    return (cper,aper,gv,pv,gvamp,gvsnr,ampv,amps)
+    return (cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,phprper,phprvel[i])
 
 
 if __name__=='__main__':
     reffn = './scalifornia_avg_phvel.dat'
     fn = './COR_GSC_R06C.SAC_s'
-    cper,aper,gv,pv,gvamp,gvsnr,ampv,amps = myftan(fn,reffn)
+    cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = myftan(fn,reffn)
     plot(aper,pv,'k')
     plot(aper,gv,'b--')
     contourf(aper,ampv,amps,250)
     xlabel('Period [s]')
     ylabel('Phase velocity [km/s]')
+    ax = gca()
+    ax.autoscale_view(tight=True)
     xmin, xmax = xlim()
     ymin, ymax = ylim()
     ############## result from fanchi's code 1st FTAN run ######
     cmpdsp = load('./COR_GSC_R06C.SAC_s_2_DISP.1')
     plot(cmpdsp[:,2],cmpdsp[:,3],'k+')
-    xlim(xmin,xmax)
+    xlim([xmin,xmax])
     ylim(ymin,ymax)
     show()

@@ -26,8 +26,8 @@ c find global max, sm, and index ism
          smax(i) = smw
          ss(i) = seis(i)
       enddo
-      write(*,*) 'Distance between maximas=',gt0-(ism-1)*dt-t0,' in sec,',
-     * ' Spectra point= ',ism
+c      write(*,*) 'Distance between maximas=',gt0-(ism-1)*dt-t0,' in sec,',
+c     * ' Spectra point= ',ism
 c find some local minima,# < 100 from left and right side of central max ism
 c left side 
       nleft = 0
@@ -142,6 +142,6 @@ c expand right end by factor fmatch
            endif
        enddo
    40 continue
-      write(*,*) nnl,nnnl,ism,nnr,nnnr
+c      write(*,*) nnl,nnnl,ism,nnr,nnnr
       return
       end

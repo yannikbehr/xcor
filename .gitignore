@@ -9,3 +9,4 @@ src/white_2cmp
 src/xcorr/justCOR
 src/xcorr/justCOR_EE_EN
 bin/*
+src/FTAN/pv/ftanpv.so

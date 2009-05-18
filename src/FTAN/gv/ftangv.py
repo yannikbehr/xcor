@@ -117,11 +117,11 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
             if nfout2 == 0 or ierr == 2 or ierr == 1:
                 raise Exception("ERROR in ftan-method (2nd step)")
 
-            cper  = array(arr2[0][0:nrow])
-            aper  = array(arr2[1][0:nrow])
-            gv    = array(arr2[2][0:nrow])
-            gvamp = array(arr2[3][0:nrow])
-            gvsnr = array(arr2[4][0:nrow])
-            ampv  = array(vels)
-            amps  = amp[0:len(vels),0:nrow]
+        cper  = array(arr2[0][0:nrow])
+        aper  = array(arr2[1][0:nrow])
+        gv    = array(arr2[2][0:nrow])
+        gvamp = array(arr2[3][0:nrow])
+        gvsnr = array(arr2[4][0:nrow])
+        ampv  = array(vels)
+        amps  = amp[0:len(vels),0:nrow]
     return (cper,aper,gv,gvamp,gvsnr,ampv,amps)

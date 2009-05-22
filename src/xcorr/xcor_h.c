@@ -70,7 +70,7 @@ int main (int na, char **arg)
   int lag;
   char str[LINEL];
   dictionary *dd;
-  char *tmpdir, *pbdir, *cordir;
+  char *tmpdir, *pbdir, *cordir, *sacdbname;
   char confile[LINEL];
   strncpy(confile,"./config.txt",LINEL-1);
 
@@ -82,9 +82,16 @@ int main (int na, char **arg)
   cordir     = iniparser_getstr(dd, "xcor:cordir");
   lag        = iniparser_getint(dd, "xcor:lag", 3000);
   pbdir      = iniparser_getstr(dd, "xcor:pbdir");
+  sacdbname  = iniparser_getstr(dd, "xcor:dbname");
 
-  sprintf(str,"%ssac_db.out", tmpdir);
-  ff = fopen(str,"rb");
+  assert((strlen(tmpdir)+strlen(sacdbname)+1) < LINEL);
+  sprintf(str,"%s/%s", tmpdir,sacdbname);
+
+  if((ff = fopen(str, "rb"))==NULL) {
+    fprintf(stderr,"%s/%s file not found\n",tmpdir,sacdbname);
+    exit(1);
+  }
+
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
 

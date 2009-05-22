@@ -1,9 +1,6 @@
 # every .o file depends on the .cpp file with the same 
 # filename; the following line says what to do with 
 # the .cpp files; $< means the first dependency
-#$Rev$
-#$Author$
-#$LastChangedDate$
 
 #%.o:%.cpp
 #	g++ -g -c $<

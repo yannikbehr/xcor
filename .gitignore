@@ -10,3 +10,4 @@ src/xcorr/justCOR
 src/xcorr/justCOR_EE_EN
 bin/*
 src/FTAN/pv/ftanpv.so
+src/xcorr/xcor_h

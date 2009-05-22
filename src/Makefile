@@ -11,29 +11,6 @@
 BINDIR = ../bin
 
 include makeauto.macro
-############## ftan options ######################
-FTANPATH = FTAN
-
-ofilesftan = $(FTANPATH)/ftandriver.o\
-	     $(FTANPATH)/swapn.o\
-	     $(FTANPATH)/aftan4.o\
-	     $(FTANPATH)/aftan4i.o\
-	     $(FTANPATH)/ftfilt.o\
-	     $(FTANPATH)/fmax.o\
-	     $(FTANPATH)/taper.o\
-	     $(FTANPATH)/trigger.o\
-	     $(FTANPATH)/lim.o\
-	     $(FTANPATH)/spline.o\
-	     $(FTANPATH)/tapers.o\
-	     $(FTANPATH)/tgauss.o\
-	     $(FTANPATH)/dspline.o\
-	     $(FTANPATH)/pred_cur.o\
-	     $(FTANPATH)/misc.o
-
-FTANLIBS =   -L/usr/lib -L/usr/local/packages/fftw/lib -lgcc -lfftw3
-
-##################################################
-
 VPATH = modules
 
 hfiles = \
@@ -73,10 +50,10 @@ mergesac: merge_sac.c module_obj $(hfiles)
 	$(CC) -Wall -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)
 
 ftan:	ftan-module
-	$(CC) -o ftandriver $(ofilesftan) $(FTANLIBS) $(ofiles) -u MAIN__ -lf2c 
 
 ftan-module:
-	cd $(FTANPATH); make objects
+	cd ./FTAN/pv; make -f pyMakefile;
+	cd ./FTAN/gv; make -f pyMakefile
 
 module_obj:
 	cd $(VPATH); make objects
@@ -86,14 +63,14 @@ install:
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
 	install	./xcorr/justCOR_EE_EN $(BINDIR);\
-	install	ftandriver $(BINDIR);\
+	install	./xcorr/xcor_h $(BINDIR);\
 	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\
 	install merge_sac $(BINDIR)
 
 clean:
-	rm initsac_db tandriver cut_trans_mod justCOR filter4 white_1cmp\
+	rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
 	white_2cmp merge_sac; \
 	cd ./modules; make clean; cd ..; cd ./FTAN; make clean; cd ..
 

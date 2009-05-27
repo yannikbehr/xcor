@@ -5,7 +5,7 @@ import pysacio as p
 import ftan
 def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
            vmax=4.,tmin=5,tmax=None,thresh=10,ffact=1.,taperl=1,snr=0.1,
-           phm=True,steps=False):
+           phm=True,steps=False,extrace=None):
     """wrapper function to set ftan parameters and call ftan modules
     1st step raw ftan; 2nd step ftan with phase-matched filtering from
     1st step prediction curve;
@@ -113,7 +113,13 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
             for i in range(0,nfout2):
                 pred[i][0] = arr2[1][i]
                 pred[i][1] = arr2[2][i]
-            
+            if extrace:
+                tr = load(extrace)
+                npred = len(tr)
+                pred = zeros((300,2))
+                for i in range(npred):
+                    pred[i][0] = tr[i][0]
+                    pred[i][1] = tr[i][1]
             nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,amp,ierr = ftan.aftan4i(n,trace,t0,dt,delta,vmin,vmax,\
                                                                            tmin,tmax,thresh,ffact,perc,npoints,\
                                                                            taperl,nfin,snr,npred,pred)

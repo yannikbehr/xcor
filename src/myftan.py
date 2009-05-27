@@ -61,11 +61,11 @@ if __name__ == '__main__':
             pbar.update(cnt)
             outfile = '%s_2_DISP.1'%fn
             try:
-                cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn)
+                cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,extrace=refdsp)
             except:
                 try:
                     outfile = '%s_2_DISP.2'%fn
-                    cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=0.5)
+                    cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=0.5,extrace=refdsp)
                 except:
                     try:
                         outfile = '%s_2_DISP.3'%fn

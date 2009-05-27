@@ -57,7 +57,7 @@ void coortr(float *lat, float *lon, int flag);
 float *myxcor(float *sig1, float *sig2, int len, int lag);
 int write_xcor(float *sig1, float *sig2, int len, int lag, 
 	       char *mondir, int ine, int jsta1, int jsta2, char *app);
-void make_dir(int ie, char *cordir, char *mondir);
+void make_dir(int ie, char *cordir, char *pbdir, char *daydir);
 
 
 SAC_DB sdb;
@@ -156,7 +156,7 @@ int do_cor(int lag , char *cordir, char* pbdir)
   /*outermost loop over day number, then station number*/
   for( ine = 0; ine < sdb.nev; ine++ ) {
     fprintf(stdout,"event number %d\n",ine);
-    make_dir(ine,cordir,mondir);
+    make_dir(ine,cordir,pbdir,mondir);
 
     /*loop over "base" station number, this will be stored into common memory*/
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
@@ -453,20 +453,27 @@ void coortr(float *lat, float *lon, int flag){
    create sub-directory for correlations under correlation root directory
    according to given information in sdb-structure
    --------------------------------------------------------------------- */
-void make_dir(int ie, char *cordir, char *daydir){
+void make_dir(int ie, char *cordir, char *pbdir, char *daydir){
   int month, year, day;
+  char months[12][4] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
   year = sdb.ev[ie].yy;
   month = sdb.ev[ie].mm;
   day   = sdb.ev[ie].dd;
-  char yeardir[LINEL],mondir[LINEL];
-  assert((strlen(cordir)+30)<LINEL);
-  sprintf(yeardir,"%s/%d",cordir,year);
-  sprintf(mondir,"%s/%d",cordir,month);
+  char yeardir[LINEL],mondir[LINEL],bnddir[LINEL];
+  assert((strlen(cordir)+40)<LINEL);
+  sprintf(bnddir,"%s/%s",cordir,pbdir);
+  sprintf(yeardir,"%s/%d",bnddir,year);
+  sprintf(mondir,"%s/%s",yeardir,months[month-1]);
   sprintf(daydir,"%s/%d_%d_%d_0_0_0",mondir,year,month,day);
   errno = 0;
   if(mkdir(cordir, MODUS) == -1){
     if(errno != EEXIST){
-      fprintf(stderr, "Couldn't create directory %s; %s\n",yeardir, strerror (errno));
+      fprintf(stderr, "Couldn't create directory %s; %s\n",cordir, strerror (errno));
+    }
+  }
+  if(mkdir(bnddir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",bnddir, strerror (errno));
     }
   }
   if(mkdir(yeardir, MODUS) == -1){

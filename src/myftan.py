@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 
 """ wrapper script for ftan module """
 
@@ -26,6 +26,7 @@ if __name__ == '__main__':
             tmpdir  = cp.get('ftan','tmpdir')
             dsptype = cp.get('ftan','dsptype')
             refdsp  = cp.get('ftan','refdsp')
+            spattern= cp.get('ftan','spattern')
         else:
             print "encountered unknown command line argument"
             raise Exception
@@ -50,7 +51,7 @@ if __name__ == '__main__':
                ' ', pg.ETA()]
     ############################################################
 
-    flist = glob.glob(cordir+'/COR*.SAC*_s')
+    flist = glob.glob(cordir+'/'+spattern)
     pbar = pg.ProgressBar(widgets=widgets, maxval=len(flist)).start()
 
     if dsptype == 'group':

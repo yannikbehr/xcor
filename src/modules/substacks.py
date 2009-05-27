@@ -9,6 +9,7 @@ import array as a
 import delaz as dz
 import pysacio as p
 from ConfigParser import SafeConfigParser
+import progressbar as pg
 
 class PAR: pass
 
@@ -113,7 +114,7 @@ def substack(corfiles,spattern,stackdir,log,stackl,shift):
     nsub = 0
     while cnt < (len(corfiles)-stackl):
         mystack = {}
-        for no in range(cnt,cnt+stackl):
+        for no in range(cnt,min(cnt+stackl,len(corfiles))):
             for f in corfiles[no][1][0]:
                 aa = os.path.basename(f).split('_')
                 stat1 = aa[1]
@@ -173,7 +174,26 @@ if __name__ == '__main__':
     mylogger.addHandler(handlerdbg)
     mylogger.addHandler(handlererr)
 
+    ########### set up progress bar ############################
+    ### count files for progressbar
+    tmppar = PAR()
+    tmppar.cnt = 0
+    def cntf(tmppar,dirname,files):
+        flist = glob.glob(dirname+'/'+tmppar.pattern)
+        if len(flist) > 0:
+            tmppar.cnt = tmppar.cnt+1
+
+    for tmppar.pattern in spattern.split(','):
+        os.path.walk(datdir,cntf,tmppar)
+    widgets = ['substacks: ', pg.Percentage(), ' ', pg.Bar('#'),
+               ' ', pg.ETA()]
+    pbar = pg.ProgressBar(widgets=widgets, maxval=tmppar.cnt).start()
+    ############################################################
+
+    cnt = 0
     for sp in spattern.split(','):
         al = mklist(sp,datdir)
         substack(al,sp,stackdir,mylogger,stackl,shift)
-
+        cnt = cnt + len(al)
+        pbar.update(cnt)
+    pbar.finish()

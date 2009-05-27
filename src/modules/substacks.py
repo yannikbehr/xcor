@@ -113,9 +113,7 @@ def substack(corfiles,spattern,stackdir,log,stackl,shift):
     nsub = 0
     while cnt < (len(corfiles)-stackl):
         mystack = {}
-        print cnt
         for no in range(cnt,cnt+stackl):
-            print corfiles[no][1][0]
             for f in corfiles[no][1][0]:
                 aa = os.path.basename(f).split('_')
                 stat1 = aa[1]
@@ -175,50 +173,7 @@ if __name__ == '__main__':
     mylogger.addHandler(handlerdbg)
     mylogger.addHandler(handlererr)
 
-    al = mklist(spattern,datdir)
-    substack(al,spattern,stackdir,mylogger,stackl,shift)
+    for sp in spattern.split(','):
+        al = mklist(sp,datdir)
+        substack(al,sp,stackdir,mylogger,stackl,shift)
 
-
-
-#def substack(a, shift, stackl, stackdir):
-#    cnt = 0
-#    pmax=0
-#    stack = plb.array([],dtype='float')
-#    nstack = 0
-#    nsub = 1
-#    while cnt < (len(a)-stackl):
-#        for no in range(cnt,cnt+stackl):
-#            [hf,hi,hs,seis,ok] = p.ReadSacFile(a[no][1][0])
-#            if not ok:
-#                print "ERROR: cannot read file %s!"%a[no][1][0]
-#                continue
-#            if len(stack)<1:
-#                stack=plb.array(seis,dtype=float)
-#                stack = plb.divide(stack,abs(stack).max())
-#                nstack = nstack + 1
-#            else:
-#                ntrace = plb.array(seis,dtype=float)
-#                ntrace = plb.divide(ntrace,abs(ntrace).max())
-#                stack = stack + ntrace
-#                nstack = nstack + 1
-#        delta = p.GetHvalue('delta',hf,hi,hs)
-#        b = p.GetHvalue('b',hf,hi,hs)
-#        null = -1*b/delta
-#        reversed = stack[::-1]
-#        newseis = stack+reversed
-#        p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
-#        p.SetHvalue('b',0,hf,hi,hs)
-#        p.SetHvalue('o',0, hf,hi,hs)
-#        lat1 = p.GetHvalue('evla',hf,hi,hs)
-#        lon1 = p.GetHvalue('evlo',hf,hi,hs)
-#        lat2 = p.GetHvalue('stla',hf,hi,hs)
-#        lon2 = p.GetHvalue('stlo',hf,hi,hs)
-#        dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
-#        dist = dist*math.pi*6372/180
-#        p.SetHvalue('dist',dist,hf,hi,hs)
-#        outfile = stackdir+'/'+os.path.basename(a[no][1][0])+'_'+str(nsub)
-#        p.WriteSacBinary(outfile,hf,hi,hs,array.array('f',newseis[null:]))
-#        cnt = cnt + shift
-#        stack = plb.array([],dtype='float')
-#        nstack = 0
-#        nsub = nsub + 1

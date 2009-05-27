@@ -3,27 +3,37 @@
 import os, os.path, sys, string
 import glob, time, bisect, logging
 import pylab as plb
-import shutil, math
-import pysacio as p
-import array
+import shutil, math, re
+import numpy as np
+import array as a
 import delaz as dz
+import pysacio as p
 from ConfigParser import SafeConfigParser
 
 class PAR: pass
 
-def add2dict(mydict,astr,f,log,rev=False):
+def add2dict(mydict,astr,f,log,rev=False,newentry=False):
     [hf,hi,hs,seis,ok] = p.ReadSacFile(f)
     if not ok:
         log.error("ERROR: cannot read sac-file %s" %(f))
-        return 0
+        return 1
     trace = np.array(seis, dtype=float)
     ### check if trace has values other than 'nan'
     if np.all(np.isnan(trace)):
         log.error('no data for %s'%f)
-        return 0
+        return 1
+    if newentry:
+        mydict[astr] = {}
+        mydict[astr]['trace'] = trace
+        mydict[astr]['hf']    = hf
+        mydict[astr]['hs']    = hs
+        mydict[astr]['hi']    = hi
+        mydict[astr]['fn']    = os.path.basename(f)
+        return 1
+        
     nstack = p.GetHvalue('mag',hf,hi,hs)
     oldtrace = np.array(mydict[astr]['trace'], dtype=float)
-    if rev=True:
+    if rev==True:
         newtrace = oldtrace+trace[::-1]
     else:
         newtrace = oldtrace+trace
@@ -38,10 +48,10 @@ def add2dict(mydict,astr,f,log,rev=False):
         new[astr]['hf'] = hf
         new[astr]['hs'] = hs
         new[astr]['hi'] = hi
+        new[astr]['fn'] = os.path.basename(f)
         mydict.update(new)
         return 1
-    else return 0
-
+    else: return 0
 
 
 def ls(par,dirname,filelist):
@@ -66,30 +76,67 @@ def mklist(pattern,datadir):
     return a
 
 
-def substack(corfiles,spattern,mystack,log):
-    for f in corfiles:
-        match = re.search(spattern,f)
-        if match:
-            stat1 = match.group(1)
-            stat2 = match.group(2)
-            # account for the fact that the correlation could be
-            # either COR_MATA_TIKO.SAC or COR_TIKO_MATA.SAC
-            comb1=stat1+'_'+stat2
-            comb2=stat2+'_'+stat1
-            if comb1 in mystack.keys():
-                if add2dict(mystack,comb1,f,log): continue
-                return -1
-            elif comb2 in mystack.keys():
-                if add2dict(mystack,comb2,f,log,rev=True): continue
-                return -1
-            else:
-                mystack[comb1] = {}
-                mystack[comb1]['trace'] = trace
-                mystack[comb1]['hf']    = hf
-                mystack[comb1]['hs']    = hs
-                mystack[comb1]['hi']    = hi
-                continue
+def write_stack(stackdir,mystack,nsub):
+    """write contents of global 'COR'-file dict to disk"""
+    if not os.path.isdir(stackdir):
+        os.mkdir(stackdir)
+    for stat in mystack.keys():
+        # write stacked correlation
+        seis = mystack[stat]['trace']
+        hf = mystack[stat]['hf']
+        hs = mystack[stat]['hs']
+        hi = mystack[stat]['hi']
+        stat1, stat2 = stat.split('_')
+        p.SetHvalue('kevnm',stat1, hf,hi,hs)
+        p.SetHvalue('kstnm',stat2, hf,hi,hs)
+        b = p.GetHvalue('b',hf,hi,hs)
+        lat1 = p.GetHvalue('evla',hf,hi,hs)
+        lon1 = p.GetHvalue('evlo',hf,hi,hs)
+        lat2 = p.GetHvalue('stla',hf,hi,hs)
+        lon2 = p.GetHvalue('stlo',hf,hi,hs)
+        dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
+        dist = dist*math.pi*6372/180
+        p.SetHvalue('dist',dist,hf,hi,hs)
+        delta = p.GetHvalue('delta',hf,hi,hs)
+        null = -1*b/delta
+        reversed = seis[::-1]
+        newseis = seis+reversed
+        p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
+        p.SetHvalue('b',0,hf,hi,hs)
+        p.SetHvalue('o',0, hf,hi,hs)
+        outputfile = stackdir+'/'+mystack[stat]['fn']+'_'+str(nsub)
+        p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',newseis[null:]))
 
+
+def substack(corfiles,spattern,stackdir,log,stackl,shift):
+    cnt = 0
+    nsub = 0
+    while cnt < (len(corfiles)-stackl):
+        mystack = {}
+        print cnt
+        for no in range(cnt,cnt+stackl):
+            print corfiles[no][1][0]
+            for f in corfiles[no][1][0]:
+                aa = os.path.basename(f).split('_')
+                stat1 = aa[1]
+                stat2 = aa[2].split('.SAC')[0]
+                # account for the fact that the correlation could be
+                # either COR_STAT1_STAT2.SAC or COR_STAT2_STAT1.SAC
+                comb1=stat1+'_'+stat2
+                comb2=stat2+'_'+stat1
+                if comb1 in mystack.keys():
+                    if add2dict(mystack,comb1,f,log): continue
+                    return -1
+                elif comb2 in mystack.keys():
+                    if add2dict(mystack,comb2,f,log,rev=True): continue
+                    return -1
+                else:
+                    if add2dict(mystack,comb1,f,log,newentry=True): continue
+                    return -1
+                    continue
+        write_stack(stackdir,mystack,nsub)
+        nsub = nsub + 1
+        cnt  = cnt + shift 
     return 1
 
 
@@ -129,7 +176,7 @@ if __name__ == '__main__':
     mylogger.addHandler(handlererr)
 
     al = mklist(spattern,datdir)
-    substack(al,shift,stackl,stackdir)
+    substack(al,spattern,stackdir,mylogger,stackl,shift)
 
 
 

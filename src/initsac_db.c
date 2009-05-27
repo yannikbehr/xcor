@@ -62,6 +62,7 @@ int main (int argc, char **argv){
   char filename[STRING];
   char delimiters[] = " ,;";
   char *search_dirs, *skip_dirs, *search_str, *tmpdir, *buf, *ptr;
+  char *sacdbname;
   dictionary *dd;
 
   strncpy(sdb.conf,"./config.txt",149);
@@ -75,6 +76,7 @@ int main (int argc, char **argv){
   search_str         = iniparser_getstr(dd, "init_sacdb:search_string");
   search_opts.flag   = iniparser_getint(dd, "init_sacdb:flag", 0);
   search_opts.prefix = iniparser_getstr(dd, "init_sacdb:prefix");
+  sacdbname          = iniparser_getstr(dd, "init_sacdb:dbname");
   buf = strdup(search_dirs);
   ptr  = strtok(buf, delimiters);
   i = 0;
@@ -114,7 +116,8 @@ int main (int argc, char **argv){
     strncpy(filename,tmpdir,STRING-1);
     if(mkdir(tmpdir, MODUS) == -1)
       fprintf(stdout,"directory %s already exists \n", tmpdir); 
-    strcat(filename,"sac_db.out");
+    assert(strlen(filename)+strlen(sacdbname)+1 <STRING);
+    strcat(filename,sacdbname);
   }
 
   /* setting initial values */
@@ -164,7 +167,7 @@ static int glob_this(const char *fpath, const struct stat *sb,
 
   for(i=0;i<search_opts.n2;i++){
     if(strstr(fpath,search_opts.skip_dirs[i]) != NULL){
-      return 2;
+      return 0;
     }
   }
 

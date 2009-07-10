@@ -88,11 +88,12 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
                         amps=append(amps[0:len(vels),0:jj],amp[0:len(vels),i:nfin],axis=1)
                         jj = jj + 1
 
-        cper  = array(cper)
-        aper  = array(aper)
-        gv    = array(gv)
-        gvamp = array(gvamp)
-        gvsnr = array(gvsnr)
+        
+        cper  = array(cper[1:])
+        aper  = array(aper[1:])
+        gv    = array(gv[1:])
+        gvamp = array(gvamp[1:])
+        gvsnr = array(gvsnr[1:])
         ampv  = array(vels)
 
     else:

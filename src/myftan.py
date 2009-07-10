@@ -15,6 +15,9 @@ import progressbar as pg
 if __name__ == '__main__':
     from ConfigParser import SafeConfigParser
     import logging
+    ############## setting defaults #########################
+    fltfact = 1.
+    refdsp = None
     ############## read config file #########################
     try:
         if string.find(sys.argv[1],'-c')!=-1:
@@ -24,14 +27,19 @@ if __name__ == '__main__':
             cp.read(config)
             cordir  = cp.get('ftan','cordir')
             tmpdir  = cp.get('ftan','tmpdir')
-            dsptype = cp.get('ftan','dsptype')
-            refdsp  = cp.get('ftan','refdsp')
             spattern= cp.get('ftan','spattern')
+            dsptype = cp.get('ftan','dsptype')
+            if  cp.has_option('ftan','refdsp'):
+                refdsp  = cp.get('ftan','refdsp')
+            if dsptype == 'phase' and not cp.has_option('ftan','refdsp'):
+                raise Exception("reference curve has to be given for phase-velocity measurements")
+            if cp.has_option('ftan','filter_fact'):
+                fltfact = cp.get('ftan','filter_fact')
         else:
             print "encountered unknown command line argument"
             raise Exception
-    except Exception:
-        print "no configuration file found"
+    except Exception,e:
+        print e
         sys.exit(1)
     ########## set up log-files ##############################
     DBG_FILENAME = './%s/myftan.log'%tmpdir
@@ -61,7 +69,7 @@ if __name__ == '__main__':
             pbar.update(cnt)
             outfile = '%s_2_DISP.1'%fn
             try:
-                cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,extrace=refdsp)
+                cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=fltfact,extrace=refdsp)
             except:
                 try:
                     outfile = '%s_2_DISP.2'%fn
@@ -89,7 +97,7 @@ if __name__ == '__main__':
             pbar.update(cnt)
             outfile='%s_2_DISP.c'%fn
             try:
-                cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp)
+                cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,ffact=fltfact)
             except:
                 mylogger.error('%s: %s'%(fn,e))
                 continue

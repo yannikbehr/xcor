@@ -130,11 +130,13 @@ class SaFromMseed:
         """main function to process mseed files"""
         files = glob.glob(mseedir+'/'+spat)
         for fn in files:
+            print fn
             if os.path.isfile(fn):
                 if not os.path.isdir(mseedir+outputdir):
                     os.mkdir(mseedir+outputdir)
                 command = self.rdseedir+'rdseed -f '+fn+' -g '+self.dataless+' -q '+\
                           mseedir+self.outputdir+' -o 1 -d 1>/dev/null 2>/dev/null '
+                          #mseedir+self.outputdir+' -o 1 -d 1 '
                 os.system(command)
                 g = self.get_ms_cont(mseedir+outputdir)
                 for i in g.keys():

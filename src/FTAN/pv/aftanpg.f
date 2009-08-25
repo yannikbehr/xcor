@@ -155,7 +155,7 @@ c spectra ends ajastment
           fils(m) = dczero
         enddo
         fils(1) = fils(1)/2.0d0
-        fils(ns/2+1) = dcmplx(dreal(fils(ns/2+1)),0.0d0)
+        fils(ns/2+1) = dcmplx(dble(fils(ns/2+1)),0.0d0)
 c forward FFT: fils ==> tmp
         call dfftw_execute(plan2)
         do m = 1,ns
@@ -164,7 +164,7 @@ c forward FFT: fils ==> tmp
         j = 1
 c extraction from FTAN map area of investigation
         do m = nb-1,ne+1
-          pha(j,k) = datan2(dimag(tmp(m)),dreal(tmp(m)))
+          pha(j,k) = datan2(dimag(tmp(m)),dble(tmp(m)))
           wor = cdabs(tmp(m))
           ampo(j,k) = wor
           amp(j,k) = 20.0d0*dlog10(wor)
@@ -262,7 +262,7 @@ c      compute right minimum -------
             enddo
           ipar(4,j) = 20.0d0*dlog10(ampo(m,k)/dsqrt(lm*rm))
           if(indl.eq.1.and.indr.eq.ntall) ipar(4,j) = ipar(4,j)+100.0d0
-          ipar(5,j) = dt*(dabs(dreal(m-indl))+dabs(dreal(m-indr)))/2;
+          ipar(5,j) = dt*(dabs(dble(m-indl))+dabs(dble(m-indr)))/2;
         enddo
 c End of SNR computations
         tim(k)   = ipar(1,ia)

@@ -3,7 +3,7 @@
 
 """driver for ftan method to measure phase-velocities"""
 import os, sys, string, glob
-sys.path.append('/home/behrya/dev/proc-scripts')
+sys.path.append('/home/behrya/dev/proc-scripts_git/')
 import pysacio as p
 import ftanpv
 from pylab import *

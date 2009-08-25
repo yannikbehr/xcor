@@ -11,7 +11,7 @@ FFLAGS = $(DBG) $(fflags)
 
 CFLAGS = $(DBG) $(cflags)
 
-FC = g77
+FC = gfortran
 
 CC = gcc
 

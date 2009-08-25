@@ -9,7 +9,7 @@ ofiles = mspline.o\
 	 tgauss.o
 
 %.o:%.f
-	g77 -c -ffixed-line-length-none $<
+	gfortran -c -ffixed-line-length-none $<
 
 
 aftan4i: $(ofiles)

@@ -8,6 +8,7 @@ import pysacio as p
 import ftanpv
 from pylab import *
 
+class FtanError(Exception): pass
 
 def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.,
            vmax=5.,tmin=4,tmax=None,thresh=20,ffact=1.,taperl=.5,snr=0.2,
@@ -44,7 +45,7 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.,
                                                                      nphpr,phprper,phprvel)
             
     if ierr == 2 or ierr == 1 or nfout2 == 2:
-        raise Exception("ERROR in ftan-method (1st step)")
+        raise FtanError("ERROR in ftan-method (1st step)")
 
     if phm:
         pred = zeros((300,2))
@@ -69,7 +70,7 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.,
                                                                           nphpr,phprper,phprvel)
     
         if ierr == 2 or ierr == 1 or nfout2 == 2:
-            raise Exception("ERROR in ftan-method (2nd step)")
+            raise FtanError("ERROR in ftan-method (2nd step)")
 
     cper  = array(arr2[0][0:nrow])
     aper  = array(arr2[1][0:nrow])

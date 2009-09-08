@@ -9,8 +9,8 @@ ofiles = dspline.o\
 	 lim.o
 
 %.o:%.f
-	g77 -c -ffixed-line-length-none $<
+	gfortran -c -ffixed-line-length-none $<
 
 
 aftan4i: $(ofiles)
-	/usr/bin/f2py -c ftan.pyf ftan.f $(ofiles) -lfftw3
+	/usr/local/bin/f2py -c ftan.pyf ftan.f $(ofiles) -lfftw3

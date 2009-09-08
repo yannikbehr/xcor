@@ -154,8 +154,8 @@ c spectra ends ajastment
         do m = ns/2+2,ns
           fils(m) = dczero
         enddo
-        fils(1) = dcmplx(dreal(fils(1))/2.0d0,0.0d0)
-        fils(ns/2+1) = dcmplx(dreal(fils(ns/2+1)),0.0d0)
+        fils(1) = dcmplx(dble(fils(1))/2.0d0,0.0d0)
+        fils(ns/2+1) = dcmplx(dble(fils(ns/2+1)),0.0d0)
 c forward FFT: fils ==> tmp
         call dfftw_execute(plan2)
         do m = 1,ns
@@ -169,7 +169,7 @@ c        endif
         j = 1
 c extraction from FTAN map area of investigation
         do m = nb-1,ne+1
-          pha(j,k) = datan2(dimag(tmp(m)),dreal(tmp(m)))
+          pha(j,k) = datan2(dimag(tmp(m)),dble(tmp(m)))
           wor = cdabs(tmp(m))
           ampo(j,k) = wor
           amp(j,k) = 20.0d0*dlog10(wor)
@@ -269,7 +269,7 @@ c      compute right minimum -------
 c          write(*,*) k,ampo(m,k),lm,rm
 
           if(indl.eq.1.and.indr.eq.ntall) ipar(4,j) = ipar(4,j)+100.0d0
-          ipar(5,j) = dt*(dabs(dreal(m-indl))+dabs(dreal(m-indr)))/2;
+          ipar(5,j) = dt*(dabs(dble(m-indl))+dabs(dble(m-indr)))/2;
         enddo
 c End of SNR computations
         tim(k)   = ipar(1,ia)
@@ -616,7 +616,7 @@ c filtering and FTAN amplitude diagram construction
       call dfftw_plan_dft_1d(plan2,ns,fils,tmp,
      *                         FFTW_FORWARD, FFTW_ESTIMATE)
       sf(1) = sf(1)/2.0d0
-      sf(ns/2+1) = dcmplx(dreal(sf(ns/2+1)),0.0d0)
+      sf(ns/2+1) = dcmplx(dble(sf(ns/2+1)),0.0d0)
 c spectra tapering
       call tapers(omb,ome,dom,alpha,ns,   omstart,inds,inde,omdom,
      *            ampdom)
@@ -669,8 +669,8 @@ c spectra ends ajastment
         do m = ns/2+2,ns
           fils(m) = dczero
         enddo
-        fils(1) = dcmplx(dreal(fils(1))/2.0d0,0.0d0)
-        fils(ns/2+1) = dcmplx(dreal(fils(ns/2+1)),0.0d0)
+        fils(1) = dcmplx(dble(fils(1))/2.0d0,0.0d0)
+        fils(ns/2+1) = dcmplx(dble(fils(ns/2+1)),0.0d0)
 c forward FFT: fils ==> tmp
         call dfftw_execute(plan2)
         do m = 1,ns
@@ -684,7 +684,7 @@ c        endif
         j = 1
 c extraction from FTAN map area of investigation
         do m = nb-1,ne+1
-          pha(j,k) = datan2(dimag(tmp(m)),dreal(tmp(m)))
+          pha(j,k) = datan2(dimag(tmp(m)),dble(tmp(m)))
           wor = cdabs(tmp(m))
           ampo(j,k) = wor
           amp(j,k) = 20.0d0*dlog10(wor)
@@ -781,7 +781,7 @@ c      compute right minimum -------
             enddo
           ipar(4,j) = 20.0d0*dlog10(ampo(m,k)/dsqrt(lm*rm))
           if(indl.eq.1.and.indr.eq.ntall) ipar(4,j) = ipar(4,j)+100.0d0
-          ipar(5,j) = dt*(dabs(dreal(m-indl))+dabs(dreal(m-indr)))/2;
+          ipar(5,j) = dt*(dabs(dble(m-indl))+dabs(dble(m-indr)))/2;
         enddo
 c End of SNR computations
         tim(k)   = ipar(1,ia)

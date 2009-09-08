@@ -3,15 +3,16 @@
 
 """driver for ftan method to measure phase-velocities"""
 import os, sys, string, glob
-sys.path.append('/home/behrya/dev/proc-scripts_git/')
+sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 import pysacio as p
 import ftanpv
 from pylab import *
 
 class FtanError(Exception): pass
+class FtanIOError(Exception): pass
 
-def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.,
-           vmax=5.,tmin=4,tmax=None,thresh=20,ffact=1.,taperl=.5,snr=0.2,
+def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.5,
+           vmax=4.5,tmin=5,tmax=None,thresh=20,ffact=1.,taperl=.5,snr=0.2,
            fmatch=2,piover4=-1,phm=True,steps=False):
 
     [hf,hi,hs,seis,ok] = p.ReadSacFile(fn)
@@ -19,13 +20,16 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.,
     stat2 = string.rstrip(p.GetHvalue('kevnm',hf,hi,hs))
     n = p.GetHvalue('npts',hf,hi,hs)
     delta = p.GetHvalue('dist',hf,hi,hs)
+    if tmin*vmin > delta:
+        raise FtanIOError("distance between stations is too small")
     times = arange(int(delta/vmax),int(delta/vmin))
     vels  = [ delta/i for i in times]
     if tmax==None:
         tmax = delta/(2*vmax)
         if tmax > 35:
             tmax = 35
-
+    if not tmax > tmin:
+        raise FtanIOError("tmax has to be bigger than tmin")
     trace = zeros(32768)
     for i in range(0,len(seis)):
         if i < 32767:

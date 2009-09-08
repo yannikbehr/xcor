@@ -56,7 +56,7 @@ def add2dict(mydict,astr,f,log,rev=False,newentry=False):
 
 
 def ls(par,dirname,filelist):
-    flist = glob.glob(dirname+'/'+par.pattern)
+    flist = glob.glob(os.path.join(dirname,par.pattern))
     if len(flist) > 0:
         a = os.path.basename(os.path.dirname(flist[0]))
         date = time.strptime(a,'%Y_%m_%d_0_0_0')

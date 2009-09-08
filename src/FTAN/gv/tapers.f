@@ -15,14 +15,14 @@ cxx ampdom = zeros(ns,1);
           ampdom(i) = 0.0d0
       enddo
       om2 = nint(omb/dom);
-      om1 = nint(max(2,om2*(1.0d0-dsqrt(tresh/alpha))));
+      om1 = nint(max(2.0d0,om2*(1.0d0-dsqrt(tresh/alpha))));
 cxx ampdom = (1-cos(pi/(om2-om1)*([om1:om2]-om1)))/2;
 c     write(*,*) 'Y',omb,ome,dom,alpha,ns
       do i = om1,om2
           ampdom(i) = (1.0d0-dcos(pi/(om2-om1)*(i-om1)))/2.0d0
       enddo
       om3 = nint(ome/dom);
-      om4 = nint(min(ns,om3*(1.0d0+sqrt(tresh/alpha))));
+      om4 = nint(min(dble(ns),om3*(1.0d0+sqrt(tresh/alpha))));
 c     write(*,*) om1, om2, om3, om4
 cxx amp2 = (1+cos(pi/(om4-om3)*([om3:om4]-om3)))/2;
       do i = om3,om4

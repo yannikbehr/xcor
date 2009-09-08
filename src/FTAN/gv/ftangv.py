@@ -3,6 +3,10 @@ from pylab import *
 sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 import pysacio as p
 import ftan
+
+class FtanError(Exception): pass
+class FtanIOError(Exception): pass
+
 def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
            vmax=4.,tmin=5,tmax=None,thresh=10,ffact=1.,taperl=1,snr=0.1,
            phm=True,steps=False,extrace=None):
@@ -12,7 +16,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
     set tmax to the maximum observable (still reliable) wavelength"""
     [hf,hi,hs,seis,ok] = p.ReadSacFile(fn)
     if not ok:
-        raise Exception('cannot read sac file')
+        raise FtanIOError('cannot read sac file')
     stat1 = string.rstrip(p.GetHvalue('kstnm',hf,hi,hs))
     stat2 = string.rstrip(p.GetHvalue('kevnm',hf,hi,hs))
     trace = zeros(32768)
@@ -22,10 +26,14 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
     
     n = p.GetHvalue('npts',hf,hi,hs)
     delta = p.GetHvalue('dist',hf,hi,hs)
+    if tmin*vmin > delta:
+        raise FtanIOError("distance between stations is too small")
     if tmax==None:
         tmax = delta/(2*vmax)
         if tmax > 35:
             tmax = 35
+    if not tmax > tmin:
+        raise FtanIOError("tmax has to be bigger than tmin")
             
     times = arange(int(delta/vmax),int(delta/vmin))
     vels  = [ delta/i for i in times]
@@ -48,7 +56,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
             if nfout2 == 0 or ierr == 2 or ierr == 1:
                 errcnt = errcnt +1
                 if errcnt > 3:
-                    raise Exception("ERROR in ftan-method (1st step)")
+                    raise FtanError("ERROR in ftan-method (1st step)")
 
             if phm:
                 # second ftan run using raw dispersion curve to construct phase match filter
@@ -66,7 +74,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
                 if nfout2 == 0 or ierr == 2 or ierr == 1:
                     errcnt = errcnt +1
                     if errcnt > 3:
-                        raise Exception("ERROR in ftan-method (2nd step)")
+                        raise FtanError("ERROR in ftan-method (2nd step)")
                 else:
                     for i in range(0,nfin):
                         if arr2[0][i]>cper[jj]:
@@ -103,7 +111,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
                                                                       tmax,thresh,ffact,perc,\
                                                                       npoints,taperl,nfin,snr)
         if nfout2 == 0 or ierr == 2 or ierr == 1:
-            raise Exception("ERROR in ftan-method (1st step)")
+            raise FtanError("ERROR in ftan-method (1st step)")
 
 
         if phm:
@@ -126,7 +134,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
                                                                            taperl,nfin,snr,npred,pred)
                 
             if nfout2 == 0 or ierr == 2 or ierr == 1:
-                raise Exception("ERROR in ftan-method (2nd step)")
+                raise FtanError("ERROR in ftan-method (2nd step)")
 
         cper  = array(arr2[0][0:nrow])
         aper  = array(arr2[1][0:nrow])

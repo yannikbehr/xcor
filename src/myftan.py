@@ -95,12 +95,23 @@ if __name__ == '__main__':
         for fn in flist:
             cnt = cnt + 1
             pbar.update(cnt)
-            outfile='%s_2_DISP.c'%fn
+            outfile='%s_2_DISP.c1'%fn
             try:
                 cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,ffact=fltfact)
-            except:
+            except ftanc.FtanIOError,e:
                 mylogger.error('%s: %s'%(fn,e))
                 continue
+            except ftanc.FtanError:
+                try:
+                    outfile = '%s_2_DISP.c2'%fn
+                    cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=8,tmax=35,ffact=fltfact)
+                except ftanc.FtanError:
+                    try:
+                        outfile = '%s_2_DISP.c3'%fn
+                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=12,tmax=35,ffact=fltfact)
+                    except ftanc.FtanError,e:
+                        mylogger.error('%s: %s'%(fn,e))
+                        continue
 
             mylogger.debug('%s'%fn)
             f = open(outfile,'w')

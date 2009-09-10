@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PRE-PROCESSING &mdash; XcorrVUW v0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="XcorrVUW v0 documentation" href="index.html" />
+    <link rel="prev" title="Welcome to XcorrVUW’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to XcorrVUW’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">XcorrVUW v0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pre-processing">
+<h1>PRE-PROCESSING<a class="headerlink" href="#pre-processing" title="Permalink to this headline">¶</a></h1>
+<p>The general concept is to bring the available raw-data in
+the following directory-structure:
+The python-script &#8216;seed_db.py&#8217; , called by the python-wrapper
+&#8216;proc-driver.py&#8217;, stores the paths of seed files found in
+one directory plus some information from these seed files
+in a sqlite-database file. This database file is used by the
+C-program &#8216;sa_from_seed_mod&#8217; to convert the seed files into
+SAC files and write them into the structure mentioned above.</p>
+<p>If the raw-data is distributed among different directories
+it might be necessary to repeat this step several times.</p>
+<p>The next step is to check if the response-files are correct
+i.e. if they exist and if they have the right date. If not,
+this has to be corrected manually. To check the response
+files the python-script &#8216;check-resp.py&#8217; can be executed.</p>
+<p>If the raw-data structure above is a patchwork from several
+different sources a new sac_db.out file has to be created.
+This file is crucial for the rest of the processing as it
+contains the paths of the SAC files and several other
+information on the data and the processing that is needed
+for subsequent steps.</p>
+<p>&#8216;sac_db.out&#8217; can be created by the C-program &#8216;initsacdb&#8217;. It
+scans the directory-structure above for SAC-files and
+constructs the new &#8216;sac_db.out&#8217; file from the information
+found. The resulting binary file can be written to stdout
+with the C-program &#8216;read_sac_db&#8217;.</p>
+<p>These last two steps are not part of the proc-driver script
+yet.</p>
+<p>The C-program &#8216;cut_trans_mod&#8217; removes the instrument-response
+and cuts the trace, at the moment, between -3000 and + 3000
+seconds.</p>
+<p>The python-script &#8216;do_whiten.py&#8217; calls the fortran-programs
+&#8216;filter4&#8217; and &#8216;whiten_phamp&#8217; which apply a time-normalisation
+as well as a spectral whitening.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Welcome to XcorrVUW&#8217;s documentation!</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/main.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to XcorrVUW’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">XcorrVUW v0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Yannik Behr.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+    </div>
+  </body>
+</html>

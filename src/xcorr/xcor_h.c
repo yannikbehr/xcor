@@ -264,6 +264,7 @@ int find_comp(char *nameZ, char *nameN, char *nameE, char *pbdir,int ne,int ns){
   char pattern[LINEL], newdir[LINEL];
   glob_t match;
   int retval=0;
+  char prefix[]="ft_10hz_filter";
   
   dircp = strdup(sdb.ev[ne].name);
   basecp = strdup(sdb.ev[ne].name);
@@ -274,7 +275,7 @@ int find_comp(char *nameZ, char *nameN, char *nameE, char *pbdir,int ne,int ns){
   
   /* find Z-component file*/
   assert((strlen(newdir)+strlen(sdb.st[ns].name)+11)<LINEL-1);
-  sprintf(pattern,"%s/ft_%s.*HZ.SAC",newdir,sdb.st[ns].name);
+  sprintf(pattern,"%s/%s_%s.*HZ.SAC",newdir,prefix,sdb.st[ns].name);
   if(glob(pattern, 0, NULL, &match) == 0){
     if(match.gl_pathc>1){
       fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);
@@ -289,7 +290,7 @@ int find_comp(char *nameZ, char *nameN, char *nameE, char *pbdir,int ne,int ns){
 
   /* find E-component file */
   assert((strlen(newdir)+strlen(sdb.st[ns].name)+11)<LINEL-1);
-  sprintf(pattern,"%s/ft_%s.*HE.SAC",newdir,sdb.st[ns].name);
+  sprintf(pattern,"%s/%s_%s.*HE.SAC",newdir,prefix,sdb.st[ns].name);
   if(glob(pattern, 0, NULL, &match) == 0){
     if(match.gl_pathc>1){
       fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);
@@ -304,7 +305,7 @@ int find_comp(char *nameZ, char *nameN, char *nameE, char *pbdir,int ne,int ns){
 
   /* find N-component file*/
   assert((strlen(newdir)+strlen(sdb.st[ns].name)+11)<LINEL-1);
-  sprintf(pattern,"%s/ft_%s.*HN.SAC",newdir,sdb.st[ns].name);
+  sprintf(pattern,"%s/%s_%s.*HN.SAC",newdir,prefix,sdb.st[ns].name);
   if(glob(pattern, 0, NULL, &match) == 0){
     if(match.gl_pathc>1){
       fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);

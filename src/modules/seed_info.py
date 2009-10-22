@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/local/bin/python
 """script to extract information from seed-files using the 'rdseed -cf seedfile'
 and 'rdseed -Sf' command"""
 
@@ -6,6 +6,9 @@ import os, re, string, glob, pytutil, time, math
 import subprocess as sp
 from pylab import *
 import datetime, sys
+
+class SeedInfoException(Exception):
+    pass
 
 class SeedStr: pass
 
@@ -96,21 +99,19 @@ class SeedInfo:
         'rdseed -cf'-command is returned as a list of lines; the file
         'rdseed.stations' is written by the 'rdseed -Sf'-command"""
         # get timespan information from seed-volume
-        rdseedcmd = self.rdseedir+"rdseed -cf "+filename+' 2> /dev/null' 
-        p = sp.Popen([rdseedcmd], shell=True, bufsize=-1,stdin=None, stdout=sp.PIPE)
-        child_stdout = p.stdout
-        data = p.stdout.readlines()
-        err = p.stdout.close()
-        rcode = p.wait()
-        if err or rcode != 0:
-                print '%r failed with exit code %d' %(rdseedcmd, err)
-                return 0
+        print filename
+        p = sp.Popen([self.rdseedir,'-cf',filename],stdout=sp.PIPE,stderr=sp.PIPE)
+        stdout,stderr = p.communicate()
+        data = stdout.split('\n')
+        if len(data) < 2:
+            raise SeedInfoException("rdseed -cf failed for file %s"%filename)
+
         # get station + lat/lon/elev information 
-        command =self.rdseedir+'rdseed -Sf '+filename+' 2>/dev/null'
-        a=os.system(command)
-        if a != 0 and not os.path.isfile('rdseed.stations'):
-            print "WARNING: cannot read station list from ",filename
-            return 0
+        command =self.rdseedir+' -Sf '+filename+' 2>/dev/null'
+        retcode = sp.call(command,shell=True)
+        #a=os.system(command)
+        if retcode != 0 and not os.path.isfile('rdseed.stations'):
+            raise SeedInfoException("rdseed -Sf failed for file %s"%filename)
         # remove rdseed error log
         for ii in glob.glob('./rdseed.err_log*'):
             os.remove(ii)
@@ -165,18 +166,21 @@ class SeedInfo:
 
 
 
-
 if __name__ == '__main__':
-    filename = ['/data/hawea/yannik/nord/nord-geonet/ouz/seed/GN-20040229-000001-27437.seed']
-#    filename = [' /Volumes/stage/stage/yannik78/datasets/SAPSE/seed-data/SAPSE-YA.9.6624']
-#    filename = ['/Volumes/stage/stage/yannik78/datasets/SAPSE/seed-data/SAPSE-YA.8.7522']
-    print "++++++ sample output structure returned by 'seed_info.py' ++++++++"
-    rdseedir = '/home/behrya/src/rdseed4.7.5/'
+    try:
+        filename = sys.argv[1]
+    except:
+        filename = '/data/hawea/yannik/nord/nord-geonet/ouz/seed/GN-20040229-000001-27437.seed'
+    print "+++++++++++++++++++++ SUMMARY ++++++++++++++++++++++++++++++"
+    rdseedir = '/usr/local/bin/rdseed'
     t = SeedInfo(rdseedir)
-    for i in filename:
-        g = t(i)
-        start, length = g.records['OUZ']['LHZ'][0]
-        print "station: OUZ  channel: LHZ  start: %s  length (in days): %f" %(num2date(start),length)
-        print "latitude: %s  longitude: %s elevation: %s" %(g.stations['OUZ']['lat'],g.stations['OUZ']['lon'],g.stations['OUZ']['elv'])
-        print "volume start: %s  volume end: %s" %(num2date(g.start), num2date(g.end))
-        print g.records
+    g = t(filename)
+    print "stations: %s "%(' '.join(g.records.keys()))
+#    for _s in g.records.keys():
+#        chan = g.records[_s].keys()[0]
+#        start, length = g.records[stat][chan][0]
+#    print "station: %s  channel: %s  start: %s  length (in days): %f" %(stat,chan,num2date(start),length)
+#    print "latitude: %s  longitude: %s elevation: %s" %(g.stations[stat]['lat'],g.stations[stat]['lon'],g.stations[stat]['elv'])
+    print "volume start: %s  volume end: %s" %(num2date(g.start), num2date(g.end))
+    print g.records
+    print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

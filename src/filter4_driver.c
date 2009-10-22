@@ -6,7 +6,7 @@
 #include <math.h>
 #include <mysac.h>
 
-#define ANPTSMAX 400000
+#define ANPTSMAX 2000000
 #define SLENGTH 300
 
 /* Function prototypes */
@@ -40,6 +40,7 @@ int main (int argc, char *argv[])
 	}
       n  = shd.npts;
       dt = shd.delta;
+      fprintf(stderr,"%d %f\n",n,dt);
       /* ==========================================================
        * Parameters for filter4 function:
        * Input parameters:

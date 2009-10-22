@@ -18,17 +18,18 @@ c ==========================================================
       include 'fftw3.f'
       integer*4 npow,n
       real*8    f1,f2,f3,f4,dt
-      real*4    seis_in(400000),seis_out(400000)
+      real*4    seis_in(2000000),seis_out(2000000)
 c ---
       integer*4 k,ns,nk
       real*8    plan1,plan2
       real*8    dom
-      double complex czero,s(400000),sf(400000)
+      double complex czero,s(2000000),sf(2000000)
 c ---
       czero = (0.0d0,0.0d0)
 
 c determin the power of FFT
       ns = 2**max0(int(dlog(dble(n))/dlog(2.0d0))+1,13)
+      write(*,*)ns,dt
       dom = 1.0d0/dt/ns
       do k = 1,ns
         s(k) = czero
@@ -70,8 +71,8 @@ c===============================================================
       subroutine flt4(f1,f2,f3,f4,dom,nk,npow,sf)
       real*8    f1,f2,f3,f4,dom
       integer*4 nk,npow
-      double complex sf(400000)
-      real*8    d1,d2,f,dpi,ss,s(400000)
+      double complex sf(2000000)
+      real*8    d1,d2,f,dpi,ss,s(2000000)
       integer*4 i,j
 c ---
       dpi = datan(1.0d0)*4.0d0

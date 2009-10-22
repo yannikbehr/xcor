@@ -16,8 +16,8 @@
 #include <mysac.h>
 
 
-#define ANPTSMAX 1000000
-#define NPTSMALL 400000
+#define ANPTSMAX 2000000
+#define NPTSMALL 2000000
 #define SLENGTH  300
 
 /* Function prorotypes */

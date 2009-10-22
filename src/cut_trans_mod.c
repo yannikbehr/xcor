@@ -170,7 +170,7 @@ int one_rec_cut(int ne, int ns, float t1, float n)
 
   if ( !read_sac (tmp_file, sig1, &shd1, 1000000 ) ) return 0;
 
-  n1 = (long)((t1-t1b)/sdb.rec[ne][ns].dt);
+  n1 = (long)(0.5+(t1-t1b)/sdb.rec[ne][ns].dt);
 
   shd1.npts = n;
   shd1.nzyear = 2000;

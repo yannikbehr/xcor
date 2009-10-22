@@ -50,7 +50,7 @@ void sort_sac_db(void);
 void print_sac_db(void);
 static int glob_this(const char *fpath, const struct stat *sb,
 		     int tflag, struct FTW *ftwbuf);
-int search_ev(float t);
+int search_ev(double t);
 int day_of_year(int year, int month, int day);
 
 SAC_DB sdb;
@@ -201,7 +201,7 @@ static int glob_this(const char *fpath, const struct stat *sb,
 void extr_sac_hd(char *sacfile, const char *pathname){
   FILE *f;
   int index, ns, ne;
-  float t0;
+  double t0;
   int year, month, day, yday;
   SAC_HD shd;
   char *ptr;
@@ -270,7 +270,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
   sdb.ev[ne].ms = 0;
   sdb.ev[ne].ms = 10.*sdb.ev[ne].ms;
   sdb.ev[ne].t0 = t0;
-  sdb.rec[ne][ns].dt = (double)shd.delta;
+  sdb.rec[ne][ns].dt = shd.delta;
   sdb.rec[ne][ns].n  = shd.npts;
   sdb.rec[ne][ns].t0 = abs_time(shd.nzyear,shd.nzjday,shd.nzhour,shd.nzmin,shd.nzsec,shd.nzmsec );
 
@@ -303,7 +303,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
     assert((strlen(search_opts.resp_dir)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+7)<STRING-1);
     sprintf(respattern,"%s/SAC_PZs*%s*%s*",search_opts.resp_dir, shd.kstnm, shd.kcmpnm);
   }else{
-    printf("%d\n",stat(search_opts.resp_dir,&fst));
+    /*printf("%d\n",stat(search_opts.resp_dir,&fst));*/
     assert((strlen(pathname)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+7)<STRING-1);
     sprintf(respattern,"%s/SAC_PZs*%s*%s*",pathname, shd.kstnm, shd.kcmpnm);
   }
@@ -387,7 +387,7 @@ int search_stat(char *statname){
  *function to check if entry for event name 
  *already exists; if not, count up number of events
  --------------------------------------------------*/
-int search_ev(float t){
+int search_ev(double t){
 
   int i,N,cnt=-1;
 

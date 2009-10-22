@@ -7,6 +7,9 @@ import glob, os, string, sys, os.path, time, shutil
 import subprocess as sp
 import pysacio as p
 from ConfigParser import SafeConfigParser
+import progressbar as pg
+
+DEBUG = False
 
 class SaFromMseed:
     def __init__(self, dataless, respdir, outputdir, bindir, rdseedir):
@@ -18,6 +21,7 @@ class SaFromMseed:
         self.monthdict = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May', \
                           6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct', \
                           11:'Nov',12:'Dec'}
+
 
     def __call__(self, mseedir, sacdiroot, spat):
         self.proc_mseed(mseedir, sacdiroot, spat)
@@ -45,22 +49,27 @@ class SaFromMseed:
     def mk_fn(self, stn, chan, d, sacdir):
         """construct filename out of station-, channel-, date-info"""
         monstr = self.monthdict[d.tm_mon]
-        ydir = sacdir+'/'+`d.tm_year`
-        mdir = sacdir+'/'+`d.tm_year`+'/'+monstr
+        #ydir = sacdir+'/'+`d.tm_year`
+        #mdir = sacdir+'/'+`d.tm_year`+'/'+monstr
         ddir = sacdir+'/'+`d.tm_year`+'/'+monstr+'/'+\
                `d.tm_year`+'_'+`d.tm_mon`+'_'+`d.tm_mday`+'_0_0_0/'
-        if not os.path.isdir(sacdir):
-            print "ERROR: directory for sac-files doesn't exist"
-            sys.exit(1)
-        if not os.path.isdir(ydir):
-            os.mkdir(ydir)
-            print "---> creating dir ", ydir
-        if not os.path.isdir(mdir):
-            os.mkdir(mdir)
-            print "---> creating dir ", mdir
         if not os.path.isdir(ddir):
-            os.mkdir(ddir)
-            print "---> creating dir ", ddir
+            os.makedirs(ddir)
+        #if not os.path.isdir(sacdir):
+        #    print "ERROR: directory for sac-files doesn't exist"
+        #    sys.exit(1)
+        #if not os.path.isdir(ydir):
+        #    os.mkdir(ydir)
+        #    if DEBUG:
+        #        print "---> creating dir ", ydir
+        #if not os.path.isdir(mdir):
+        #    os.mkdir(mdir)
+        #    if DEBUG:
+        #        print "---> creating dir ", mdir
+        #if not os.path.isdir(ddir):
+        #    os.mkdir(ddir)
+        #    if DEBUG:
+        #        print "---> creating dir ", ddir
         filename = ddir+'/'+stn+'.'+chan+'.SAC'
         return filename
     
@@ -98,7 +107,7 @@ class SaFromMseed:
         """run c-code to merge several sac-files of the same day into
         one big sac-file"""
         try:
-            mergesaccmd = self.bindir+"merge_sac "+outputfn
+            mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn+" 2>/dev/null 1>/dev/null"
             p = sp.Popen(mergesaccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
             child = p.stdin
             for i in filelist:
@@ -123,31 +132,48 @@ class SaFromMseed:
         outdir = os.path.dirname(sacfn)
         target = os.path.join(outdir,os.path.basename(respfile))
         shutil.copy(respfile, target)
-        print "--> cp ", respfile,' ', target
+        if DEBUG:
+            print "--> cp ", respfile,' ', target
         
     
     def proc_mseed(self, mseedir, sacdir, spat):
         """main function to process mseed files"""
-        files = glob.glob(mseedir+'/'+spat)
+        if DEBUG:
+            print "searching for pattern %s"%os.path.join(mseedir,spat)
+        files = glob.glob(os.path.join(mseedir,spat))
+        cnt = 0
+        if not DEBUG:
+            widgets = ['mSEED2sac: ', pg.Percentage(), ' ', pg.Bar('#'),
+                            ' ', pg.ETA()]
+            pbar = pg.ProgressBar(widgets=widgets, maxval=len(files)).start()
         for fn in files:
-            print fn
+            if DEBUG:
+                print fn
+            else:
+                cnt +=1
+                pbar.update(cnt)
+
             if os.path.isfile(fn):
-                if not os.path.isdir(mseedir+outputdir):
-                    os.mkdir(mseedir+outputdir)
-                command = self.rdseedir+'rdseed -f '+fn+' -g '+self.dataless+' -q '+\
-                          mseedir+self.outputdir+' -o 1 -d 1>/dev/null 2>/dev/null '
-                          #mseedir+self.outputdir+' -o 1 -d 1 '
+                if not os.path.isdir(mseedir+self.outputdir):
+                    os.mkdir(mseedir+self.outputdir)
+                command = self.rdseedir+'rdseed_4.7.5 -f '+fn+' -g '+self.dataless+' -q '+\
+                          mseedir+self.outputdir+' -b 90000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
+                if DEBUG:
+                    print command
                 os.system(command)
-                g = self.get_ms_cont(mseedir+outputdir)
+                g = self.get_ms_cont(mseedir+self.outputdir)
                 for i in g.keys():
                     for j in g[i].keys():
                         if j != 'date':
                             filename = self.mk_fn(i,j,g[i]['date'], sacdir)
-                            print "--> writing file ", filename
+                            if DEBUG:
+                                print "--> writing file ", filename
                             if self.merge_sac(g[i][j],filename):
                                 self.cp_resp(i, j, filename)
                             for k in g[i][j]:
                                 os.remove(k)
+        if not DEBUG:
+            pbar.finish()
 
 
 if __name__ == '__main__':

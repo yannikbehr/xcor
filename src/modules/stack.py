@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/local/bin/python
 """script to stack horizontal component cross-correlation results"""
 
 import numpy as np
@@ -19,7 +19,9 @@ def find_match(par,dirname,filelist):
             i = filelist.index(dn)
             del filelist[i]
         except: pass
-
+        if dirname.find(dn) != -1:
+            return
+        
     print '... in %s'%dirname
     corfiles = glob.glob(dirname+'/COR*')
     if len(corfiles) > 0:

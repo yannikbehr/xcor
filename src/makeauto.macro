@@ -2,7 +2,7 @@
 ############## COMPILER #########################
 CC = gcc
 CPP = g++
-FC = g77
+FC = gfortran
 
 PYTHON = /usr/include/python2.4 
 NUMPY = /usr/lib/python2.4/site-packages/numpy/core/include/numpy

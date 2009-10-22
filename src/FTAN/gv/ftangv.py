@@ -35,9 +35,9 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
     if not tmax > tmin:
         raise FtanIOError("tmax has to be bigger than tmin")
             
-    times = arange(int(delta/vmax),int(delta/vmin))
+    #times = arange(int(delta/vmax),int(delta/vmin))
+    times = [x*dt for x in xrange(int(delta/vmax/dt)-1,int(delta/vmin/dt))]
     vels  = [ delta/i for i in times]
-
     if steps == True:
         #run ftan with small frequency steps
         cper=[];aper=[];gv=[];gvamp=[];gvsnr=[];
@@ -45,8 +45,8 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
         cper.append(0);aper.append(0);gv.append(0);gvamp.append(0);gvsnr.append(0)
         jj = 0
         errcnt = 0
-        for k in arange(tmin,int(tmax),1.):
-            tm = k+10.
+        for k in arange(tmin,int(tmax),2.):
+            tm = k+3.
             if tm > tmax: break
             # first ftan run to get raw dispersion curve
             nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,amp,ierr = ftan.aftan4(n,trace,t0,dt,\
@@ -116,6 +116,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
 
         if phm:
             # second ftan run using raw dispersion curve to construct phase match filter
+
             snr = 120.0
             npred=nfout2
             pred = zeros((300,2))
@@ -137,6 +138,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
                 raise FtanError("ERROR in ftan-method (2nd step)")
 
         cper  = array(arr2[0][0:nrow])
+        
         aper  = array(arr2[1][0:nrow])
         gv    = array(arr2[2][0:nrow])
         gvamp = array(arr2[3][0:nrow])

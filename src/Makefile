@@ -35,11 +35,14 @@ initsacdb: module_obj initsac_db.c
 justcor: 
 	cd ./xcorr; make
 
+filter: filter4_driver.c module_obj
+	$(CC) -g filter4_driver.c -o filter4 -I $(VPATH) -lfftw3 -lgfortran ./modules/filter4.o ./modules/mysac.o
+
 whiteout1cmp: white_1cmp_driver.c module_obj
-	$(CC) -g white_1cmp_driver.c -o white_1cmp -I $(VPATH) -lfftw3 ./modules/white_phamp_1cmp.o ./modules/mysac.o
+	$(CC) -g white_1cmp_driver.c -o white_1cmp -I $(VPATH) -lfftw3 -lgfortran ./modules/white_phamp_1cmp.o ./modules/mysac.o
 
 whiteout2cmp: white_2cmp_driver.c module_obj
-	$(CC) -g white_2cmp_driver.c -o white_2cmp -I $(VPATH) -lfftw3 ./modules/white_phamp_2cmp.o ./modules/mysac.o
+	$(CC) -g white_2cmp_driver.c -o white_2cmp -I $(VPATH) -lfftw3 -lgfortran ./modules/white_phamp_2cmp.o ./modules/mysac.o
 
 mergesac: merge_sac.c module_obj $(hfiles)
 	$(CC) -Wall -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)
@@ -59,6 +62,7 @@ install:
 	install	./xcorr/justCOR $(BINDIR);\
 	install	./xcorr/justCOR_EE_EN $(BINDIR);\
 	install	./xcorr/xcor_h $(BINDIR);\
+	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\
 	install merge_sac $(BINDIR)

@@ -60,7 +60,7 @@ class SacFromSeed(seed_info.SeedInfo):
         print >>child, '1'                  # Output format
         print >>child, 'N'                  # Output filenames include endtime?
         print >>child, 'Y'                  # Output poles and zeroes?
-        print >>child, '0'                  # Check Reversal
+        print >>child, '3'                  # Check Reversal
         print >>child, ''                   # Select Data Type
         print >>child, '%s' %(date1)        # Start time(s)
         print >>child, '%s' %(date2)        # End time(s)

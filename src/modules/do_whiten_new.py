@@ -19,21 +19,20 @@ class ProcLst: pass
 class DoWhiten:
     """class that comprises routines for performing filtering\n
     and spectral whitening"""
-    def __init__(self, cnffile):
-        conf = SafeConfigParser()
-        conf.read(cnffile)
-        self.sacdir = conf.get("whitening", "sacfiles")
-        self.sacbin = conf.get("whitening", "sacdir")
-        self.bindir = conf.get("whitening", "bindir")
-        self.prefix = conf.get("whitening", "prefix")
-        # frequency band +- 20% as taper
-        self.upperp = int(conf.get("whitening", "upperperiod"))
-        self.lowerp = int(conf.get("whitening", "lowerperiod"))
+    def __init__(self,sacdir,prefix,complist,sacbin='/usr/local/sac/bin/',
+                 bindir=os.path.join(os.environ['AUTO_SRC'],'bin'),
+                 upperp=5,lowerp=100,skipdir=[]):
+        self.sacdir  = sacdir
+        self.prefix  = prefix
+        self.complst = complist.split(',')
+        self.sacbin  = sacbin
+        self.bindir  = bindir
+        self.upperp  = upperp
+        self.lowerp  = lowerp
+        self.skipdir = skipdir
         self.eqband = [50, 15]
         self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-	self.cnffilename = cnffile
         self.npow = 1
-        self.complst = string.split(conf.get("whitening","complist"),',')
         self.proclst = ProcLst()
         self.proclst.ydaydir = []
         self.cnt = -1
@@ -193,34 +192,40 @@ class DoWhiten:
         dirlist = os.listdir(dirname+'/'+month)
         if not len(dirlist) >0:
             raise Exception
-        bpfile = `self.upperp`+'to'+`self.lowerp`
+        bpfile = "%.1fto%.1f"%(self.upperp,self.lowerp)
         if not os.path.isdir(dirname+'/'+month+'/'+bpfile):
             os.mkdir(dirname+'/'+month+'/'+bpfile)
             print "Creating dir structure: ", month
         for day in dirlist:
-            if day != bpfile and string.find(day, '.svn') == -1 and string.find(day, '5to100') == -1 and string.find(day, '5to100_EN') == -1:
-                self.cnt = self.cnt + 1
-                self.proclst.ydaydir.append({})
-                self.proclst.ydaydir[self.cnt]['name'] = day
-                if not os.path.isdir(dirname+'/'+month+'/'+bpfile+'/'+day):
-                    os.mkdir(dirname+'/'+month+'/'+bpfile+'/'+day)
-                if not os.path.isdir(dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband'):
-                    os.mkdir(dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband')
-                # get all ft-files with channel name given in complst;
-                # write them into strct
-                for i in range(0,len(self.complst)):
-                    pattern="%s/%s/%s/%s_*.%s.SAC"\
-                             %(dirname,month,day,self.prefix,self.complst[i])
-                    print pattern
-                    tmplist = glob.glob(pattern)
-                    if len(tmplist) > 0:
-                        self.proclst.ydaydir[self.cnt][self.complst[i]] = []
-                        for file in tmplist:
-                            file = os.path.basename(file)
-                            src = dirname+'/'+month+'/'+day+'/'+file
-                            tar = dirname+'/'+month+'/'+bpfile+'/'+day+'/'+file
-                            eqtar = dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband/'+file
-                            self.proclst.ydaydir[self.cnt][self.complst[i]].append((src,tar,eqtar))
+            try:
+                for _d in self.skipdir:
+                    if day.find(_d) != -1:
+                        raise Exception()
+            except:
+                continue
+#            if day != bpfile and string.find(day, '.svn') == -1 and string.find(day, '5to100') == -1 and string.find(day, '5to100_EN') == -1:
+            self.cnt = self.cnt + 1
+            self.proclst.ydaydir.append({})
+            self.proclst.ydaydir[self.cnt]['name'] = day
+            if not os.path.isdir(dirname+'/'+month+'/'+bpfile+'/'+day):
+                os.mkdir(dirname+'/'+month+'/'+bpfile+'/'+day)
+            if not os.path.isdir(dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband'):
+                os.mkdir(dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband')
+            # get all ft-files with channel name given in complst;
+            # write them into strct
+            for i in range(0,len(self.complst)):
+                pattern="%s/%s/%s/%s_*.%s.SAC"\
+                         %(dirname,month,day,self.prefix,self.complst[i])
+                print pattern
+                tmplist = glob.glob(pattern)
+                if len(tmplist) > 0:
+                    self.proclst.ydaydir[self.cnt][self.complst[i]] = []
+                    for file in tmplist:
+                        file = os.path.basename(file)
+                        src = dirname+'/'+month+'/'+day+'/'+file
+                        tar = dirname+'/'+month+'/'+bpfile+'/'+day+'/'+file
+                        eqtar = dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband/'+file
+                        self.proclst.ydaydir[self.cnt][self.complst[i]].append((src,tar,eqtar))
 
 
     def process(self):
@@ -255,13 +260,29 @@ if __name__ == '__main__':
     try:
         if string.find(sys.argv[1],'-c')!=-1:
             config=sys.argv[2]
-            print "config file is: ",sys.argv[2]
         else:
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
         config = 'config.txt' 
-        print "config file is", config
-    test = DoWhiten(config)
+
+    if not os.path.isfile(config):
+        print "no config file found"
+        sys.exit(1)
+        
+    conf = SafeConfigParser()
+    conf.read(config)
+
+    # frequency band +- 20% as taper
+    sacdir  = conf.get("whitening", "sacfiles")
+    sacbin  = conf.get("whitening", "sacdir")
+    bindir  = conf.get("whitening", "bindir")
+    prefix  = conf.get("whitening", "prefix")
+    upperp  = float(conf.get("whitening", "upperperiod"))
+    lowerp  = float(conf.get("whitening", "lowerperiod"))
+    complst = conf.get("whitening","complist")
+    skipdir = conf.get("whitening","skip_directories").split(',')
+    test = DoWhiten(sacdir,prefix,complst,sacbin=sacbin,bindir=bindir,\
+                    upperp=upperp,lowerp=lowerp,skipdir=skipdir)
     os.path.walk(test.sacdir, test.dir_walk, 0)
     test.process()

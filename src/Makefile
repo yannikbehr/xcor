@@ -24,7 +24,7 @@ options = -g -Wall
 %.o:%.c
 	$(CC) -g -c  $<  
 
-all: cut filter4 initsacdb whiteout1cmp whiteout2cmp justcor mergesac ftan 
+all: cut initsacdb whiteout1cmp whiteout2cmp justcor mergesac ftan 
 
 cut: 	module_obj cut_trans_mod.c
 	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm
@@ -34,9 +34,6 @@ initsacdb: module_obj initsac_db.c
 
 justcor: 
 	cd ./xcorr; make
-
-filter4: filter4_driver.c module_obj
-	$(CC) -g filter4_driver.c -o filter4 -I $(VPATH) -lfftw3 ./modules/filter4.o ./modules/mysac.o
 
 whiteout1cmp: white_1cmp_driver.c module_obj
 	$(CC) -g white_1cmp_driver.c -o white_1cmp -I $(VPATH) -lfftw3 ./modules/white_phamp_1cmp.o ./modules/mysac.o
@@ -62,7 +59,6 @@ install:
 	install	./xcorr/justCOR $(BINDIR);\
 	install	./xcorr/justCOR_EE_EN $(BINDIR);\
 	install	./xcorr/xcor_h $(BINDIR);\
-	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\
 	install merge_sac $(BINDIR)

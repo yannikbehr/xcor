@@ -11,6 +11,8 @@ from numpy import *
 from ConfigParser import SafeConfigParser
 import progressbar as pg
 
+DEBUG = False
+
 def abs_time(yy,jday,hh,mm,ss,ms):
     nyday = 0
     for i in range(1901,yy):
@@ -28,6 +30,9 @@ def cut(sdb,ne,ns,t1,nos):
     """
     fin  = sdb.rec[ne][ns].ft_fname+'_tmp'
     fout = sdb.rec[ne][ns].ft_fname
+    if DEBUG:
+        print fin
+        print fout
     p = ReadSac(fin)
     dt   = p.GetHvalue('delta')
     npts = p.GetHvalue('npts')
@@ -73,7 +78,7 @@ def cut(sdb,ne,ns,t1,nos):
     os.remove(fin)
 
 
-def rm_inst(sdbf,delta=1.0,rminst=True,filter=False,instype='resp',
+def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
             plow=160.,phigh=4.,sacbin = '/usr/local/sac/bin/sac',
             t1=1000,nos=84000):
     """
@@ -81,43 +86,36 @@ def rm_inst(sdbf,delta=1.0,rminst=True,filter=False,instype='resp',
     time window, and either remove instrument response, filter, or leave
     them as they are
     """
-    sdb = sac_db.read_db(sdbf)
-    widgets = ['rm_inst: ', pg.Percentage(), ' ', pg.Bar('#'),
-               ' ', pg.ETA()]
-    pbar = pg.ProgressBar(widgets=widgets, maxval=sdb.nev).start()
-    for ne in xrange(sdb.nev):
-        pbar.update(ne)
-        for ns in xrange(sdb.nst):
-            fl1=1.0/(plow+0.0625*plow)
-            fl2=1.0/plow
-            fl3=1.0/phigh
-            fl4=1.0/(phigh-0.25*phigh)
-            if sdb.rec[ne][ns].fname == '': continue
-            p = Popen(sacbin+' 2>/dev/null 1>/dev/null',shell=True,stdin=PIPE)
-            cd1 = p.stdin
-            #print sdb.rec[ne][ns].fname
-            print >>cd1, "r %s"%sdb.rec[ne][ns].fname
-            print >>cd1, "rmean"
-            print >>cd1, "rtrend"
-            print >>cd1, "interpolate delta %f "%delta
-            if rminst:
-                if instype == 'resp':
-                    print >>cd1, "transfer from evalresp fname %s to vel freqlimits\
-                    %f %f %f %f"%(sdb.rec[ne][ns].resp_fname,fl1,fl2,fl3,fl4)
-                if instype == 'pz':
-                    print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
-                    %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
-            if filter:
-                print >>cd1,"bandpass npoles 4 corner %f %f"%(fl2,fl3)
-            print >>cd1, "w %s"%(sdb.rec[ne][ns].ft_fname+'_tmp')
-            print >>cd1, "quit"
-            cd1.close()
-            p.wait()
-            cut(sdb,ne,ns,t1,nos)
-            sdb.rec[ne][ns].dt = delta
-            sdb.rec[ne][ns].n  = int(round(nos/delta))
-    sac_db.write_db(sdb,sdbf)
-    pbar.finish()
+    fl1=1.0/(plow+0.0625*plow)
+    fl2=1.0/plow
+    fl3=1.0/phigh
+    fl4=1.0/(phigh-0.25*phigh)
+    if sdb.rec[ne][ns].fname == '':return
+    p = Popen(sacbin+' 2>/dev/null 1>/dev/null',shell=True,stdin=PIPE)
+    cd1 = p.stdin
+    if DEBUG:
+        print "r %s"%sdb.rec[ne][ns].fname
+    print >>cd1, "r %s"%sdb.rec[ne][ns].fname
+    print >>cd1, "rmean"
+    print >>cd1, "rtrend"
+    print >>cd1, "interpolate delta %f "%delta
+    if rminst:
+        if instype == 'resp':
+            print >>cd1, "transfer from evalresp fname %s to vel freqlimits\
+            %f %f %f %f"%(sdb.rec[ne][ns].resp_fname,fl1,fl2,fl3,fl4)
+        if instype == 'pz':
+            if sdb.rec[ne][ns].pz_fname != '':
+                print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
+                %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
+    if filter:
+        print >>cd1,"bandpass npoles 4 corner %f %f"%(fl2,fl3)
+    print >>cd1, "w %s"%(sdb.rec[ne][ns].ft_fname+'_tmp')
+    print >>cd1, "quit"
+    cd1.close()
+    p.wait()
+    cut(sdb,ne,ns,t1,nos)
+    sdb.rec[ne][ns].dt = delta
+    sdb.rec[ne][ns].n  = int(round(nos/delta))
 
 
 if __name__ == "__main__":
@@ -163,6 +161,24 @@ if __name__ == "__main__":
         rminst  = False
         filt    = False
 
-    rm_inst(os.path.join(tmpdir,dbname),delta=delta,rminst=rminst,instype=instype,\
-            plow=plow,phigh=phigh,sacbin=os.path.join(sacdir,'sac'),\
-            t1=t1,nos=nos,filter=filt)
+    sacbin = os.path.join(sacdir,'sac')
+    if not os.access('/usr/local/sac/bin/sac',os.X_OK):
+        print "Cannot find executable sac-binary"
+        sys.exit(1)
+    sdbf = os.path.join(tmpdir,dbname)
+    sdb = sac_db.read_db(sdbf)
+    if not DEBUG:
+        widgets = ['rm_inst: ', pg.Percentage(), ' ', pg.Bar('#'),
+                   ' ', pg.ETA()]
+        pbar = pg.ProgressBar(widgets=widgets, maxval=sdb.nev).start()
+    
+    for ne in xrange(sdb.nev):
+        if not DEBUG:
+            pbar.update(ne)
+        for ns in xrange(sdb.nst):
+            rm_inst(sdb,ne,ns,delta=delta,rminst=rminst,instype=instype,\
+                    plow=plow,phigh=phigh,sacbin=sacbin,\
+                    t1=t1,nos=nos,filter=filt)
+    sac_db.write_db(sdb,sdbf)
+    if not DEBUG:
+        pbar.finish()

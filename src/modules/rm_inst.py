@@ -91,6 +91,7 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
     fl3=1.0/phigh
     fl4=1.0/(phigh-0.25*phigh)
     if sdb.rec[ne][ns].fname == '':return
+    if os.path.isfile(sdb.rec[ne][ns].ft_fname):return
     p = Popen(sacbin+' 2>/dev/null 1>/dev/null',shell=True,stdin=PIPE)
     cd1 = p.stdin
     if DEBUG:

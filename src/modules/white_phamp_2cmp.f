@@ -14,8 +14,8 @@ c seis_out - output array length of n, (float)
 c ==========================================================
 
       subroutine filter4(f1,f2,f3,f4,npow,dt,n,seis_in_E,seis_in_N,
-      1    seis_out_E,seis_out_N,seis_outamp_E,seis_outamp_N,
-      2    seis_outph_E,seis_outph_N,ns,dom)
+     1    seis_out_E,seis_out_N,seis_outamp_E,seis_outamp_N,
+     2    seis_outph_E,seis_outph_N,ns,dom)
       implicit none
       include 'fftw3.f'
       integer*4 npow,n

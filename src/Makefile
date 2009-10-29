@@ -24,7 +24,7 @@ options = -g -Wall
 %.o:%.c
 	$(CC) -g -c  $<  
 
-all: cut initsacdb whiteout1cmp whiteout2cmp justcor mergesac ftan 
+all: cut initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter
 
 cut: 	module_obj cut_trans_mod.c
 	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm
@@ -32,7 +32,7 @@ cut: 	module_obj cut_trans_mod.c
 initsacdb: module_obj initsac_db.c
 	$(CC) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
-justcor: 
+xcor: 
 	cd ./xcorr; make
 
 filter: filter4_driver.c module_obj
@@ -70,7 +70,8 @@ install:
 clean:
 	rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
 	white_2cmp merge_sac; \
-	cd ./modules; make clean; cd ..; cd ./FTAN; make clean; cd ..
+	cd ./modules; make clean; cd ..;\
+	cd ../bin/; rm *
 
 tilde: 
 	rm -f $(VPATH)/*~ ; rm -f *~; rm rdseed.err_log.*

@@ -68,14 +68,15 @@ install:
 	install merge_sac $(BINDIR)
 
 clean:
-	rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
+	-rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
 	white_2cmp merge_sac; \
 	cd ./modules; make clean; cd ..;\
-	cd ../bin/; rm *
+	-rm ../bin/*
 
 tilde: 
-	rm -f $(VPATH)/*~ ; rm -f *~; rm rdseed.err_log.*
-
+	-rm -f $(VPATH)/*~ 
+	-rm -f *~
+	-rm rdseed.err_log.*
 
 tar: 
 	tar -czvf ../noise_proc.tar.gz ../src

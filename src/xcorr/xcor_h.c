@@ -48,9 +48,9 @@ struct array{
 
 /* Function prorotypes */
 int check_info (SAC_HD *sh1, SAC_HD *sh2);
-int do_cor(int lag,char *cordir,char *pbdir);  
+int do_cor(int lag,char *cordir,char *pbdir,char *prefix);  
 void get_args(int argc, char** argv,char *confile);
-int find_comp(char *name1_Z, char *name1_N, char *name1_E,char *pbdir,int ne,int ns);
+int find_comp(char *name1_Z, char *name1_N, char *name1_E,char *pbdir,char *prefix,int ne,int ns);
 void rotate(int ndat, float* n, float* e,float* r,float* t,float baz);
 struct array delaz(float eqlat, float eqlon, float stlat, float stlon, int flag);
 void coortr(float *lat, float *lon, int flag);
@@ -70,7 +70,7 @@ int main (int na, char **arg)
   int lag;
   char str[LINEL];
   dictionary *dd;
-  char *tmpdir, *pbdir, *cordir, *sacdbname;
+  char *tmpdir, *pbdir, *cordir, *sacdbname, *prefix;
   char confile[LINEL];
   strncpy(confile,"./config.txt",LINEL-1);
 
@@ -83,6 +83,7 @@ int main (int na, char **arg)
   lag        = iniparser_getint(dd, "xcor:lag", 3000);
   pbdir      = iniparser_getstr(dd, "xcor:pbdir");
   sacdbname  = iniparser_getstr(dd, "xcor:dbname");
+  prefix     = iniparser_getstr(dd, "xcor:prefix");
 
   assert((strlen(tmpdir)+strlen(sacdbname)+1) < LINEL);
   sprintf(str,"%s/%s", tmpdir,sacdbname);
@@ -96,7 +97,7 @@ int main (int na, char **arg)
   fclose(ff);
 
   /*do all the work of correlations here  */
-  if(!do_cor(lag,cordir,pbdir)){
+  if(!do_cor(lag,cordir,pbdir,prefix)){
     fprintf(stderr,"ERROR: in function 'do_cor'!\n");  
     return 1;
   }
@@ -141,7 +142,7 @@ SAC_HD sh1, sh2, shd_cor;
   lag    = half length of correlation window
   cordir = directory for correl. results
   ----------------------------------------------------------------------------*/
-int do_cor(int lag , char *cordir, char* pbdir)
+int do_cor(int lag , char *cordir, char* pbdir, char *prefix)
 {
   int ine, jsta1, jsta2;
   int len, ndat, retval1, retval2; 
@@ -160,7 +161,7 @@ int do_cor(int lag , char *cordir, char* pbdir)
 
     /*loop over "base" station number, this will be stored into common memory*/
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
-      retval1 = find_comp(name1_Z, name1_N, name1_E,pbdir,ine,jsta1);
+      retval1 = find_comp(name1_Z, name1_N, name1_E,pbdir,prefix,ine,jsta1);
       if(retval1 < 1)continue;
       //      if(retval1 == 1 || retval1 == 3 || retval1 == 5 || retval1 == 7){
       if(((retval1+2)%2)>0){
@@ -169,7 +170,7 @@ int do_cor(int lag , char *cordir, char* pbdir)
 
       /* loop over second station */
       for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
-	retval2 = find_comp(name2_Z, name2_N, name2_E,pbdir,ine,jsta2);
+	retval2 = find_comp(name2_Z, name2_N, name2_E,pbdir,prefix,ine,jsta2);
 	if(retval2 < 1)continue;
 	if(((retval1+2)%2)>0 && ((retval2+2)%2)>0){
 		z2 = read_sac_dyn(name2_Z, &sh2);
@@ -259,12 +260,11 @@ int write_xcor(float *sig1, float *sig2, int len, int lag,
 /*--------------------------------------------------------------------------
   function to find East-, North- and Z-component files for given date-dir
    ------------------------------------------------------------------------*/
-int find_comp(char *nameZ, char *nameN, char *nameE, char *pbdir,int ne,int ns){
+int find_comp(char *nameZ, char *nameN, char *nameE, char *pbdir,char *prefix, int ne,int ns){
   char *dircp, *dirn, *base, *basecp;
   char pattern[LINEL], newdir[LINEL];
   glob_t match;
   int retval=0;
-  char prefix[]="ft_10hz_filter";
   
   dircp = strdup(sdb.ev[ne].name);
   basecp = strdup(sdb.ev[ne].name);

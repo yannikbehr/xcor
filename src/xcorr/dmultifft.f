@@ -21,7 +21,7 @@ c ==========================================================
       include 'fftw3.h'
       integer*4 lag, i,k
 c      real*4    cor(10001)
-      real*8    plan3, fn
+      real*8    plan3
       double complex temp1(400000),temp2(400000)
       double complex temp3(400000),czero
       real*4  seis_out(400000)

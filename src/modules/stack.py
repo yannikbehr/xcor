@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env mypython
 """script to stack horizontal component cross-correlation results"""
 
 import numpy as np

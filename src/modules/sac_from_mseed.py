@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """extract mseed data from geonet download and put them into the right\n
 directory structure together with their corresponding response files"""
 
@@ -12,12 +12,12 @@ import progressbar as pg
 DEBUG = False
 
 class SaFromMseed:
-    def __init__(self, dataless, respdir, outputdir, bindir, rdseedir):
+    def __init__(self, dataless, respdir, outputdir, bindir, rdseed):
         self.dataless  = dataless
         self.respdir   = respdir
         self.outputdir = outputdir
         self.bindir    = bindir
-        self.rdseedir  = rdseedir
+        self.rdseed    = rdseed
         self.monthdict = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May', \
                           6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct', \
                           11:'Nov',12:'Dec'}
@@ -49,27 +49,10 @@ class SaFromMseed:
     def mk_fn(self, stn, chan, d, sacdir):
         """construct filename out of station-, channel-, date-info"""
         monstr = self.monthdict[d.tm_mon]
-        #ydir = sacdir+'/'+`d.tm_year`
-        #mdir = sacdir+'/'+`d.tm_year`+'/'+monstr
         ddir = sacdir+'/'+`d.tm_year`+'/'+monstr+'/'+\
                `d.tm_year`+'_'+`d.tm_mon`+'_'+`d.tm_mday`+'_0_0_0/'
         if not os.path.isdir(ddir):
             os.makedirs(ddir)
-        #if not os.path.isdir(sacdir):
-        #    print "ERROR: directory for sac-files doesn't exist"
-        #    sys.exit(1)
-        #if not os.path.isdir(ydir):
-        #    os.mkdir(ydir)
-        #    if DEBUG:
-        #        print "---> creating dir ", ydir
-        #if not os.path.isdir(mdir):
-        #    os.mkdir(mdir)
-        #    if DEBUG:
-        #        print "---> creating dir ", mdir
-        #if not os.path.isdir(ddir):
-        #    os.mkdir(ddir)
-        #    if DEBUG:
-        #        print "---> creating dir ", ddir
         filename = ddir+'/'+stn+'.'+chan+'.SAC'
         return filename
     
@@ -117,7 +100,8 @@ class SaFromMseed:
             if err or rcode != 0:
                 raise RuntimeError, '%r failed with exit code %d' %(mergesaccmd, err)
         except Exception, e:
-            print "ERROR: while merging sacfiles"
+            if DEBUG:
+                print "ERROR: while merging sacfiles"
             return 0
         else:
             return 1
@@ -156,7 +140,7 @@ class SaFromMseed:
             if os.path.isfile(fn):
                 if not os.path.isdir(mseedir+self.outputdir):
                     os.mkdir(mseedir+self.outputdir)
-                command = self.rdseedir+'rdseed_4.7.5 -f '+fn+' -g '+self.dataless+' -q '+\
+                command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
                           mseedir+self.outputdir+' -b 90000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
                 if DEBUG:
                     print command
@@ -184,7 +168,7 @@ if __name__ == '__main__':
             print "config file is: ",sys.argv[2]
             cp = SafeConfigParser()
             cp.read(config)
-            rdseedir = cp.get('mseed2sac','rdseedir')
+            rdseed = cp.get('mseed2sac','rdseed')
             bindir   = cp.get('mseed2sac','bindir')
             mseedir  = cp.get('mseed2sac','mseedir')
             sacfiles = cp.get('mseed2sac','sacfiles')
@@ -196,15 +180,8 @@ if __name__ == '__main__':
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
-        print "using standard parameters"
-        rdseedir = '/home/behrya/src/rdseed4.7.5/'
-        bindir   = '/home/behrya/dev/auto/bin/'
-        mseedir  = './2003/'
-        sacfiles = './SacFiles/'
-        dataless = '/home/behrya/dev/proc-scripts/wsdl/gsoap/miniseed/C/example/dataless/nz.dataless.seed'
-        respfiles= './respfiles/'
-        outputdir= 'sacfiles'
-        spat     = '*'
+        print "usage: %s -c config-file"%os.path.basename(sys.argv[0])
+        sys.exit(1)
 
-    t = SaFromMseed(dataless, respfiles, outputdir, bindir, rdseedir)
+    t = SaFromMseed(dataless, respfiles, outputdir, bindir, rdseed)
     t(mseedir, sacfiles, spat)

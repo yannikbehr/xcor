@@ -19,7 +19,7 @@ ofiles = \
 	$(VPATH)/iniparser.o\
 	$(VPATH)/mysac.o
 
-options = -g -Wall
+options = -g -Wall -I/usr/local/include -L/usr/local/lib
 
 %.o:%.c
 	$(CC) -g -c  $<  
@@ -36,13 +36,13 @@ xcor:
 	cd ./xcorr; make
 
 filter: filter4_driver.c module_obj
-	$(CC) -g filter4_driver.c -o filter4 -I $(VPATH) -lfftw3 -lgfortran ./modules/filter4.o ./modules/mysac.o
+	$(CC) $(options) filter4_driver.c -o filter4 -I $(VPATH) ./modules/filter4.o ./modules/mysac.o -lfftw3 -lgfortran 
 
 whiteout1cmp: white_1cmp_driver.c module_obj
-	$(CC) -g white_1cmp_driver.c -o white_1cmp -I $(VPATH) -lfftw3 -lgfortran ./modules/white_phamp_1cmp.o ./modules/mysac.o
+	$(CC) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) ./modules/white_phamp_1cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
 
 whiteout2cmp: white_2cmp_driver.c module_obj
-	$(CC) -g white_2cmp_driver.c -o white_2cmp -I $(VPATH) -lfftw3 -lgfortran ./modules/white_phamp_2cmp.o ./modules/mysac.o
+	$(CC) $(options) white_2cmp_driver.c -o white_2cmp -I $(VPATH) ./modules/white_phamp_2cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
 
 mergesac: merge_sac.c module_obj $(hfiles)
 	$(CC) -Wall -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)

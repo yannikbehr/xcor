@@ -36,7 +36,7 @@ int main (int argc, char **argv)
   static float seis_in[NPTSMALL],seis_out[NPTSMALL];
   static float seis_outamp[NPTSMALL],seis_outph[NPTSMALL];
   double t1,t2,t3,t4;
-  char  name[SLENGTH], name1[SLENGTH], name_test[SLENGTH];
+  char  name[SLENGTH], name1[SLENGTH];
   char  nameamp[SLENGTH], nameph[SLENGTH];
   int   i, nn;
 

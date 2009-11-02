@@ -23,7 +23,7 @@ int main (int argc, char *argv[])
   
   double t1,t2,t3,t4;
   char  name_in[SLENGTH], name_out[SLENGTH];
-  int   i, j, nn;
+  int   nn;
       
   while((nn = fscanf(stdin,"%lf %lf %lf %lf %d %s %s",
       &t1,&t2,&t3,&t4,&npow,name_in, name_out)) != EOF){

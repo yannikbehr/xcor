@@ -35,10 +35,10 @@ int main (int argc, char *argv[])
   static float seis_outamp_N[NPTSMALL],seis_outph_N[NPTSMALL];
 
   double t1,t2,t3,t4;
-  char  name_E[SLENGTH],name_N[SLENGTH],name1[SLENGTH];
+  char  name_E[SLENGTH],name_N[SLENGTH];
   char  name_amp_E[SLENGTH],name_ph_E[SLENGTH];
   char  name_amp_N[SLENGTH],name_ph_N[SLENGTH];
-  int   i, j, nn,iii;
+  int   i, nn;
 
   while((nn = fscanf(stdin,"%lf %lf %lf %lf %d %s %s",&t1,&t2,&t3,&t4,
 		     &npow,name_E, name_N)) != EOF) 

@@ -8,7 +8,7 @@ class FtanError(Exception): pass
 class FtanIOError(Exception): pass
 
 def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
-           vmax=4.,tmin=5,tmax=None,thresh=10,ffact=1.,taperl=1,snr=0.1,
+           vmax=4.,tmin=5,tmax=None,tmaxmax=35,thresh=10,ffact=1.,taperl=1,snr=0.1,
            phm=True,steps=False,extrace=None):
     """wrapper function to set ftan parameters and call ftan modules
     1st step raw ftan; 2nd step ftan with phase-matched filtering from
@@ -30,8 +30,8 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
         raise FtanIOError("distance between stations is too small")
     if tmax==None:
         tmax = delta/(2*vmax)
-        if tmax > 35:
-            tmax = 35
+        if tmax > tmaxmax:
+            tmax = tmaxmax
     if not tmax > tmin:
         raise FtanIOError("tmax has to be bigger than tmin")
             

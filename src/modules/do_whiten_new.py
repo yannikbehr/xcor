@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """module for calling filter4.f and whiten_phamp.f with appropriate values
 and creating output directory\n
 $Log$
@@ -214,7 +214,7 @@ class DoWhiten:
             # get all ft-files with channel name given in complst;
             # write them into strct
             for i in range(0,len(self.complst)):
-                pattern="%s/%s/%s/%s_*.%s.SAC"\
+                pattern="%s/%s/%s/%s*.%s.SAC"\
                          %(dirname,month,day,self.prefix,self.complst[i])
                 print pattern
                 tmplist = glob.glob(pattern)

@@ -1,9 +1,9 @@
-#!/usr/local/bin/python
+#!/usr/bin/env mypython
 
 """ wrapper script for ftan module """
 
 
-from pylab import *
+#from pylab import *
 import os, sys, string, glob
 sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/gv')
 sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/pv')
@@ -11,6 +11,8 @@ import ftanc
 import ftangv
 import pysacio as p
 import progressbar as pg
+
+DEBUG=True
 
 if __name__ == '__main__':
     from ConfigParser import SafeConfigParser
@@ -60,35 +62,41 @@ if __name__ == '__main__':
     ############################################################
 
     flist = glob.glob(cordir+'/'+spattern)
-    pbar = pg.ProgressBar(widgets=widgets, maxval=len(flist)).start()
+    if not DEBUG:
+        pbar = pg.ProgressBar(widgets=widgets, maxval=len(flist)).start()
 
     if dsptype == 'group':
         cnt = 0
         for fn in flist:
             cnt = cnt +1
-            pbar.update(cnt)
+            if not DEBUG:
+                pbar.update(cnt)
+            else:
+                print fn
             outfile = '%s_2_DISP.1'%fn
             if explore:
+                tmin = 2.
                 while True:
-                    tmin = 2.
                     try:
-                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,extrace=refdsp)
-                    except FtanError:
-                        tmin += 0.5
-                    except FtanIOError:
+                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,extrace=refdsp,tmaxmax=60)
+                    except ftangv.FtanError:
+                        tmin += 1.
+                    except ftangv.FtanIOError:
+                        break
+                    else:
                         break
             else:
                 try:
                     cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=fltfact,extrace=refdsp)
-                except:
+                except ftangv.FtanError:
                     try:
                         outfile = '%s_2_DISP.2'%fn
                         cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=0.5,extrace=refdsp)
-                    except:
+                    except ftangv.FtanError:
                         try:
                             outfile = '%s_2_DISP.3'%fn
                             cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,steps=True,phm=False)
-                        except Exception, e:
+                        except ftangv.FtanError, e:
                             mylogger.error('%s: %s'%(fn,e))
                             continue
     
@@ -97,14 +105,18 @@ if __name__ == '__main__':
             for ii in range(0,len(cper)):
                 print >>f,'%d\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],gvamp[ii],gvsnr[ii])
             f.close()
-        pbar.finish()
+        if not DEBUG:
+            pbar.finish()
 
 
     if dsptype == 'phase':
         cnt = 0
         for fn in flist:
             cnt = cnt + 1
-            pbar.update(cnt)
+            if not DEBUG:
+                pbar.update(cnt)
+            else:
+                print fn
             outfile='%s_2_DISP.c1'%fn
             if explore:
                 while True:
@@ -138,6 +150,7 @@ if __name__ == '__main__':
             for ii in range(0,len(cper)):
                 print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii])
             f.close()
-        pbar.finish()
+        if not DEBUG:
+            pbar.finish()
                 
             

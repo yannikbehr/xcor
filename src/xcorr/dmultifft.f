@@ -22,9 +22,9 @@ c ==========================================================
       integer*4 lag, i,k
 c      real*4    cor(10001)
       real*8    plan3
-      double complex temp1(400000),temp2(400000)
-      double complex temp3(400000),czero
-      real*4  seis_out(400000)
+      double complex temp1(2000000),temp2(2000000)
+      double complex temp3(2000000),czero
+      real*4  seis_out(2000000)
 
       common /core/temp1
 

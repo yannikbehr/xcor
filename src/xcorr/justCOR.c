@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <errno.h>
 #define MODUS 0711
 #define STRING 300
 #define SSTRING 150
@@ -37,16 +38,20 @@
 /* Function prorotypes */
 void dcommon_(int *len, float *amp,float *phase);
 void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int *ns);
-void swapn(unsigned char *b, int N, int n);
 int check_info (int ne, int ns1, int ns2 );
-int do_cor(int lag, char *cordir);
+int do_cor(int lag, char *cordir,char *pbdir);
 void sac_db_chng (char *pbdir);
-static int glob_this(const char *fpath, const struct stat *sb,
-		     int tflag, struct FTW *ftwbuf);
-void get_args(int argc, char** argv);
+void get_args(int argc, char** argv,char *fconf);
+void make_dir(int ie, char *cordir, char *pbdir, char *daydir);
 
 
 SAC_DB sdb;
+SAC_HD shdamp1, shdph1, shdamp2, shdph2, shd_cor;
+
+/* as there are sometimes problems with very large arrays that are defined 
+within functions, we define them here*/
+float amp[900000], phase[900000], cor[900000];
+float seis_out[2000000];
 
 /*c/////////////////////////////////////////////////////////////////////////*/
 int main (int na, char **arg)
@@ -54,38 +59,33 @@ int main (int na, char **arg)
   FILE *ff;
   int lag;
   int flags = 1;
-  char str[600];
+  char str[600],fconf[STRING];
   dictionary *dd;
-  char *tmpdir, *cordir, *pbdir;
-  strcpy(sdb.conf,"./config.txt");
+  char *tmpdir, *cordir, *pbdir, *sacdbname, *prefix;
+  strncpy(fconf,"./config.txt",STRING-1);
+  get_args(na, arg,fconf);
 
-  get_args(na, arg);
-
-  /* OPEN SAC DATABASE FILE AND READ IN TO MEMORY */
-  dd         = iniparser_new(sdb.conf);
+  /* read in parameters from config file*/
+  dd         = iniparser_new(fconf);
   tmpdir     = iniparser_getstr(dd, "xcor:tmpdir");
   cordir     = iniparser_getstr(dd, "xcor:cordir");
   lag        = iniparser_getint(dd, "xcor:lag", 3000);
   pbdir      = iniparser_getstr(dd, "xcor:pbdir");
+  sacdbname  = iniparser_getstr(dd, "xcor:dbname");
+  prefix     = iniparser_getstr(dd, "xcor:prefix");
 
-  sprintf(str,"%ssac_db.out", tmpdir);
+  /* open sac-database file and read into memory*/
+  assert((strlen(tmpdir)+strlen(sacdbname)+1) < STRING);
+  sprintf(str,"%s/%s", tmpdir,sacdbname);
   ff = fopen(str,"rb");
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
-
   /* change ft_fname value in sdb-struct */
   sac_db_chng(pbdir);
 
   /*do all the work of correlations here  */
-  do_cor(lag,cordir);  
+  do_cor(lag,cordir,pbdir);  
   printf("correlations finished\n");
-
-  /* move COR/COR_STA1_STA2.SAC.prelim to COR/COR_STA1_STA2.SAC */
-  if (nftw(cordir, glob_this, 20, flags) == -1) {
-      perror("nftw");
-      exit(EXIT_FAILURE);
-  }
-
   iniparser_free(dd);
   return 0;
 }
@@ -124,9 +124,6 @@ int check_info (int ne, int ns1, int ns2 )
 
 
 /*c/////////////////////////////////////////////////////////////////////////*/
-float sig[1000000];
-SAC_HD shdamp1, shdph1, shdamp2, shdph2, shd_cor;
-
 /*----------------------------------------------------------------------------
   correlation in frequ.-domain
   lag    = half length of correlation window
@@ -137,73 +134,57 @@ SAC_HD shdamp1, shdph1, shdamp2, shdph2, shd_cor;
   -dcommon
   -dmultifft
 ----------------------------------------------------------------------------*/
-int do_cor(int lag, char *cordir)
+int do_cor(int lag, char *cordir, char *pbdir)
 {
-  int ine, jsta1, jsta2, k;
-
+  int ine, jsta1, jsta2;
   int len,ns,i; 
+  char filename[STRING], amp_sac[STRING], phase_sac[STRING];
+  char mondir[STRING];
 
-
-  char filename[STRING], amp_sac[STRING], phase_sac[STRING], yeardir[STRING], mondir[STRING];
-  char *buf, *month, *year;
-  float amp[400000], phase[400000], cor[400000];
-  float seis_out[400000];
-
-  // outermost loop over day number, then station number
-
+  /*outermost loop over day number, then station number*/
   for( ine = 0; ine < sdb.nev; ine++ ) {
     fprintf(stderr,"sdb.nev %d\n",ine);
-
-    // loop over "base" station number, this will be stored into common memory
-
+    make_dir(ine,cordir,pbdir,mondir);
+    /*loop over "base" station number, this will be stored into common memory*/
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
       if(sdb.rec[ine][jsta1].n > 0){
-	if(sdb.rec[ine][jsta1].n > 84000){
-	  fprintf(stderr,"ERROR: trace longer than 84000 pts; %s\n",sdb.rec[ine][jsta1].ft_fname);
+	if(sdb.rec[ine][jsta1].n > 840000){
+	  fprintf(stderr,"ERROR: trace longer than 840000 pts; %s\n",sdb.rec[ine][jsta1].ft_fname);
 	  continue;
 	}
         sprintf( amp_sac, "%s.am", sdb.rec[ine][jsta1].ft_fname );
         sprintf( phase_sac, "%s.ph", sdb.rec[ine][jsta1].ft_fname );
-
 	// read amp and phase files and read into common memory
-        if ( read_sac(amp_sac, amp, &shdamp1, 1000000 )==NULL ) {
+        if ( read_sac(amp_sac, amp, &shdamp1, 900000 )==NULL ) {
   	  fprintf( stderr,"file %s not found\n", amp_sac );
    	  continue;
         }
-        if ( read_sac(phase_sac, phase, &shdph1, 1000000)== NULL ) {
+        if ( read_sac(phase_sac, phase, &shdph1, 900000)== NULL ) {
           fprintf( stderr,"file %s not found\n", phase_sac );
           continue;
-        }
-
+	  }
 	len = shdamp1.npts;
-
         dcommon_( &len, amp, phase ); // reads amp and phase files into common memory
-
 	for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
   	  if(sdb.rec[ine][jsta2].n > 0){
-	    if(sdb.rec[ine][jsta2].n > 84000){
+	    if(sdb.rec[ine][jsta2].n > 840000){
 	      fprintf(stderr,"ERROR: trace longer than 84000 pts; %s\n",sdb.rec[ine][jsta2].ft_fname);
 	      continue;
 	    }
-
 	    // compute correlation
 	    sprintf(amp_sac, "%s.am", sdb.rec[ine][jsta2].ft_fname);
             sprintf(phase_sac, "%s.ph", sdb.rec[ine][jsta2].ft_fname);
 	    fprintf(stderr,"file %s  %s\n", sdb.rec[ine][jsta1].ft_fname,sdb.rec[ine][jsta2].ft_fname );
             // get array of floats for amp and phase of first signal
-
-            if ( read_sac(amp_sac, amp, &shdamp2, 100000) ==NULL ) {
+            if ( read_sac(amp_sac, amp, &shdamp2, 900000) ==NULL ) {
               fprintf(stderr,"file %s not found\n", amp_sac );
               continue;
             }
-
-            if ( read_sac(phase_sac, phase, &shdph2, 100000)==NULL ) {
+            if ( read_sac(phase_sac, phase, &shdph2, 900000)==NULL ) {
               fprintf(stderr,"file %s not found\n", phase_sac );
               continue;
-            }
-     
+	      }
 	    len = shdamp2.npts;
-
             if(!check_info(ine, jsta1, jsta2 )) {
               fprintf(stderr,"files incompatible\n");
               return 0;
@@ -217,54 +198,19 @@ int do_cor(int lag, char *cordir)
 		    cor[lag-i] =  seis_out[i];
 		    cor[lag+i] =  seis_out[ns-i];
 		  }
-
-		// move and rename cor file accordingly 
-		/* extract location for correlations */
-		/* and create COR-dir if necessary   */
-		buf = strdup(sdb.ev[ine].name);
-		month = strdup(basename(dirname(buf)));
-		year = strdup(basename(dirname(buf)));
-		assert(strlen(cordir)+strlen(year)+strlen(month)+3<STRING);
-		sprintf(yeardir,"%s/%s",cordir,year);
-		if(mkdir(yeardir, MODUS) == -1){
-		  printf("directory %s already exists \n", yeardir); 
-		}
-		sprintf(mondir,"%s/%s/%s/",cordir,year,month);
-		if(mkdir(mondir, MODUS) == -1){
-		  printf("directory %s already exists \n", mondir); 
-		}
-		
-		
-		sprintf(filename, "%s/COR_%s_%s.SAC.prelim",
+		sprintf(filename, "%s/COR_%s_%s.SAC",
 			mondir, sdb.st[jsta1].name, sdb.st[jsta2].name);
-
-		if(access(filename, F_OK) == 0) { // if file already present, do this
-		  if ( !read_sac (filename, sig, &shd_cor, 1000000 ) ) {
-		    fprintf(stderr,"file %s not found\n", filename );
-		    return 0;
-		  }
-		  // add new correlation to previous one
-		  for(k = 0; k < (2*lag+1); k++) sig[k] += cor[k];
-		  shd_cor.unused1 = shd_cor.unused1+1;
-		  write_sac (filename, sig, &shd_cor );
-		}
-	 
-		// if file doesn't already exist, use one of the current headers
-		// and change a few values. more may need to be added
-		else {
-		  shdamp1.delta = sdb.rec[ine][jsta1].dt;
-		  shdamp1.evla =  sdb.st[jsta1].lat;
-		  shdamp1.evlo =  sdb.st[jsta1].lon;
-		  shdamp1.stla =  sdb.st[jsta2].lat;
-		  shdamp1.stlo =  sdb.st[jsta2].lon;
-		  shdamp1.npts =  2*lag+1;
-		  shdamp1.b    = -(lag)*shdamp1.delta;
-		  shdamp1.unused1 = 0;
-		  write_sac (filename, cor, &shdamp1);
-		}
-		free(buf);
-		free(month);
-		free(year);
+		shdamp1.delta = sdb.rec[ine][jsta1].dt;
+		shdamp1.evla =  sdb.st[jsta1].lat;
+		shdamp1.evlo =  sdb.st[jsta1].lon;
+		shdamp1.stla =  sdb.st[jsta2].lat;
+		shdamp1.stlo =  sdb.st[jsta2].lon;
+		shdamp1.npts =  2*lag+1;
+		shdamp1.b    = -(lag)*shdamp1.delta;
+		shdamp1.unused1 = 1;
+		strncpy(shd_cor.kevnm,sdb.st[jsta1].name,7);
+		strncpy(shd_cor.kstnm,sdb.st[jsta2].name,7);
+		write_sac (filename, cor, &shdamp1);
 	      }   //loop over check
 
 	  }    //loop over if jsta2
@@ -313,42 +259,10 @@ void sac_db_chng (char *pbdir )
 }
 
 
-/*------------------------------------------------------------ 
- *  call-back function for nftw()
-  ------------------------------------------------------------*/
-static int glob_this(const char *fpath, const struct stat *sb,
-		     int tflag, struct FTW *ftwbuf){
-  const char pattern[] = "*.prelim";
-  char localpattern[STRING];
-  char *newname, *ptr;
-  glob_t match;
-  int j;
-
-  assert((strlen(fpath)+strlen(pattern))<STRING-1);
-  sprintf(localpattern,"%s/%s",fpath, pattern);
-
-  if(glob(localpattern, 0, NULL, &match) == 0){
-      for(j=0;j<match.gl_pathc;j++){
-	newname = strdup(match.gl_pathv[j]);
-	ptr = strrchr(newname,'.');
-	*(ptr) = '\0';
-	printf("--> rename %s to %s\n", match.gl_pathv[j], newname);
-	if( (rename(match.gl_pathv[j],newname)) < 0) {
-	  fprintf(stderr, "---->ERROR while renaming");
-	  return EXIT_FAILURE;
-	}
-	free(newname);
-      }
-  }
-  globfree(&match);
-  return 0;
-}
-
-
 /*--------------------------------------------------------------------------
 reading and checking commandline arguments
 --------------------------------------------------------------------------*/
-void get_args(int argc, char** argv)
+void get_args(int argc, char** argv, char *fconf)
 {
   int i;
 
@@ -368,7 +282,7 @@ void get_args(int argc, char** argv)
 
       switch (argv[i][1]) {
 
-      case 'c':	strcpy(sdb.conf,argv[++i]);
+      case 'c':	strcpy(fconf,argv[++i]);
 	break;
 
       case 'h':	fprintf(stderr,"USAGE: %s [-c alt/config.file]\n", argv[0]);
@@ -380,4 +294,53 @@ void get_args(int argc, char** argv)
     }
   }
 }
+
+
+/* ------------------------------------------------------------------------
+   create sub-directory for correlations under correlation root directory
+   according to given information in sdb-structure
+   --------------------------------------------------------------------- */
+void make_dir(int ie, char *cordir, char *pbdir, char *daydir){
+  int month, year, day;
+  char months[12][4] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+  year = sdb.ev[ie].yy;
+  month = sdb.ev[ie].mm;
+  day   = sdb.ev[ie].dd;
+  char yeardir[LINEL],mondir[LINEL],bnddir[LINEL];
+  assert((strlen(cordir)+40)<LINEL);
+  sprintf(bnddir,"%s/%s",cordir,pbdir);
+  sprintf(yeardir,"%s/%d",bnddir,year);
+  sprintf(mondir,"%s/%s",yeardir,months[month-1]);
+  sprintf(daydir,"%s/%d_%d_%d_0_0_0",mondir,year,month,day);
+  errno = 0;
+  if(mkdir(cordir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",cordir, strerror (errno));
+    }
+  }
+  if(mkdir(bnddir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",bnddir, strerror (errno));
+    }
+  }
+  if(mkdir(yeardir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",yeardir, strerror (errno));
+    }
+  }
+  errno = 0;
+  if(mkdir(mondir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",mondir, strerror (errno));
+    }
+  }
+  errno = 0;
+  if(mkdir(daydir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",daydir, strerror (errno));
+    }
+  }
+  return;
+}
+
 

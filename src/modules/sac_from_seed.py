@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """script to extract all available data from seed-files into daylong
 sacfiles and put them in the right directory structure\n
 The script accounts for 3 different cases: \n
@@ -21,15 +21,15 @@ import pytutil as pt
 from ConfigParser import SafeConfigParser
 
 class SacFromSeed(seed_info.SeedInfo):
-    def __init__(self, rdseedir, bindir, sacroot):
-        self.rdseedir = rdseedir
+    def __init__(self, rdseed, bindir, sacroot):
+        self.rdseed = rdseed
         self.sacroot = sacroot
         self.bindir  = bindir
         self.resp_only = False
         self.monthdict = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May', \
                           6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct', \
                           11:'Nov',12:'Dec'}
-        seed_info.SeedInfo.__init__(self,rdseedir)
+        seed_info.SeedInfo.__init__(self,rdseed)
 
 
     def __call__(self, filelist, **kw):
@@ -44,8 +44,8 @@ class SacFromSeed(seed_info.SeedInfo):
     def rdseed_extr(self,filename, station, channel, date1, date2):
         """run rdseed-command to extract daylong sacfiles and
         corresponding response-file"""
-        command = self.rdseedir+'rdseed 2>/dev/null 1>/dev/null'
-        buffersize = 8640000
+        command = self.rdseed+' 2>/dev/null 1>/dev/null'
+        buffersize = 9000000
         p = sp.Popen(command, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
         child = p.stdin
         print >>child, '%s' %(filename)     # Input  file
@@ -78,7 +78,7 @@ class SacFromSeed(seed_info.SeedInfo):
     def rdseed_resp(self,filename):
         """run rdseed-command to extract evalresp-compatible\n
         response files + pole-zero files"""
-        command = self.rdseedir+'rdseed -f %s -p -R 2>/dev/null 1>/dev/null' %(filename)
+        command = self.rdseed+' -f %s -p -R 2>/dev/null 1>/dev/null' %(filename)
         err = os.system(command)
         if err != 0:
             raise RuntimeError, '%r failed with exit code %d' %(command, err)
@@ -314,26 +314,26 @@ if __name__ == '__main__':
             print "config file is: ",sys.argv[2]
             cp = SafeConfigParser()
             cp.read(config)
-            rdseedir  = cp.get('seed2sac','rdseedir')
+            rdseed  = cp.get('seed2sac','rdseed')
             bindir    = cp.get('seed2sac','bindir')
             sacfiles  = cp.get('seed2sac','sacfiles')
             seedfiles = cp.get('seed2sac','seedfiles')
-            seedfilere= cp.get('seed2sac','seedfilere')
+            spattern= cp.get('seed2sac','spattern')
         else:
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
         print "using standard parameters"
-        rdseedir   = '/home/behrya/src/rdseed4.7.5/'
+        rdseed   = '/home/behrya/src/rdseed4.7.5/'
         bindir     = '/home/behrya/dev/auto/bin/'
         sacfiles   = './testsac'
         seedfiles  = '/data/hawea/yannik/SAPSE/xc/'
-        seedfilere = 'SAPSE_XC.10.20115'
+        spattern = 'SAPSE_XC.10.20115'
 
-    t  = SacFromSeed(rdseedir, bindir, sacfiles)
+    t  = SacFromSeed(rdseed, bindir, sacfiles)
 
     def getfilist(arg, dirname, files):
-        flist = glob.glob(dirname+'/S*')
+        flist = glob.glob(os.path.join(dirname,spattern))
         if len(flist)>0:
             for i in flist:
                 arg.append(i)

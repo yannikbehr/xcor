@@ -13,8 +13,8 @@ class SeedInfoException(Exception):
 class SeedStr: pass
 
 class SeedInfo:
-    def __init__(self, rdseedir):
-        self.rdseedir = rdseedir
+    def __init__(self, rdseed):
+        self.rdseed = rdseed
         
     
     def __call__(self, filen):
@@ -100,14 +100,14 @@ class SeedInfo:
         'rdseed.stations' is written by the 'rdseed -Sf'-command"""
         # get timespan information from seed-volume
         print filename
-        p = sp.Popen([self.rdseedir,'-cf',filename],stdout=sp.PIPE,stderr=sp.PIPE)
+        p = sp.Popen([self.rdseed,'-cf',filename],stdout=sp.PIPE,stderr=sp.PIPE)
         stdout,stderr = p.communicate()
         data = stdout.split('\n')
         if len(data) < 2:
             raise SeedInfoException("rdseed -cf failed for file %s"%filename)
 
         # get station + lat/lon/elev information 
-        command =self.rdseedir+' -Sf '+filename+' 2>/dev/null'
+        command =self.rdseed+' -Sf '+filename+' 2>/dev/null'
         retcode = sp.call(command,shell=True)
         #a=os.system(command)
         if retcode != 0 and not os.path.isfile('rdseed.stations'):
@@ -172,8 +172,8 @@ if __name__ == '__main__':
     except:
         filename = '/data/hawea/yannik/nord/nord-geonet/ouz/seed/GN-20040229-000001-27437.seed'
     print "+++++++++++++++++++++ SUMMARY ++++++++++++++++++++++++++++++"
-    rdseedir = '/usr/local/bin/rdseed'
-    t = SeedInfo(rdseedir)
+    rdseed = '/usr/local/bin/rdseed'
+    t = SeedInfo(rdseed)
     g = t(filename)
     print "stations: %s "%(' '.join(g.records.keys()))
 #    for _s in g.records.keys():

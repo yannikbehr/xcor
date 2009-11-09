@@ -119,13 +119,15 @@ if __name__ == '__main__':
                 print fn
             outfile='%s_2_DISP.c1'%fn
             if explore:
+                tmin = 2.
                 while True:
-                    tmin = 2.
                     try:
                         cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=tmin,ffact=fltfact)
                     except ftanc.FtanError:
-                        tmin += 0.5
+                        tmin += 1.0
                     except ftanc.FtanIOError:
+                        break
+                    else:
                         break
             else:
                 try:

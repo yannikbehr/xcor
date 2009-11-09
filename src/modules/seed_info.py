@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env mypython
 """script to extract information from seed-files using the 'rdseed -cf seedfile'
 and 'rdseed -Sf' command"""
 

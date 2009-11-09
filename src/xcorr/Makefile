@@ -10,7 +10,7 @@
 ############## COMPILER #########################
 CC = gcc
 CPP = g++
-FC = g77
+FC = gfortran
 
 BIN1  = justCOR
 BIN2  = justCOR_EE_EN

@@ -78,7 +78,7 @@ if __name__ == '__main__':
                 tmin = 2.
                 while True:
                     try:
-                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,extrace=refdsp,tmaxmax=60)
+                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,extrace=refdsp,tmaxmax=30)
                     except ftangv.FtanError:
                         tmin += 1.
                     except ftangv.FtanIOError:
@@ -101,10 +101,13 @@ if __name__ == '__main__':
                             continue
     
             mylogger.debug('%s'%fn)
-            f = open(outfile,'w')
-            for ii in range(0,len(cper)):
-                print >>f,'%d\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],gvamp[ii],gvsnr[ii])
-            f.close()
+            if not locals().has_key('aper'):
+                continue
+            if (aper[-1]-aper[0]) > 4.:
+                f = open(outfile,'w')
+                for ii in range(0,len(cper)):
+                    print >>f,'%d\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],gvamp[ii],gvsnr[ii])
+                f.close()
         if not DEBUG:
             pbar.finish()
 
@@ -148,10 +151,13 @@ if __name__ == '__main__':
                             continue
 
             mylogger.debug('%s'%fn)
-            f = open(outfile,'w')
-            for ii in range(0,len(cper)):
-                print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii])
-            f.close()
+            if not locals().has_key('aper'):
+                continue
+            if (aper[-1]-aper[0]) > 4.:
+                f = open(outfile,'w')
+                for ii in range(0,len(cper)):
+                    print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii])
+                f.close()
         if not DEBUG:
             pbar.finish()
                 

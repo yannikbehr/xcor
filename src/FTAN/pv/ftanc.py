@@ -6,6 +6,7 @@ import os, sys, string, glob
 sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 import pysacio as p
 import ftanpv
+from numpy import *
 from pylab import *
 
 class FtanError(Exception): pass
@@ -21,6 +22,8 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.5,
     n = p.GetHvalue('npts',hf,hi,hs)
     delta = p.GetHvalue('dist',hf,hi,hs)
     if tmin*vmin > delta:
+        raise FtanIOError("distance between stations is too small")
+    if delta/vmax < 1.:
         raise FtanIOError("distance between stations is too small")
     times = arange(int(delta/vmax),int(delta/vmin))
     vels  = [ delta/i for i in times]

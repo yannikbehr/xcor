@@ -64,6 +64,7 @@ class DoWhiten:
                         ret = p.wait()
                         if err or ret != 0:
                             raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
+                        #shutil.copy2(tar,tar+'_filter')
         return 1
 
 
@@ -71,8 +72,9 @@ class DoWhiten:
         """ calls sac routines to conduct whitening for Z-component"""
         utaper = upperp - (float(upperp)/100)*20
         ltaper = lowerp + (float(lowerp)/100)*20
-        saccmd = self.sacbin+'/sac'+' 1>/dev/null'
-        whitefilter = self.bindir+'/white_1cmp'+' 1>/dev/null'
+        saccmd = self.sacbin+' 1>/dev/null'
+        #whitefilter = self.bindir+'/white_1cmp'+' 1>/dev/null'
+        whitefilter = self.bindir+'/white_1cmp'
         for i in self.proclst.ydaydir:
             if len(i.keys()) == len(self.complst) +1:
                 for j in self.complst:
@@ -92,6 +94,7 @@ class DoWhiten:
                         err1 = child1.close()
                         ret1 = p1.wait()
                         if os.path.isfile('a1.avg'):
+                            #shutil.copy2(tar,tar+'_smooth')
                             os.remove('a1.avg')
                         if err1 or ret1 != 0:
                             raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
@@ -137,7 +140,7 @@ class DoWhiten:
         utaper = upperp - (float(upperp)/100)*20
         ltaper = lowerp + (float(lowerp)/100)*20
         whitefilter = self.bindir+'/white_2cmp'
-        saccmd = self.sacbin+'/sac'
+        saccmd = self.sacbin
         for i in self.proclst.ydaydir:
             if len(i.keys()) == len(self.complst) +1:
                 for j in i[self.complst[0]]:
@@ -275,7 +278,7 @@ if __name__ == '__main__':
 
     # frequency band +- 20% as taper
     sacdir  = conf.get("whitening", "sacfiles")
-    sacbin  = conf.get("whitening", "sacdir")
+    sacbin  = conf.get("whitening", "sacbin")
     bindir  = conf.get("whitening", "bindir")
     prefix  = conf.get("whitening", "prefix")
     upperp  = float(conf.get("whitening", "upperperiod"))

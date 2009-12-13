@@ -1,0 +1,9 @@
+[whitening]
+sacfiles=./data/
+sacdir=/usr/local/sac/bin/sac
+bindir=/home/behrya/dev/auto_git/bin
+prefix=ft_grid
+upperperiod=2.0
+lowerperiod=90.0
+complist=BHZ
+skip_directories=5to100

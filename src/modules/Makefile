@@ -13,8 +13,8 @@ ofiles = \
 	mysac.o
 
 sofiles = \
-	fft_filter.so
-
+	fft_filter.so\
+	fft_filter_c.so
 
 %.o:%.c 
 	$(CC) -g -c  $<  
@@ -25,7 +25,11 @@ sofiles = \
 %.so:%.f90
 	$(FC) -g $(FFLAGS) -shared $< -o $@ -lfftw3
 
+%.so:%.c
+	$(FC) -g $(FFLAGS) -shared $< -o $@ -lfftw3
+
 objects: $(ofiles) $(hfiles) $(sofiles)
+
 
 clean:
 	rm *.o *.pyc

@@ -62,6 +62,7 @@
       do k = 1,n
         seis_out(k) = 2.0*real(dble(s(k)))/ns
       enddo
+      deallocate(s,sf)
       return
       end
 !===============================================================
@@ -70,7 +71,7 @@
       subroutine flt4(f1,f2,f3,f4,dom,nk,npow,sf)
       real*8    f1,f2,f3,f4,dom
       integer*4 nk,npow
-      complex(8) sf(400000)
+      complex(8) sf(4000000)
       real*8    d1,d2,f,dpi,ss,s(400000)
       integer*4 i,j
 ! ---

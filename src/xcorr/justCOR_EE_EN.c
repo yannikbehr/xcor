@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <errno.h>
 
 #define MODUS 0711
 #define LINEL 300
@@ -39,24 +40,29 @@
 void dcommon_(int *len, float *amp,float *phase);
 void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int *ns);
 int check_info (int ne, int ns1, int ns2 );
-int do_cor(int lag, char *cordir);
-void sac_db_chng (char *pbdir );
+int do_cor(int lag, char *cordir,char *pbdir, char *prefix);
+void sac_db_chng (char *pbdir);
 void get_args(int argc, char** argv);
-int find_n_comp(char *nameE, char *nameN);
+//int find_n_comp(char *nameE, char *nameN);
+int find_n_comp(char *nameE, char *nameN, char *pbdir,char *prefix, int ne,int ns);
 int check_exist(char *nameE, char *nameN);
-static int glob_this(const char *fpath, const struct stat *sb,
-		     int tflag, struct FTW *ftwbuf);
+void make_dir(int ie, char *cordir, char *pbdir, char *daydir);
+  //static int glob_this(const char *fpath, const struct stat *sb,
+  //		     int tflag, struct FTW *ftwbuf);
 
 SAC_DB sdb;
+float amp[900000], phase[900000], cor[900000];
+float seis_out[2000000];
 
 /*c/////////////////////////////////////////////////////////////////////////*/
 int main (int na, char **arg)
 {
   FILE *ff;
-  int lag, flags = 1;
-  char str[600];
+  int lag;
+  //int flags = 1;
+  char str[LINEL];
   dictionary *dd;
-  char *tmpdir, *pbdir, *cordir;
+  char *tmpdir, *pbdir, *cordir, *sacdbname, *prefix;
   strcpy(sdb.conf,"./config.txt");
 
   get_args(na, arg);
@@ -67,8 +73,11 @@ int main (int na, char **arg)
   cordir     = iniparser_getstr(dd, "xcor:cordir");
   lag        = iniparser_getint(dd, "xcor:lag", 3000);
   pbdir      = iniparser_getstr(dd, "xcor:pbdir");
+  sacdbname  = iniparser_getstr(dd, "xcor:dbname");
+  prefix     = iniparser_getstr(dd, "xcor:prefix");
 
-  sprintf(str,"%ssac_db.out", tmpdir);
+  assert((strlen(tmpdir)+strlen(sacdbname)+1) < LINEL);
+  sprintf(str,"%s/%s", tmpdir,sacdbname);
   ff = fopen(str,"rb");
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
@@ -77,50 +86,50 @@ int main (int na, char **arg)
   sac_db_chng(pbdir);
 
   /*do all the work of correlations here  */
-  do_cor(lag,cordir);  
+  do_cor(lag,cordir,pbdir,prefix);  
   printf("correlations finished\n");
-
-  /* move COR/COR_STA1_STA2.SAC_EE.prelim to COR/COR_STA1_STA2.SAC_EE etc. */
-  if (nftw(cordir, glob_this, 20, flags) == -1) {
-      perror("nftw");
-      exit(EXIT_FAILURE);
-  }
-
   iniparser_free(dd);
   return 0;
+
+  /* move COR/COR_STA1_STA2.SAC_EE.prelim to COR/COR_STA1_STA2.SAC_EE etc. */
+  /*if (nftw(cordir, glob_this, 20, flags) == -1) {
+      perror("nftw");
+      exit(EXIT_FAILURE);
+      }*/
+
 }
 
 
-/*------------------------------------------------------------ 
- *  call-back function for nftw()
-  ------------------------------------------------------------*/
-static int glob_this(const char *fpath, const struct stat *sb,
-		     int tflag, struct FTW *ftwbuf){
-  const char pattern[] = "*.prelim";
-  char localpattern[LINEL];
-  char *newname, *ptr;
-  glob_t match;
-  int j;
-
-  assert((strlen(fpath)+strlen(pattern))<LINEL-1);
-  sprintf(localpattern,"%s/%s",fpath, pattern);
-
-  if(glob(localpattern, 0, NULL, &match) == 0){
-      for(j=0;j<match.gl_pathc;j++){
-	newname = strdup(match.gl_pathv[j]);
-	ptr = strrchr(newname,'.');
-	*(ptr) = '\0';
-	printf("--> rename %s to %s\n", match.gl_pathv[j], newname);
-	if( (rename(match.gl_pathv[j],newname)) < 0) {
-	  fprintf(stderr, "---->ERROR while renaming");
-	  return EXIT_FAILURE;
-	}
-	free(newname);
-      }
-  }
-  globfree(&match);
-  return 0;
-}
+///*------------------------------------------------------------ 
+// *  call-back function for nftw()
+//  ------------------------------------------------------------*/
+//static int glob_this(const char *fpath, const struct stat *sb,
+//		     int tflag, struct FTW *ftwbuf){
+//  const char pattern[] = "*.prelim";
+//  char localpattern[LINEL];
+//  char *newname, *ptr;
+//  glob_t match;
+//  int j;
+//
+//  assert((strlen(fpath)+strlen(pattern))<LINEL-1);
+//  sprintf(localpattern,"%s/%s",fpath, pattern);
+//
+//  if(glob(localpattern, 0, NULL, &match) == 0){
+//      for(j=0;j<match.gl_pathc;j++){
+//	newname = strdup(match.gl_pathv[j]);
+//	ptr = strrchr(newname,'.');
+//	*(ptr) = '\0';
+//	printf("--> rename %s to %s\n", match.gl_pathv[j], newname);
+//	if( (rename(match.gl_pathv[j],newname)) < 0) {
+//	  fprintf(stderr, "---->ERROR while renaming");
+//	  return EXIT_FAILURE;
+//	}
+//	free(newname);
+//      }
+//  }
+//  globfree(&match);
+//  return 0;
+//}
 
 
 /*----------------------------------------------------------------------------
@@ -168,9 +177,9 @@ SAC_HD shdamp1, shdph1, shdamp2, shdph2, shd_cor;
   -dcommon
   -dmultifft
   ----------------------------------------------------------------------------*/
-int do_cor(int lag , char *cordir)
+int do_cor(int lag , char *cordir, char *pbdir, char *prefix)
 {
-  int ine, jsta1, jsta2, k;
+  int ine, jsta1, jsta2;
 
   int len,ns,i, comp; 
 
@@ -184,35 +193,25 @@ int do_cor(int lag , char *cordir)
   char amp_sac2N[LINEL], phase_sac2N[LINEL];
   char name1_N[LINEL],name1_E[LINEL];
   char name2_N[LINEL],name2_E[LINEL]; 
-  char *buf, *month, *year;
-  char yeardir[LINEL], mondir[LINEL];
-  float amp[400000], phase[400000], cor[400000];
-  float seis_out[400000];
+  //char *buf, *month, *year;
+  //char yeardir[LINEL];
+  char mondir[LINEL];
+  /*  float amp[400000], phase[400000], cor[400000];
+      float seis_out[400000];*/
 
   /*outermost loop over day number, then station number*/
   for( ine = 0; ine < sdb.nev; ine++ ) {
     fprintf(stdout,"event number %d\n",ine);
+    make_dir(ine,cordir,pbdir,mondir);
+
     /* move and rename cor file accordingly 
        extract location for correlations
        and create COR-dir if necessary   */
-    buf = strdup(sdb.ev[ine].name);
-    month = strdup(basename(dirname(buf)));
-    year = strdup(basename(dirname(buf)));
-    assert(strlen(cordir)+strlen(year)+strlen(month)+3<LINEL);
-    sprintf(yeardir,"%s/%s",cordir,year);
-    if(mkdir(yeardir, MODUS) == -1){
-      printf("directory %s already exists \n", yeardir); 
-    }
-    sprintf(mondir,"%s/%s/%s/",cordir,year,month);
-    if(mkdir(mondir, MODUS) == -1){
-      printf("directory %s already exists \n", mondir); 
-    }
-    
     /*loop over "base" station number, this will be stored into common memory*/
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
       if(!(sdb.rec[ine][jsta1].n > 0)) continue;
       strcpy(name1_E,sdb.rec[ine][jsta1].ft_fname);
-      if(!find_n_comp(name1_E, name1_N)) continue;
+      if(!find_n_comp(name1_E,name1_N,pbdir,prefix,ine,jsta1)) continue;
       sprintf( amp_sac1E, "%s.am", name1_E );
       sprintf( phase_sac1E, "%s.ph", name1_E );
       sprintf( amp_sac1N, "%s.am", name1_N );
@@ -223,7 +222,7 @@ int do_cor(int lag , char *cordir)
 	if(!check_info(ine, jsta1, jsta2 )) continue;
 	if(!(sdb.rec[ine][jsta2].n > 0)) continue;
 	strcpy(name2_E,sdb.rec[ine][jsta2].ft_fname);
-	if(!find_n_comp(name2_E, name2_N)) continue;
+	if(!find_n_comp(name2_E,name2_N,pbdir,prefix,ine,jsta2)) continue;
 
 	sprintf( amp_sac2E, "%s.am", name2_E );
 	sprintf( phase_sac2E, "%s.ph", name2_E );
@@ -241,11 +240,11 @@ int do_cor(int lag , char *cordir)
 	    sprintf( phase_sac, "%s.ph", name1_N );
 	  }
 	  // read amp and phase files and read into common memory
-	  if ( read_sac(amp_sac, amp, &shdamp1, 1000000 )==NULL ){
+	  if ( read_sac(amp_sac, amp, &shdamp1, 9000000 )==NULL ){
 	    fprintf(stderr,"ERROR: cannot read  %s\n", amp_sac );
 	    return 0;
 	  }
-	  if ( read_sac(phase_sac, phase, &shdph1, 1000000)== NULL ){
+	  if ( read_sac(phase_sac, phase, &shdph1, 9000000)== NULL ){
 	    fprintf(stderr,"ERROR: cannot read  %s\n", phase_sac );
 	    return 0;
 	  }
@@ -260,11 +259,11 @@ int do_cor(int lag , char *cordir)
 	    sprintf(phase_sac, "%s.ph", name2_N);
 	  }
 	  // get array of floats for amp and phase of first signal
-	  if ( read_sac(amp_sac, amp, &shdamp2, 100000) ==NULL ){
+	  if ( read_sac(amp_sac, amp, &shdamp2, 9000000) ==NULL ){
 	    fprintf(stderr,"ERROR: cannot read  %s\n", amp_sac );
 	    return 0;
 	  }
-	  if ( read_sac(phase_sac, phase, &shdph2, 100000)==NULL ){
+	  if ( read_sac(phase_sac, phase, &shdph2, 9000000)==NULL ){
 	    fprintf(stderr,"ERROR: cannot read  %s\n", phase_sac );
 	    return 0;
 	  }
@@ -279,49 +278,36 @@ int do_cor(int lag , char *cordir)
 	  
 	  /*move and rename cor file accordingly */
 	  if(comp==0){
-	    sprintf(filename, "%s/COR_%s_%s.SAC_EE.prelim",
+	    sprintf(filename, "%s/COR_%s_%s.SAC_EE",
 		    mondir, sdb.st[jsta1].name, sdb.st[jsta2].name);
 	  }else if(comp==1){
-	    sprintf(filename, "%s/COR_%s_%s.SAC_EN.prelim",
+	    sprintf(filename, "%s/COR_%s_%s.SAC_EN",
 		    mondir, sdb.st[jsta1].name, sdb.st[jsta2].name);
 	  }else if(comp==2){
-	    sprintf(filename, "%s/COR_%s_%s.SAC_NE.prelim",
+	    sprintf(filename, "%s/COR_%s_%s.SAC_NE",
 		    mondir, sdb.st[jsta1].name, sdb.st[jsta2].name);
 	  }else{
-	    sprintf(filename, "%s/COR_%s_%s.SAC_NN.prelim",
+	    sprintf(filename, "%s/COR_%s_%s.SAC_NN",
 		    mondir, sdb.st[jsta1].name, sdb.st[jsta2].name);
 	  }
 
-	  if(access(filename, F_OK) == 0) { // if file already present, do this
-	    if ( !read_sac (filename, sig, &shd_cor, 1000000 ) ) {
-	      fprintf(stderr,"file %s not found\n", filename );
-	      return 0;
-	    }
-	    // add new correlation to previous one
-	    for(k = 0; k < (2*lag+1); k++) sig[k] += cor[k];
-	    shd_cor.unused1 = shd_cor.unused1+1;
-	    write_sac (filename, sig, &shd_cor );
-	  }
 	 
-	  // if file doesn't already exist, use one of the current headers
-	  // and change a few values. more may need to be added
-	  else {
-	    shdamp1.delta = 1.0;
-	    //		    shdamp1.delta = sdb.rec[ine][jsta1].dt;
-	    shdamp1.evla =  sdb.st[jsta1].lat;
-	    shdamp1.evlo =  sdb.st[jsta1].lon;
-	    shdamp1.stla =  sdb.st[jsta2].lat;
-	    shdamp1.stlo =  sdb.st[jsta2].lon;
-	    shdamp1.npts =  2*lag+1;
-	    shdamp1.b    = -(lag)*shdamp1.delta;
-	    shdamp1.user9=  shdamp2.cmpaz;
-	    shdamp1.unused1 = 0;
-	    write_sac (filename, cor, &shdamp1);
-	  }
+	  shdamp1.delta = sdb.rec[ine][jsta1].dt;
+	  shdamp1.evla =  sdb.st[jsta1].lat;
+	  shdamp1.evlo =  sdb.st[jsta1].lon;
+	  shdamp1.stla =  sdb.st[jsta2].lat;
+	  shdamp1.stlo =  sdb.st[jsta2].lon;
+	  shdamp1.npts =  2*lag+1;
+	  shdamp1.b    = -(lag)*shdamp1.delta;
+	  shdamp1.user9=  shdamp2.cmpaz;
+	  shdamp1.unused1 = 1;
+	  strncpy(shdamp1.kevnm,sdb.st[jsta1].name,7);
+	  strncpy(shdamp1.kstnm,sdb.st[jsta2].name,7);
+	  write_sac (filename, cor, &shdamp1);
 	}    //loop over comp
       }   //loop over jsta2
     }  //loop over jsta1
-    free(buf);free(month);free(year);
+  //    free(buf);free(month);free(year);
   }  //loop over events
   return 1;
 }
@@ -363,64 +349,101 @@ void sac_db_chng (char *pbdir )
   return;
 }
 
-
 /*--------------------------------------------------------------------------
-  function to construct North-component filename 
-  from given East-component filename 
+  function to find East-, North- and Z-component files for given date-dir
    ------------------------------------------------------------------------*/
-int find_n_comp(char *nameE, char *nameN){
-  char pattern[]="(.*/ft_.{1,4}[.])(.{1,3})([.]SAC.*)";
-  regmatch_t submatch[4];
-  regex_t *regexpr;
-  char *filename, *cmp, *start, *end;
-  char ncmp[4];
-  int err, i;
-  filename = strdup(nameE);
-  regexpr = (regex_t *)malloc(sizeof(regex_t));
-  memset(regexpr, 0, sizeof(regex_t));
-  /* Compile the regex */
-  err = regcomp(regexpr,pattern, REG_EXTENDED);
-  if(err!=0){
-    fprintf(stderr,"ERROR: in regular expression %s!\n", pattern);
-    regfree(regexpr);
-    return 0; 
-  }
-  /* extract all the matches */
-  if(regexec( regexpr,filename,regexpr->re_nsub+1, submatch, 0)== 0){
-    start = strdup(filename);
-    memcpy(start,filename,submatch[1].rm_eo);
-    *(start+submatch[1].rm_eo) = '\0';
-
-    cmp = strdup(filename+submatch[2].rm_so);
-    memcpy(cmp,filename+submatch[2].rm_so,submatch[2].rm_eo-submatch[2].rm_so);
-    *(cmp+(submatch[2].rm_eo-submatch[2].rm_so)) = '\0';
-
-    end = strdup(filename+submatch[3].rm_so);
-    memcpy(end,filename+submatch[3].rm_so,submatch[3].rm_eo-submatch[3].rm_so);
-    *(end+(submatch[3].rm_eo-submatch[3].rm_so)) = '\0';
-
-    for(i=0;i<3;i++){
-      if(cmp[i]=='E'){
-	ncmp[i]='N';
-      }else{
-	ncmp[i]=cmp[i];
-      }
+int find_n_comp(char *nameE, char *nameN, char *pbdir,char *prefix, int ne,int ns){
+  char *dircp, *dirn, *base, *basecp;
+  char pattern[LINEL], newdir[LINEL];
+  glob_t match;
+  dircp = strdup(sdb.ev[ne].name);
+  basecp = strdup(sdb.ev[ne].name);
+  dirn = dirname(dircp);
+  base = basename(basecp);
+  assert((strlen(dirn)+strlen(pbdir)+strlen(base)+2)<LINEL-1);
+  sprintf(newdir,"%s/%s/%s",dirn,pbdir,base);
+  
+  /* find N-component file*/
+  assert((strlen(newdir)+strlen(prefix)+strlen(sdb.st[ns].name)+11)<LINEL-1);
+  sprintf(pattern,"%s/%s_%s.*HN.SAC",newdir,prefix,sdb.st[ns].name);
+  if(glob(pattern, 0, NULL, &match) == 0){
+    if(match.gl_pathc>1){
+      fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);
+      return 0;
+    }else if(abs(match.gl_pathc - 1)< 0.0001) {
+      strncpy(nameN,match.gl_pathv[0],LINEL-1);
+    }else{
+      fprintf(stderr,"ERROR: no matching file found for %s\n",pattern);
+      return 0;
     }
-    ncmp[3] = '\0';
-    assert((strlen(start)+strlen(ncmp)+strlen(end))<100);
-    sprintf(nameN,"%s%s%s",start,ncmp,end);
-    printf("%s\n",nameN); 
-    free(start);free(cmp);free(end);
-  }else{
-    fprintf(stderr,"ERROR: no match for regular expression %s\n",pattern);
-    return 0;
   }
-  regfree(regexpr);
-  free(filename);
-  if(!check_exist(nameE,nameN)) return 0;
+
+  globfree(&match);
+  free(dircp);
+  free(basecp);
   return 1;
- 
-} 
+}
+
+
+
+//
+///*--------------------------------------------------------------------------
+//  function to construct North-component filename 
+//  from given East-component filename 
+//   ------------------------------------------------------------------------*/
+//int find_n_comp(char *nameE, char *nameN){
+//  char pattern[]="(.*/ft_.{1,4}[.])(.{1,3})([.]SAC.*)";
+//  regmatch_t submatch[4];
+//  regex_t *regexpr;
+//  char *filename, *cmp, *start, *end;
+//  char ncmp[4];
+//  int err, i;
+//  filename = strdup(nameE);
+//  regexpr = (regex_t *)malloc(sizeof(regex_t));
+//  memset(regexpr, 0, sizeof(regex_t));
+//  /* Compile the regex */
+//  err = regcomp(regexpr,pattern, REG_EXTENDED);
+//  if(err!=0){
+//    fprintf(stderr,"ERROR: in regular expression %s!\n", pattern);
+//    regfree(regexpr);
+//    return 0; 
+//  }
+//  /* extract all the matches */
+//  if(regexec( regexpr,filename,regexpr->re_nsub+1, submatch, 0)== 0){
+//    start = strdup(filename);
+//    memcpy(start,filename,submatch[1].rm_eo);
+//    *(start+submatch[1].rm_eo) = '\0';
+//
+//    cmp = strdup(filename+submatch[2].rm_so);
+//    memcpy(cmp,filename+submatch[2].rm_so,submatch[2].rm_eo-submatch[2].rm_so);
+//    *(cmp+(submatch[2].rm_eo-submatch[2].rm_so)) = '\0';
+//
+//    end = strdup(filename+submatch[3].rm_so);
+//    memcpy(end,filename+submatch[3].rm_so,submatch[3].rm_eo-submatch[3].rm_so);
+//    *(end+(submatch[3].rm_eo-submatch[3].rm_so)) = '\0';
+//
+//    for(i=0;i<3;i++){
+//      if(cmp[i]=='E'){
+//	ncmp[i]='N';
+//      }else{
+//	ncmp[i]=cmp[i];
+//      }
+//    }
+//    ncmp[3] = '\0';
+//    assert((strlen(start)+strlen(ncmp)+strlen(end))<100);
+//    sprintf(nameN,"%s%s%s",start,ncmp,end);
+//    printf("%s\n",nameN); 
+//    free(start);free(cmp);free(end);
+//  }else{
+//    fprintf(stderr,"ERROR: no match for regular expression %s\n",pattern);
+//    return 0;
+//  }
+//  regfree(regexpr);
+//  free(filename);
+//  if(!check_exist(nameE,nameN)) return 0;
+//  return 1;
+// 
+//} 
 
 
 /*--------------------------------------------------------------------------
@@ -497,4 +520,51 @@ void get_args(int argc, char** argv)
 }
 
 
+
+/* ------------------------------------------------------------------------
+   create sub-directory for correlations under correlation root directory
+   according to given information in sdb-structure
+   --------------------------------------------------------------------- */
+void make_dir(int ie, char *cordir, char *pbdir, char *daydir){
+  int month, year, day;
+  char months[12][4] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+  year = sdb.ev[ie].yy;
+  month = sdb.ev[ie].mm;
+  day   = sdb.ev[ie].dd;
+  char yeardir[LINEL],mondir[LINEL],bnddir[LINEL];
+  assert((strlen(cordir)+40)<LINEL);
+  sprintf(bnddir,"%s/%s",cordir,pbdir);
+  sprintf(yeardir,"%s/%d",bnddir,year);
+  sprintf(mondir,"%s/%s",yeardir,months[month-1]);
+  sprintf(daydir,"%s/%d_%d_%d_0_0_0",mondir,year,month,day);
+  errno = 0;
+  if(mkdir(cordir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",cordir, strerror (errno));
+    }
+  }
+  if(mkdir(bnddir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",bnddir, strerror (errno));
+    }
+  }
+  if(mkdir(yeardir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",yeardir, strerror (errno));
+    }
+  }
+  errno = 0;
+  if(mkdir(mondir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",mondir, strerror (errno));
+    }
+  }
+  errno = 0;
+  if(mkdir(daydir, MODUS) == -1){
+    if(errno != EEXIST){
+      fprintf(stderr, "Couldn't create directory %s; %s\n",daydir, strerror (errno));
+    }
+  }
+  return;
+}
 

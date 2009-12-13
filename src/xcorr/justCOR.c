@@ -46,7 +46,7 @@ void make_dir(int ie, char *cordir, char *pbdir, char *daydir);
 
 
 SAC_DB sdb;
-SAC_HD shdamp1, shdph1, shdamp2, shdph2, shd_cor;
+SAC_HD shdamp1, shdph1, shdamp2, shdph2;
 
 /* as there are sometimes problems with very large arrays that are defined 
 within functions, we define them here*/
@@ -208,8 +208,8 @@ int do_cor(int lag, char *cordir, char *pbdir)
 		shdamp1.npts =  2*lag+1;
 		shdamp1.b    = -(lag)*shdamp1.delta;
 		shdamp1.unused1 = 1;
-		strncpy(shd_cor.kevnm,sdb.st[jsta1].name,7);
-		strncpy(shd_cor.kstnm,sdb.st[jsta2].name,7);
+		strncpy(shdamp1.kevnm,sdb.st[jsta1].name,7);
+		strncpy(shdamp1.kstnm,sdb.st[jsta2].name,7);
 		write_sac (filename, cor, &shdamp1);
 	      }   //loop over check
 

@@ -6,11 +6,10 @@ wrapper for fortran filter routine
 from ctypes import *
 from pylab import *
 import sys, os, os.path
-from obspy.sac import ReadSac
 
-
-def filter4(f1,f2,f3,f4,npow,dt,npts,trace):
-    ft = cdll.LoadLibrary('./filter4.so')
+def filter4(trace,f1,f2,f3,f4,dt,npow=1):
+    npts=len(trace)
+    ft = cdll.LoadLibrary(os.path.join(os.path.dirname(__file__),'fft_filter.so'))
     f1 = c_double(f1)
     f2 = c_double(f2)
     f3 = c_double(f3)
@@ -26,21 +25,41 @@ def filter4(f1,f2,f3,f4,npow,dt,npts,trace):
 
 
 if __name__ == '__main__':
-    xtr = ReadSac('/data/sabine/yannik/Results/stack/horizontal/nord/COR_WCZ_TIKO.SAC_RR_s')
-    xtr.GetHvalue('delta')
-    xtr.GetHvalue('npts')
+    from subprocess import *
+    import obspy.signal.filter
+    from obspy.sac import ReadSac
     t=arange(0,4.01,0.01)
     x=sin(2*pi*t*.5)
+    xtr = ReadSac()
     xn=x + sin(2*pi*t*10)*.1
     xn=x+randn(len(t))*0.05
+    xtr.fromarray(xn,delta=0.01)
+    xtr.WriteSacBinary('tmp.sac')
     n = len(xn)
     dt = 0.01
-    f1 = 0.4
-    f2 = 0.5
-    f3 = 0.6
+    f1 = 0.3
+    f2 = 0.35
+    f3 = 0.65
     f4 = 0.7
     npow = 1
-    trout = filter4(f1,f2,f3,f4,npow,dt,n,xn)
-    plot(t,trout)
-    plot(t,xn)
+    trout = filter4(xn.copy(),f1,f2,f3,f4,dt)
+    #trout2 = filter4(f1,f2,f3,f4,npow,dt,n,-1.*trout[::-1].copy())
+    trout2 = obspy.signal.filter.bandpassZPHSH(xn,f1,f4,df=1/0.01)
+    p = Popen('sac',stdin=PIPE)
+    f = p.stdin
+    print >>f,'r tmp.sac'
+    print >>f,'bandpass npoles 2 passes 2 corner %f %f'%(f1,f4)
+    print >>f,'w tmp.sac.filter'
+    print >>f,'quit'
+    f.close()
+    p.wait()
+    xtr2 = ReadSac('tmp.sac.filter')
+    plot(t,trout2,'c')
+    plot(t,xtr2.seis,'k--')
+    plot(t,trout,'g')
+    plot(t,xn,'r')
+    plot(t,x,'k--')
+    os.remove('tmp.sac')
+    os.remove('tmp.sac.filter')
     show()
+    

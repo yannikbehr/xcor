@@ -12,6 +12,8 @@ ofiles = \
 	white_phamp_1cmp.o\
 	mysac.o
 
+sofiles = \
+	fft_filter.so
 
 
 %.o:%.c 
@@ -20,7 +22,10 @@ ofiles = \
 %.o:%.f 
 	$(FC) -g -c $(FFLAGS) $<  
 
-objects: $(ofiles) $(hfiles)
+%.so:%.f90
+	$(FC) -g $(FFLAGS) -shared $< -o $@ -lfftw3
+
+objects: $(ofiles) $(hfiles) $(sofiles)
 
 clean:
 	rm *.o *.pyc

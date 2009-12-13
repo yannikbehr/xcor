@@ -20,17 +20,17 @@ c ==========================================================
       include 'fftw3.f'
       integer*4 npow,n
       real*8    f1,f2,f3,f4,dt
-      real*4    seis_in_E(400000),seis_out_E(400000)
-      real*4   seis_outamp_E(400000), seis_outph_E(400000)
-      real*4    seis_in_N(400000),seis_out_N(400000)
-      real*4   seis_outamp_N(400000), seis_outph_N(400000)
+      real*4    seis_in_E(2000000),seis_out_E(2000000)
+      real*4   seis_outamp_E(2000000), seis_outph_E(2000000)
+      real*4    seis_in_N(2000000),seis_out_N(2000000)
+      real*4   seis_outamp_N(2000000), seis_outph_N(2000000)
 c ---
       integer*4 k,ns,nk,i
       real*8    plan1_E,plan2_E
       real*8    plan1_N,plan2_N
       real*8    dom
-      double complex czero,s_E(400000),sf_E(400000)
-      double complex s_N(400000),sf_N(400000)
+      double complex czero,s_E(2000000),sf_E(2000000)
+      double complex s_N(2000000),sf_N(2000000)
 c ---
       czero = (0.0d0,0.0d0)
 
@@ -130,8 +130,8 @@ c===============================================================
       subroutine flt4(f1,f2,f3,f4,dom,nk,npow,sf_E,sf_N)
       real*8    f1,f2,f3,f4,dom
       integer*4 nk,npow
-      double complex sf_E(400000),sf_N(400000)
-      real*8    d1,d2,f,dpi,ss,s(400000)
+      double complex sf_E(2000000),sf_N(2000000)
+      real*8    d1,d2,f,dpi,ss,s(2000000)
       integer*4 i,j
 c ---
       dpi = datan(1.0d0)*4.0d0
@@ -175,8 +175,8 @@ c=s==============================================================
       subroutine smooth(f1,f2,f3,f4,dom,nk,sf_E,sf_N,number)
       real*8    f1,f2,f3,f4
       integer*4 number,nk
-      double complex sf_E(400000), sf_N(400000)
-      real*8    sorig(400000), sout(400000),dom
+      double complex sf_E(2000000), sf_N(2000000)
+      real*8    sorig(2000000), sout(2000000),dom
       real*8   f,sum, avg
 c ---
         do i = 1,nk

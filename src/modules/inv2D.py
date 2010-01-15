@@ -39,6 +39,8 @@ class Inv2D:
                           '8','%f %f %f'%(self.lonmin,self.lonmax,self.gridy),'12','.1','.5','16',
                           '19','q','v','go']
         self.result    = cnf.get('2Dmap','result')
+        self.tomobin   = cnf.get('2Dmap','tomobin')
+        self.tomoray   = cnf.get('2Dmap','tomoray')
         shutil.copy(self.ctrf,self.wd)
         self.ctrf = basename(self.ctrf)
         os.chdir(self.wd)
@@ -50,14 +52,14 @@ class Inv2D:
             self.copy_res(_p)
 
 
-    def run_inv2D(self,period,invpath='/home/behrya/dev/2Dmaps_svn',ray=False):
+    def run_inv2D(self,period,ray=False):
         """ function to run 2D inversion that can be called to test several
         different inversion parameters """
         ############## generate script to be run on the remote machine ####
         datafile = os.path.join(self.datadir,'%ds_%s.txt'%(period,self.name))
         if ray:
-            p = Popen('~/dev/barmin_tomo/pc/tomo_sp_cu_s %s %s %d'\
-                      %(datafile,self.name,period),shell=True,stdin=PIPE)
+            p = Popen('%s %s %s %d'\
+                      %(self.tomoray,datafile,self.name,period),shell=True,stdin=PIPE)
             f = p.stdin
             for _pm in self.param:
                 print >>f,_pm
@@ -65,8 +67,8 @@ class Inv2D:
             p.wait()
             
         else:
-            p = Popen('%s/INVERSION_CODE/itomo_ra_sp_cu_shn_l %s %s %d '\
-                      %(invpath,datafile,self.name,period),shell=True,stdin=PIPE)
+            p = Popen('%s %s %s %d '\
+                      %(self.tomobin,datafile,self.name,period),shell=True,stdin=PIPE)
             f = p.stdin
             for _pm in self.param:
                 print >>f,_pm

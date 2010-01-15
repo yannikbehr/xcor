@@ -141,7 +141,7 @@ class SaFromMseed:
                 if not os.path.isdir(mseedir+self.outputdir):
                     os.mkdir(mseedir+self.outputdir)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
-                          mseedir+self.outputdir+' -b 90000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
+                          mseedir+self.outputdir+' -b 9000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
                 if DEBUG:
                     print command
                 os.system(command)

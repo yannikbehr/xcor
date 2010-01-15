@@ -41,6 +41,7 @@ void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int 
 int check_info (int ne, int ns1, int ns2 );
 int do_cor(int lag, char *cordir,char *pbdir);
 void sac_db_chng (char *pbdir);
+void sac_db_chng_new (char *pbdir );
 void get_args(int argc, char** argv,char *fconf);
 void make_dir(int ie, char *cordir, char *pbdir, char *daydir);
 
@@ -81,7 +82,7 @@ int main (int na, char **arg)
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
   /* change ft_fname value in sdb-struct */
-  sac_db_chng(pbdir);
+  sac_db_chng_new(pbdir);
 
   /*do all the work of correlations here  */
   do_cor(lag,cordir,pbdir);  
@@ -253,6 +254,43 @@ void sac_db_chng (char *pbdir )
 	}
 	free(filename);
 	free(daydir);
+      }
+    }
+  return;
+}
+
+/*--------------------------------------------------------------------------
+insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
+previous changes in the overall program structure makes it necessary
+--------------------------------------------------------------------------*/
+void sac_db_chng_new (char *pbdir )
+
+{
+  int ie, is;
+  char *result, *filename;
+  int month, year, day;
+  char months[12][4] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+
+  for ( ie = 0; ie < sdb.nev; ie++ ) for ( is = 0; is < sdb.nst; is++ )
+    {
+      if(sdb.rec[ie][is].ft_fname == NULL){
+	printf("ERROR: ft_fname not found\n");
+      }else {
+	result=strrchr(sdb.rec[ie][is].ft_fname,'/');
+	if(result != NULL){
+	  filename = strdup(result);
+	  year = sdb.ev[ie].yy;
+	  month = sdb.ev[ie].mm;
+	  day   = sdb.ev[ie].dd;
+	  /*	  sprintf(sdb.rec[ie][is].ft_fname,"%s/%d/%s/%d_%d_%d_0_0_0/%s",
+		  pbdir,year,months[month-1],year,month,day,filename);*/
+	  sprintf(sdb.rec[ie][is].ft_fname,"%s/%s/%d_%d_%d_0_0_0/%s",
+		  pbdir,months[month-1],year,month,day,filename);
+	  printf("dir is: %s\n",sdb.rec[ie][is].ft_fname);
+	}else {
+	  continue;
+	}
+	free(filename);
       }
     }
   return;

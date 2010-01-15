@@ -523,8 +523,11 @@ double abs_time ( int yy, long jday, long hh, long mm, long ss, long ms ){
       if ( 4*(i/4) == i ) nyday += 366;
       else nyday += 365;
     }
-
-  return 24.*3600.*(nyday+jday) + 3600.*hh + 60.*mm + ss + 0.001*ms;
+  /* as 'jday' discribes the actual date and not the number of whole days that
+   have passed since the beginning of the year, we have to decrement it by one;
+  luckily that doesn't have an effect on our files, as we were only looking at 
+  differences in time*/
+  return 24.*3600.*(nyday+jday-1) + 3600.*hh + 60.*mm + ss + 0.001*ms;
 }
 
 

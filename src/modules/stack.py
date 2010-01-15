@@ -108,26 +108,24 @@ def write_stack(stackdir,par):
         lat2 = p.GetHvalue('stla',hf,hi,hs)
         lon2 = p.GetHvalue('stlo',hf,hi,hs)
         dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
-        dist = dist*math.pi*6372/180
+        dist = dist*math.pi*6371/180
         p.SetHvalue('dist',dist,hf,hi,hs)
         try:
             app = par.spattern.split('.SAC')[1][0:-1]
         except:
             app = ''
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app
-        #print 'writing',outputfile
         p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))
 
         # write symmetric part 
         delta = p.GetHvalue('delta',hf,hi,hs)
-        null = -1*b/delta
+        null = int(round(-1*b/delta))
         reversed = seis[::-1]
         newseis = seis+reversed
         p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
         p.SetHvalue('b',0,hf,hi,hs)
         p.SetHvalue('o',0, hf,hi,hs)
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app+'_s'
-        #print 'writing',outputfile
         p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',newseis[null:]))
 
 

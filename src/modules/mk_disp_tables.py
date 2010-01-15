@@ -130,7 +130,7 @@ class PrepDisp:
         if type == 'snr':
             cols = (0,1)
             
-        DISP    = pl.load(fn, usecols=cols)
+        DISP    = pl.loadtxt(fn, usecols=cols)
         if p < DISP[:,0].min() or p > DISP[:,0].max():
             raise PrepDispErr('Period value out of bounds')
         ## linear interpolation

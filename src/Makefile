@@ -50,8 +50,8 @@ mergesac: merge_sac.c module_obj $(hfiles)
 ftan:	ftan-module
 
 ftan-module:
-	cd ./FTAN/pv; make -f pyMakefile;
-	cd ./FTAN/gv; make -f pyMakefile
+	cd ./FTAN/pv; make;
+	cd ./FTAN/gv; make
 
 module_obj:
 	cd $(VPATH); make objects
@@ -68,10 +68,13 @@ install:
 	install merge_sac $(BINDIR)
 
 clean:
-	-rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
+	rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
 	white_2cmp merge_sac; \
 	cd ./modules; make clean; cd ..;\
-	-rm ../bin/*
+	rm ../bin/*;\
+	cd ./FTAN/pv; make clean; cd -;\
+	cd ./FTAN/gv; make clean;\
+	
 
 tilde: 
 	-rm -f $(VPATH)/*~ 

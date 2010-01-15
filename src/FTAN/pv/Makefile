@@ -1,30 +1,24 @@
-#
-INST_DIR = $(HOME)/bin
-BIN  = aftani_c_pgl_test
+include ../../makeauto.macro
 
-fflags = -O2 -Wall -ffixed-line-length-none
-cflags = -O2 -Wall
+ofiles = mspline.o\
+	 fmax.o\
+	 ftfilt.o\
+	 phtovel.o\
+	 predcur.o\
+	 taper.o\
+	 tapers.o\
+	 trigger.o\
+	 tgauss.o
 
-LDLIBS =   -L/home/barmin/FFTW/lib -lfftw3
+%.o:%.f
+	gfortran -c -ffixed-line-length-none $<
 
-FFLAGS = $(DBG) $(fflags)
 
-CFLAGS = $(DBG) $(cflags)
+aftan4i: $(ofiles)
+	$(F2PY) -c ftanpv.pyf ftanpv.f $(ofiles) -lfftw3 
 
-FC = gfortran
 
-CC = gcc
+clean:
+	rm -f *.o *.so
 
-DBG =
 
-FOBJS = driver_c.o swapn.o aftanpg.o aftanipg.o ftfilt.o fmax.o taper.o \
-	trigger.o tapers.o tgauss.o mspline.o pred_cur.o misc.o phtovel.o
-
-$(BIN) : $(FOBJS)
-	$(FC) $(FFLAGS) $(CFLAGS) $(FOBJS) -o $(BIN) $(LDLIBS) 
-
-install :: $(BIN)
-	install -s $(BIN) $(INST_DIR)
-
-clean ::
-	rm -f $(BIN) core $(FOBJS)

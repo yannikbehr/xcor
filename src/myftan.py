@@ -20,6 +20,8 @@ if __name__ == '__main__':
     ############## setting defaults #########################
     fltfact = 1.
     refdsp = None
+    tmin = None
+    tmax = None
     ############## read config file #########################
     try:
         if string.find(sys.argv[1],'-c')!=-1:
@@ -38,6 +40,11 @@ if __name__ == '__main__':
                 raise Exception("reference curve has to be given for phase-velocity measurements")
             if cp.has_option('ftan','filter_fact'):
                 fltfact = cp.get('ftan','filter_fact')
+            if cp.has_option('ftan','tmin'):
+                tmin = float(cp.get('ftan','tmin'))
+            if cp.has_option('ftan','tmax'):
+                tmax = float(cp.get('ftan','tmax'))
+                             
         else:
             print "encountered unknown command line argument"
             raise Exception
@@ -75,7 +82,8 @@ if __name__ == '__main__':
                 print fn
             outfile = '%s_2_DISP.1'%fn
             if explore:
-                tmin = 2.
+                if tmin == None:
+                    tmin = 2.
                 while True:
                     try:
                         cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,extrace=refdsp,tmaxmax=30)
@@ -125,7 +133,7 @@ if __name__ == '__main__':
                 tmin = 2.
                 while True:
                     try:
-                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=tmin,ffact=fltfact)
+                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact)
                     except ftanc.FtanError:
                         tmin += 1.0
                     except ftanc.FtanIOError:

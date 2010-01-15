@@ -23,7 +23,7 @@ class ReadDisp:
 
 
     def read(self):
-        self.trace = load(self.name)
+        self.trace = loadtxt(self.name)
         rows,cols = self.trace.shape
         if cols == 6:
             self.type = 'group'
@@ -56,7 +56,7 @@ class ReadDisp:
                 pcurve = os.path.join(os.path.dirname(self.name),
                                       '%s_%s.PRED'%(self.st2,self.st1))
         if os.path.isfile(pcurve):
-            self.ptrace = load(pcurve)
+            self.ptrace = loadtxt(pcurve)
             if self.ptrace.shape == (2,):
                 self.ptrace.shape = (1,2)
             self.pname  = pcurve
@@ -88,7 +88,7 @@ class ReadDisp:
             except:
                 pass
         if os.path.isfile(d2curve):
-            self.d2trace = load(d2curve)
+            self.d2trace = loadtxt(d2curve)
             self.d2name  = d2curve
         
 

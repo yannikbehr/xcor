@@ -1,24 +1,25 @@
-#!/usr/local/bin/python
+#!/usr/bin/env mypython
 
 
 """driver for ftan method to measure phase-velocities"""
 import os, sys, string, glob
 sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 import pysacio as p
-import ftanpv
 from numpy import *
 from pylab import *
+import ftanpv
 
 class FtanError(Exception): pass
 class FtanIOError(Exception): pass
 
-def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.5,
+def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.5,
            vmax=4.5,tmin=5,tmax=None,thresh=20,ffact=1.,taperl=.5,snr=0.2,
            fmatch=2,piover4=-1,phm=True,steps=False):
 
     [hf,hi,hs,seis,ok] = p.ReadSacFile(fn)
     stat1 = string.rstrip(p.GetHvalue('kstnm',hf,hi,hs))
     stat2 = string.rstrip(p.GetHvalue('kevnm',hf,hi,hs))
+    dt = p.GetHvalue('delta',hf,hi,hs)
     n = p.GetHvalue('npts',hf,hi,hs)
     delta = p.GetHvalue('dist',hf,hi,hs)
     if tmin*vmin > delta:
@@ -37,7 +38,7 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,dt=1.,vmin=1.5,
     for i in range(0,len(seis)):
         if i < 32767:
             trace[i] = seis[i]
-    reftr = load(ref)
+    reftr = loadtxt(ref)
     phprper = zeros(300)
     phprvel = zeros(300)
     nphpr = len(reftr[:,1])
@@ -104,7 +105,7 @@ if __name__=='__main__':
     xmin, xmax = xlim()
     ymin, ymax = ylim()
     ############## result from fanchi's code 1st FTAN run ######
-    cmpdsp = load('./COR_GSC_R06C.SAC_s_2_DISP.1')
+    cmpdsp = loadtxt('./COR_GSC_R06C.SAC_s_2_DISP.1')
     plot(cmpdsp[:,2],cmpdsp[:,3],'k+')
     xlim([xmin,xmax])
     ylim(ymin,ymax)

@@ -3,11 +3,12 @@ from pylab import *
 sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 import pysacio as p
 import ftan
+from matplotlib.mlab import load
 
 class FtanError(Exception): pass
 class FtanIOError(Exception): pass
 
-def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
+def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
            vmax=4.,tmin=5,tmax=None,tmaxmax=35,thresh=10,ffact=1.,taperl=1,snr=0.1,
            phm=True,steps=False,extrace=None):
     """wrapper function to set ftan parameters and call ftan modules
@@ -19,6 +20,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,dt=1.,vmin=2.,
         raise FtanIOError('cannot read sac file')
     stat1 = string.rstrip(p.GetHvalue('kstnm',hf,hi,hs))
     stat2 = string.rstrip(p.GetHvalue('kevnm',hf,hi,hs))
+    dt    = p.GetHvalue('delta',hf,hi,hs)
     trace = zeros(32768)
     for i in range(0,len(seis)):
         if i < 32767:

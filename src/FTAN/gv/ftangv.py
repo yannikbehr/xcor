@@ -10,7 +10,7 @@ class FtanIOError(Exception): pass
 
 def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
            vmax=4.,tmin=5,tmax=None,tmaxmax=35,thresh=10,ffact=1.,taperl=1,snr=0.1,
-           phm=True,steps=False,extrace=None):
+           phm=True,steps=False,extrace=None,level='strict'):
     """wrapper function to set ftan parameters and call ftan modules
     1st step raw ftan; 2nd step ftan with phase-matched filtering from
     1st step prediction curve;
@@ -58,7 +58,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
             if nfout2 == 0 or ierr == 2 or ierr == 1:
                 errcnt = errcnt +1
                 if errcnt > 3:
-                    raise FtanError("ERROR in ftan-method (1st step)")
+                    raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
 
             if phm:
                 # second ftan run using raw dispersion curve to construct phase match filter
@@ -76,7 +76,7 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
                 if nfout2 == 0 or ierr == 2 or ierr == 1:
                     errcnt = errcnt +1
                     if errcnt > 3:
-                        raise FtanError("ERROR in ftan-method (2nd step)")
+                        raise FtanError("ERROR in ftan-method (2nd step): nfout=%d ierr=%d "%(nfout2,ierr))
                 else:
                     for i in range(0,nfin):
                         if arr2[0][i]>cper[jj]:
@@ -112,8 +112,13 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
                                                                       delta,vmin,vmax,tmin,\
                                                                       tmax,thresh,ffact,perc,\
                                                                       npoints,taperl,nfin,snr)
-        if nfout2 == 0 or ierr == 2 or ierr == 1:
-            raise FtanError("ERROR in ftan-method (1st step)")
+        if level == 'strict':
+            if nfout2 == 0 or ierr == 2 or ierr == 1:
+                raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
+        if level == 'easy':
+            if nfout2 == 0 or ierr == 2:
+                raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
+            
 
 
         if phm:
@@ -136,8 +141,12 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
                                                                            tmin,tmax,thresh,ffact,perc,npoints,\
                                                                            taperl,nfin,snr,npred,pred)
                 
-            if nfout2 == 0 or ierr == 2 or ierr == 1:
-                raise FtanError("ERROR in ftan-method (2nd step)")
+            if level == 'strict':
+                if nfout2 == 0 or ierr == 2 or ierr == 1:
+                    raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
+            if level == 'easy':
+                if nfout2 == 0 or ierr == 2:
+                    raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
 
         cper  = array(arr2[0][0:nrow])
         

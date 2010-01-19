@@ -27,6 +27,8 @@ class SeedInfo:
         match = re.search(pattern,line)
         if match:
             year = int(match.group(1))
+            if year > 2038:
+                raise SeedInfoException("Year information is out of range. Bug in seed-file?")
             yday = int(match.group(2))
             month, mday, err = pytutil.monthdate(year, yday)
             if err == -1:
@@ -38,6 +40,7 @@ class SeedInfo:
             wday = 0                        # weekday set to Monday
             dayls = -1                      # I don't care about daylight saving
             a = (year, month, mday, hour, mins, sec, wday, yday, dayls)
+            print a
             eptime = time.mktime(a)
             eptime = datetime.datetime.fromtimestamp(eptime)
             return date2num(eptime)
@@ -99,7 +102,6 @@ class SeedInfo:
         'rdseed -cf'-command is returned as a list of lines; the file
         'rdseed.stations' is written by the 'rdseed -Sf'-command"""
         # get timespan information from seed-volume
-        print filename
         p = sp.Popen([self.rdseed,'-cf',filename],stdout=sp.PIPE,stderr=sp.PIPE)
         stdout,stderr = p.communicate()
         data = stdout.split('\n')

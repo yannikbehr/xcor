@@ -244,7 +244,11 @@ class SacFromSeed(seed_info.SeedInfo):
             os.mkdir(self.sacroot)
         for fn in filelist:
             print fn
-            g = self.extract_sd(fn)
+            try:
+                g = self.extract_sd(fn)
+            except seed_info.SeedInfoException, e:
+                print e
+                continue
             if g == 0:
                 print "ERROR: cannot extract seed file meta information for %s" %(fn)
                 continue
@@ -323,12 +327,8 @@ if __name__ == '__main__':
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
-        print "using standard parameters"
-        rdseed   = '/home/behrya/src/rdseed4.7.5/'
-        bindir     = '/home/behrya/dev/auto/bin/'
-        sacfiles   = './testsac'
-        seedfiles  = '/data/hawea/yannik/SAPSE/xc/'
-        spattern = 'SAPSE_XC.10.20115'
+        print "No configuration file found."
+        sys.exit(1)
 
     t  = SacFromSeed(rdseed, bindir, sacfiles)
 

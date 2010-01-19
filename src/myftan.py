@@ -74,6 +74,8 @@ if __name__ == '__main__':
 
     if dsptype == 'group':
         cnt = 0
+        ### store initial value
+        tmin_init = tmin
         for fn in flist:
             cnt = cnt +1
             if not DEBUG:
@@ -86,12 +88,16 @@ if __name__ == '__main__':
                     tmin = 2.
                 while True:
                     try:
-                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,extrace=refdsp,tmaxmax=30)
+                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,
+                                                                           extrace=refdsp,tmaxmax=30,phm=False)
                     except ftangv.FtanError:
                         tmin += 1.
                     except ftangv.FtanIOError:
+                        ### reset tmin to initial value
+                        tmin = tmin_init
                         break
                     else:
+                        tmin = tmin_init
                         break
             else:
                 try:

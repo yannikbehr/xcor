@@ -40,7 +40,6 @@ class SeedInfo:
             wday = 0                        # weekday set to Monday
             dayls = -1                      # I don't care about daylight saving
             a = (year, month, mday, hour, mins, sec, wday, yday, dayls)
-            print a
             eptime = time.mktime(a)
             eptime = datetime.datetime.fromtimestamp(eptime)
             return date2num(eptime)

@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env mypython
 """
 remove instrument response using sac and cut precisely
 """
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     conf = SafeConfigParser()
     conf.read(cnffile)
-    sacdir = conf.get("rm_resp","sacdir");
+    sacbin = conf.get("rm_resp","sacbin");
     t1     = int(conf.get("rm_resp","start_t"))
     nos    = int(conf.get("rm_resp","npts"))
     rmopt  = int(conf.get("rm_resp","rm_opt"))
@@ -162,7 +162,6 @@ if __name__ == "__main__":
         rminst  = False
         filt    = False
 
-    sacbin = os.path.join(sacdir,'sac')
     if not os.access('/usr/local/sac/bin/sac',os.X_OK):
         print "Cannot find executable sac-binary"
         sys.exit(1)

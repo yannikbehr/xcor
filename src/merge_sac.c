@@ -14,11 +14,15 @@
 /*========================== MAIN =================================================*/
 int main (int argc, char** argv)
 {
-  int i=0, nn;
+  int i=0, nn, ret;
   char str[NFILES][LINEL];
   while((nn = fscanf(stdin,"%s",str[i])) != EOF) i++;
-  merge_sac(str, i, argv[1]);
-  return 0;
+  ret = merge_sac(str, i, argv[1]);
+  if(ret == 0){
+    return 1;
+  }else{
+    return 0;
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -106,7 +110,7 @@ int merge_sac(char str[NFILES][LINEL], int i, char *fileout){
 
   if ( (float)Nholes/(float)N > 0.1 ){
     fprintf(stderr,"ERROR: too many holes\n");
-    return 1;
+    return 0;
   }
 
 
@@ -129,7 +133,7 @@ int merge_sac(char str[NFILES][LINEL], int i, char *fileout){
   }
   write_sac (fileout, sig0, &s0);
   free(sig0);
-  return 0;
+  return 1;
 }
 
 

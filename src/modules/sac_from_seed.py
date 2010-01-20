@@ -98,9 +98,9 @@ class SacFromSeed(seed_info.SeedInfo):
             err = child.close()
             rcode = p.wait()
             if err or rcode != 0:
-                raise RuntimeError, '%r failed with exit code %d' %(mergesaccmd, err)
+                raise RuntimeError, '%r failed with exit code %d' %(mergesaccmd, rcode)
         except Exception, e:
-            print "ERROR: while merging sacfiles"
+            print "ERROR: while merging sacfiles:",e
             return 0
         else:
             return 1
@@ -259,7 +259,6 @@ class SacFromSeed(seed_info.SeedInfo):
                         respattern = r'RESP.\w*.%s.\w*.%s' %(stat,comp)
                         j = num2date(i)
                         dlist1 = j.utctimetuple()
-                        print dlist1
                         date1 = `dlist1[0]`+'.'+`dlist1[7]`+'.00:00:00'
                         date2 = `dlist1[0]`+'.'+`dlist1[7]`+'.23:59:59'
                         print "extracting %s (%s) between %s and %s" %(stat,comp,date1,date2)
@@ -279,7 +278,8 @@ class SacFromSeed(seed_info.SeedInfo):
                                 print "creating ", daydir
                                 os.mkdir(daydir)
                             outputfn = stat+'.'+comp+'.SAC'
-                            self.merge_sac(sacfiles, outputfn)
+                            if self.merge_sac(sacfiles, outputfn) == -1:
+                                continue
                             if os.path.isfile(outputfn) and not \
                                    os.path.isfile(os.path.join(daydir,outputfn)):
                                 os.rename(outputfn,os.path.join(daydir,outputfn))
@@ -288,7 +288,8 @@ class SacFromSeed(seed_info.SeedInfo):
                                 newfile = outputfn
                                 retval = self.comp_sac(oldfile, newfile)
                                 if retval == 1:
-                                    self.merge_sac([oldfile, newfile], newfile+'_tmp')
+                                    if self.merge_sac([oldfile, newfile], newfile+'_tmp') == -1:
+                                        continue
                                     if os.path.isfile(newfile+'_tmp'):
                                         os.rename(newfile+'_tmp',
                                                   os.path.join(daydir,newfile))

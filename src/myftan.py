@@ -92,7 +92,7 @@ if __name__ == '__main__':
                 while True:
                     try:
                         cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,
-                                                                           extrace=refdsp,tmaxmax=30,phm=False)
+                                                                           extrace=refdsp,tmaxmax=30,phm=True)
                     except ftangv.FtanError:
                         tmin += 1.
                     except ftangv.FtanIOError:

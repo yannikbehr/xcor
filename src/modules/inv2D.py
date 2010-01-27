@@ -29,14 +29,15 @@ class Inv2D:
         self.lonmax = coord[:,0].max()
         self.gridx = 0.25
         self.gridy = 0.25
+        self.intx, self.intdx = self._get_step_size_()
         self.period    = eval(cnf.get('2Dmap','period'))
         self.name      = cnf.get('2Dmap','name')
         self.beta      = int(cnf.get('2Dmap','beta'))
         self.alpha     = int(cnf.get('2Dmap','alpha'))
         self.sigma     = int(cnf.get('2Dmap','sigma'))
         self.param     = ['me','4','5',str(self.beta),'6',str(self.alpha),
-                          str(self.sigma),str(self.sigma),'7','%f %f %f'%(self.latmin,self.latmax,self.gridx),
-                          '8','%f %f %f'%(self.lonmin,self.lonmax,self.gridy),'12','.1','.5','16',
+                          str(self.sigma),str(self.sigma),'7','%f'%self.latmin,'%f'%self.latmax,'%f'%self.gridx,
+                          '8','%f'%self.lonmin,'%f'%self.lonmax,'%f'%self.gridy,'12','%f'%0.1,'%f'%0.5,'16',
                           '19','q','v','go']
         self.result    = cnf.get('2Dmap','result')
         self.tomobin   = cnf.get('2Dmap','tomobin')
@@ -67,13 +68,14 @@ class Inv2D:
             p.wait()
             
         else:
-            p = Popen('%s %s %s %d '\
+            p = Popen('%s %s %s %d'\
                       %(self.tomobin,datafile,self.name,period),shell=True,stdin=PIPE)
             f = p.stdin
             for _pm in self.param:
                 print >>f,_pm
             f.close()
-            p.wait()
+            ret = p.wait()
+            print ret
 
 
     def copy_res(self,p):
@@ -84,7 +86,15 @@ class Inv2D:
         for _f in fl:
             shutil.copy2(_f,resdir)
 
-
+    def _get_step_size_(self):
+        """
+        calculate integration step size from given latitudes and longitudes
+        """
+        intx = abs((abs(self.latmax) - abs(self.latmin)))/10.
+        print intx
+        dx = intx/2
+        return intx, dx
+    
 if __name__ == '__main__':
     try:
         if string.find(sys.argv[1],'-c')!=-1:

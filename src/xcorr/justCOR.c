@@ -149,8 +149,9 @@ int do_cor(int lag, char *cordir, char *pbdir)
     /*loop over "base" station number, this will be stored into common memory*/
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
       if(sdb.rec[ine][jsta1].n > 0){
-	if(sdb.rec[ine][jsta1].n > 840000){
-	  fprintf(stderr,"ERROR: trace longer than 840000 pts; %s\n",sdb.rec[ine][jsta1].ft_fname);
+	if(sdb.rec[ine][jsta1].n > 86400/sdb.rec[ine][jsta1].dt){
+	  fprintf(stderr,"ERROR: trace longer than 84000 s (%d); %s\n",
+		  sdb.rec[ine][jsta1].n, sdb.rec[ine][jsta1].ft_fname);
 	  continue;
 	}
         sprintf( amp_sac, "%s.am", sdb.rec[ine][jsta1].ft_fname );
@@ -168,8 +169,9 @@ int do_cor(int lag, char *cordir, char *pbdir)
         dcommon_( &len, amp, phase ); // reads amp and phase files into common memory
 	for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
   	  if(sdb.rec[ine][jsta2].n > 0){
-	    if(sdb.rec[ine][jsta2].n > 840000){
-	      fprintf(stderr,"ERROR: trace longer than 84000 pts; %s\n",sdb.rec[ine][jsta2].ft_fname);
+	    if(sdb.rec[ine][jsta2].n > 86400/sdb.rec[ine][jsta2].dt){
+	      fprintf(stderr,"ERROR: trace longer than 84000 s (%d); %s\n",
+		      sdb.rec[ine][jsta2].n, sdb.rec[ine][jsta2].ft_fname);
 	      continue;
 	    }
 	    // compute correlation
@@ -282,10 +284,12 @@ void sac_db_chng_new (char *pbdir )
 	  year = sdb.ev[ie].yy;
 	  month = sdb.ev[ie].mm;
 	  day   = sdb.ev[ie].dd;
-	  /*	  sprintf(sdb.rec[ie][is].ft_fname,"%s/%d/%s/%d_%d_%d_0_0_0/%s",
-		  pbdir,year,months[month-1],year,month,day,filename);*/
+	  sprintf(sdb.rec[ie][is].ft_fname,"%s/%d/%s/%d_%d_%d_0_0_0/%s",
+		  pbdir,year,months[month-1],year,month,day,filename);
+	  /*
 	  sprintf(sdb.rec[ie][is].ft_fname,"%s/%s/%d_%d_%d_0_0_0/%s",
 		  pbdir,months[month-1],year,month,day,filename);
+	  */
 	  printf("dir is: %s\n",sdb.rec[ie][is].ft_fname);
 	}else {
 	  continue;

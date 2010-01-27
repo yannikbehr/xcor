@@ -11,6 +11,7 @@ import ftanc
 import ftangv
 import pysacio as p
 import progressbar as pg
+import scipy.io as sio
 
 DEBUG=True
 
@@ -22,6 +23,7 @@ if __name__ == '__main__':
     refdsp = None
     tmin = None
     tmax = None
+    writeamps = False
     ############## read config file #########################
     try:
         if string.find(sys.argv[1],'-c')!=-1:
@@ -34,6 +36,7 @@ if __name__ == '__main__':
             spattern= cp.get('ftan','spattern')
             dsptype = cp.get('ftan','dsptype')
             explore = cp.getboolean('ftan','explore')
+            writeamps = cp.getboolean('ftan','writeamps')
             if  cp.has_option('ftan','refdsp'):
                 refdsp  = cp.get('ftan','refdsp')
             if dsptype == 'phase' and not cp.has_option('ftan','refdsp'):
@@ -122,12 +125,16 @@ if __name__ == '__main__':
                 for ii in range(0,len(cper)):
                     print >>f,'%d\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],gvamp[ii],gvsnr[ii])
                 f.close()
+            if writeamps:
+                sio.savemat(outfile+'_amp.mat',{'cper':cper,'ampv':ampv,'amps':amps})
+
         if not DEBUG:
             pbar.finish()
 
 
     if dsptype == 'phase':
         cnt = 0
+        tmin_init = tmin
         for fn in flist:
             cnt = cnt + 1
             if not DEBUG:
@@ -136,15 +143,18 @@ if __name__ == '__main__':
                 print fn
             outfile='%s_2_DISP.c1'%fn
             if explore:
-                tmin = 2.
+                if tmin == None:
+                    tmin = 2.
                 while True:
                     try:
                         cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact)
                     except ftanc.FtanError:
                         tmin += 1.0
                     except ftanc.FtanIOError:
+                        tmin = tmin_init
                         break
                     else:
+                        tmin = tmin_init
                         break
             else:
                 try:
@@ -172,6 +182,8 @@ if __name__ == '__main__':
                 for ii in range(0,len(cper)):
                     print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii])
                 f.close()
+            if writeamps:
+                sio.savemat(outfile+'_amp.mat',{'cper':cper,'ampv':ampv,'amps':amps})
         if not DEBUG:
             pbar.finish()
                 

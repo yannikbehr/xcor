@@ -85,8 +85,8 @@ class PrepDisp:
             if not DEBUG:
                 cnt += 1
                 pbar.update(cnt)
-            a = dispfn.split('_s_')
-            snr_fn = a[0]+'_s_snr.txt'
+            a = os.path.basename(dispfn).split('_s_')
+            snr_fn = os.path.join(self.dirs['xdir'],a[0]+'_s_snr.txt')
             if not os.path.isfile(snr_fn):
                 print "Cannot find snr-file for %s"%dispfn
                 return

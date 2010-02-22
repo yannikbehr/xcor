@@ -7,7 +7,7 @@ import os, os.path, sys, glob
 from subprocess import *
 
 
-def initsacdb(datdir,regex='[!^ft]*.SAC',cnf='./config.txt',
+def initsacdb(datdir,regex='[!^ft]*Z.SAC',cnf='./config.txt',
                   srchflag='0',prefix='ft',sacdbf='sac_db.out',
                   tmpdir='./tmp/',resp_dir='./'):
     _path = os.environ['AUTO_SRC']

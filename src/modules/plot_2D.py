@@ -23,7 +23,9 @@ def _get_range_(paths):
     latmax = append(val[:,0],val[:,2]).max()
     lonmin = append(val[:,1],val[:,3]).min()
     lonmax = append(val[:,1],val[:,3]).max()
-    return lonmin,lonmax,latmin,latmax
+    zmin = val[:,4].min()
+    zmax = val[:,4].max()
+    return lonmin,lonmax,latmin,latmax,zmin,zmax
 
 def _get_extrema_(paths):
     """
@@ -66,14 +68,18 @@ def plot_result(**keys):
     gmt = GMT()
     paths = keys['paths']
     if keys['map_range'] == None:
+        lonmin,lonmax,latmin,latmax,zmin,zmax = _get_range_(paths)
         ### if map range not given try to guess from data
-        rng = '%f/%f/%f/%f'%_get_range_(paths)
+        rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
     else:
+        lonmin,lonmax,latmin,latmax,zmin,zmax = _get_range_(paths)
+        lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
         rng = map_range
     scl = 'M10c'
-    scalebar = '3.5c/-1.0c/6c/.2ch'
-    anot = 'a.5f.1/a.5f.1WSne'
-    vstep = .2
+    scalebar = '3.c/-1.6c/6c/.2ch'
+    sb = Ax(approx_ticks = 6)
+    sb_guru = ScaleGuru([([zmin,zmin],[zmax,zmax])], axes=(sb,sb))
+    vstep = sb_guru.get_params()['xinc']
     cptfile=gmt.tempfilename('colorpalette.txt')
     mymkcpt.make_cpt((a for a in _get_extrema_(paths)),cptfile)
 
@@ -85,6 +91,11 @@ def plot_result(**keys):
         if keys['map2D'] != None:
             lonmin,lonmax,latmin,latmax,zmin,zmax = _get_2dmap_lim_(map2D)
             rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
+        axx = Ax(approx_ticks=5)
+        ayy = Ax(approx_ticks=5)
+        guru = ScaleGuru([([lonmin,lonmax],[latmin,latmax])], axes=(axx,ayy))
+        s = guru.get_params()
+        anot = 'a%ff%f/a%ff%fWSne'%(s['xinc'],s['xinc']/2.,s['yinc'],s['yinc']/2.)
         gmt.psbasemap(R=rng,J=scl,V=True,B=anot,G='white')
         gmt.pscoast(R=True,J=True,V=True,W='1/0/0/0',D='i')
         gmt.psxy(R=True,J=True,m=True,V=True,W='2',C=cptfile,in_string=_convert_result_(paths).getvalue())
@@ -146,9 +157,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for _p in period:
-        fout = '%s_%d.ps'%(fileout,_p)
+        fout = '%s_%d.pdf'%(fileout,_p)
         if plot_map:
             map2D = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d.1'%(prefix,_p))
+        else:
+            map2D = None
         if plot_paths:
             paths = os.path.join(pathdir,'%ss_%s.txt'%(_p,prefix))
         plot_result(paths=paths,map2D=map2D,map_range=map_range,

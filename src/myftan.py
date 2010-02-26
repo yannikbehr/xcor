@@ -120,13 +120,13 @@ if __name__ == '__main__':
             mylogger.debug('%s'%fn)
             if not locals().has_key('aper'):
                 continue
-            if (aper[-1]-aper[0]) > 4.:
+            if (aper[-1]-aper[0]) > 2.:
                 f = open(outfile,'w')
                 for ii in range(0,len(cper)):
                     print >>f,'%d\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],gvamp[ii],gvsnr[ii])
                 f.close()
-            if writeamps:
-                sio.savemat(outfile+'_amp.mat',{'cper':cper,'ampv':ampv,'amps':amps})
+                if writeamps:
+                    sio.savemat(outfile+'_amp.mat',{'cper':cper,'ampv':ampv,'amps':amps})
 
         if not DEBUG:
             pbar.finish()
@@ -147,7 +147,7 @@ if __name__ == '__main__':
                     tmin = 2.
                 while True:
                     try:
-                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact)
+                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact,vmin=1.0)
                     except ftanc.FtanError:
                         tmin += 1.0
                     except ftanc.FtanIOError:
@@ -177,13 +177,13 @@ if __name__ == '__main__':
             mylogger.debug('%s'%fn)
             if not locals().has_key('aper'):
                 continue
-            if (aper[-1]-aper[0]) > 4.:
+            if (aper[-1]-aper[0]) > 2.:
                 f = open(outfile,'w')
                 for ii in range(0,len(cper)):
                     print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii])
                 f.close()
-            if writeamps:
-                sio.savemat(outfile+'_amp.mat',{'cper':cper,'ampv':ampv,'amps':amps})
+                if writeamps:
+                    sio.savemat(outfile+'_amp.mat',{'cper':cper,'ampv':ampv,'amps':amps})
         if not DEBUG:
             pbar.finish()
                 

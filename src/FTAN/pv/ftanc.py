@@ -26,7 +26,8 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.5,
         raise FtanIOError("distance between stations is too small")
     if delta/vmax < 1.:
         raise FtanIOError("distance between stations is too small")
-    times = arange(int(delta/vmax),int(delta/vmin))
+    times = [x*dt for x in xrange(int(delta/vmax/dt)-1,int(delta/vmin/dt))]
+    #times = arange(int(delta/vmax),int(delta/vmin))
     vels  = [ delta/i for i in times]
     if tmax==None:
         tmax = delta/(2*vmax)

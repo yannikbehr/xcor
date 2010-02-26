@@ -47,8 +47,8 @@ def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
         cper.append(0);aper.append(0);gv.append(0);gvamp.append(0);gvsnr.append(0)
         jj = 0
         errcnt = 0
-        for k in arange(tmin,int(tmax),2.):
-            tm = k+3.
+        for k in arange(tmin,int(tmax),.1):
+            tm = k+1.
             if tm > tmax: break
             # first ftan run to get raw dispersion curve
             nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,amp,ierr = ftan.aftan4(n,trace,t0,dt,\

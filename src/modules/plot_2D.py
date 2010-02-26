@@ -59,8 +59,28 @@ def _get_2dmap_lim_(map2D):
     latmax = val[:,1].max()
     zmin = val[:,2].min()
     zmax = val[:,2].max()
-    return lonmin,lonmax,latmin,latmax,zmin,zmax
-    
+    steplon = val[1,0] - val[0,0]
+    _i = 1
+    while True:
+        steplat = val[_i,1] - val[_i-1,1]
+        if steplat > 0.0001: break
+        _i += 1
+    return lonmin,lonmax,latmin,latmax,zmin,zmax,steplon, steplat
+
+def _get_scale_tick_(zmin,zmax):
+    """
+    Find the right increment to put 5 anotations on the scalebar.
+    """
+    nticks = 5
+    while True:
+        sb = Ax(approx_ticks = nticks)
+        sb_guru = ScaleGuru([([zmin,zmin],[zmax,zmax])], axes=(sb,sb))
+        vstep = sb_guru.get_params()['xinc']
+        if (zmax-zmin)/vstep >= 5: break
+        nticks += 1
+    return vstep
+
+
 def plot_result(**keys):
     """
     plot measurements and 2D maps
@@ -72,14 +92,10 @@ def plot_result(**keys):
         ### if map range not given try to guess from data
         rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
     else:
-        lonmin,lonmax,latmin,latmax,zmin,zmax = _get_range_(paths)
         lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
         rng = map_range
     scl = 'M10c'
     scalebar = '3.c/-1.6c/6c/.2ch'
-    sb = Ax(approx_ticks = 6)
-    sb_guru = ScaleGuru([([zmin,zmin],[zmax,zmax])], axes=(sb,sb))
-    vstep = sb_guru.get_params()['xinc']
     cptfile=gmt.tempfilename('colorpalette.txt')
     mymkcpt.make_cpt((a for a in _get_extrema_(paths)),cptfile)
 
@@ -89,8 +105,9 @@ def plot_result(**keys):
     #### plot measurements
     if keys['plot_paths']:
         if keys['map2D'] != None:
-            lonmin,lonmax,latmin,latmax,zmin,zmax = _get_2dmap_lim_(map2D)
+            lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2D)
             rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
+        lonmin1,lonmax1,latmin1,latmax1,zmin1,zmax1 = _get_range_(paths)
         axx = Ax(approx_ticks=5)
         ayy = Ax(approx_ticks=5)
         guru = ScaleGuru([([lonmin,lonmax],[latmin,latmax])], axes=(axx,ayy))
@@ -99,7 +116,7 @@ def plot_result(**keys):
         gmt.psbasemap(R=rng,J=scl,V=True,B=anot,G='white')
         gmt.pscoast(R=True,J=True,V=True,W='1/0/0/0',D='i')
         gmt.psxy(R=True,J=True,m=True,V=True,W='2',C=cptfile,in_string=_convert_result_(paths).getvalue())
-        gmt.psscale(C=cptfile,V=True,D=scalebar,B='%f::/:km/s:'%vstep)
+        gmt.psscale(C=cptfile,V=True,D=scalebar,B='%f::/:km/s:'%_get_scale_tick_(zmin1,zmax1))
 
     if keys['plot_map']:
         xshift = '0c'
@@ -108,13 +125,13 @@ def plot_result(**keys):
         grdtomo = gmt.tempfilename('tomo.grd')
         grdtomotmp = gmt.tempfilename('tomo_tmp.grd')
         tomocpt = gmt.tempfilename('tomo.cpt')
-        lonmin,lonmax,latmin,latmax,zmin,zmax = _get_2dmap_lim_(map2D)
-        gmt.xyz2grd(keys['map2D'],G=grdtomotmp,I=0.25,R='%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax),out_discard=True)
+        lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2D)
+        gmt.xyz2grd(keys['map2D'],G=grdtomotmp,I='%f/%f'%(slon,slat),R='%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax),out_discard=True)
         gmt.grdsample(grdtomotmp,G=grdtomo,I='1m',Q='l',R=True,out_discard=True)
-        gmt.grd2cpt(grdtomo,E=50,L='%f/%f'%(zmin,zmax),C="polar",I=True,out_filename=tomocpt)
+        gmt.grd2cpt(grdtomo,E=50,L='%f/%f'%(zmin,zmax),C="seis",out_filename=tomocpt)
         gmt.grdimage(grdtomo,R=True,J=scl,P=True,C=tomocpt,X=xshift)
-        gmt.pscoast(R=True,J=scl,B='a5f5/a5f5',D='i',W='thinnest' )
-        gmt.psscale(C=tomocpt,D='3.3c/1.0c/3.5c/.2ch',B='.5::/:km/s:')
+        gmt.pscoast(R=True,J=scl,B=anot,D='i',W='thinnest' )
+        gmt.psscale(C=tomocpt,D=scalebar,B='%f::/:km/s:'%_get_scale_tick_(zmin,zmax))
 
     gmt.save(fileout) 
     os.system('gv '+fileout+'&')
@@ -160,6 +177,7 @@ if __name__ == '__main__':
         fout = '%s_%d.pdf'%(fileout,_p)
         if plot_map:
             map2D = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d.1'%(prefix,_p))
+            fout = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d_%s_%s.pdf'%(prefix,_p,alpha,sigma))
         else:
             map2D = None
         if plot_paths:

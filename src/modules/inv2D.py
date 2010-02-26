@@ -27,18 +27,19 @@ class Inv2D:
         self.latmax = coord[:,1].max()
         self.lonmin = coord[:,0].min()
         self.lonmax = coord[:,0].max()
-        self.gridx = 0.25
-        self.gridy = 0.25
-        self.intx, self.intdx = self._get_step_size_()
-        self.period    = eval(cnf.get('2Dmap','period'))
-        self.name      = cnf.get('2Dmap','name')
-        self.beta      = int(cnf.get('2Dmap','beta'))
-        self.alpha     = int(cnf.get('2Dmap','alpha'))
-        self.sigma     = int(cnf.get('2Dmap','sigma'))
-        self.param     = ['me','4','5',str(self.beta),'6',str(self.alpha),
-                          str(self.sigma),str(self.sigma),'7','%f'%self.latmin,'%f'%self.latmax,'%f'%self.gridx,
-                          '8','%f'%self.lonmin,'%f'%self.lonmax,'%f'%self.gridy,'12','%f'%0.1,'%f'%0.5,'16',
-                          '19','q','v','go']
+        self.gridlat = float(cnf.get('2Dmap','gridlat'))
+        self.gridlon = float(cnf.get('2Dmap','gridlon'))
+        self.intstep = float(cnf.get('2Dmap','integration_step'))
+        self.cellsz = float(cnf.get('2Dmap','cell_size'))
+        self.period = eval(cnf.get('2Dmap','period'))
+        self.name = cnf.get('2Dmap','name')
+        self.beta = int(cnf.get('2Dmap','beta'))
+        self.alpha = int(cnf.get('2Dmap','alpha'))
+        self.sigma = int(cnf.get('2Dmap','sigma'))
+        self.param = ['me','4','5',str(self.beta),'6',str(self.alpha),
+                      str(self.sigma),str(self.sigma),'7','%f'%self.latmin,'%f'%self.latmax,'%f'%self.gridlat,
+                      '8','%f'%self.lonmin,'%f'%self.lonmax,'%f'%self.gridlon,'12','%f'%self.intstep,'%f'%self.cellsz,'16',
+                      '19','q','v','go']
         self.result    = cnf.get('2Dmap','result')
         self.tomobin   = cnf.get('2Dmap','tomobin')
         self.tomoray   = cnf.get('2Dmap','tomoray')
@@ -86,14 +87,6 @@ class Inv2D:
         for _f in fl:
             shutil.copy2(_f,resdir)
 
-    def _get_step_size_(self):
-        """
-        calculate integration step size from given latitudes and longitudes
-        """
-        intx = abs((abs(self.latmax) - abs(self.latmin)))/10.
-        print intx
-        dx = intx/2
-        return intx, dx
     
 if __name__ == '__main__':
     try:

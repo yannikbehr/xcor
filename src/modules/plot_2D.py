@@ -107,6 +107,9 @@ def plot_result(**keys):
         if keys['map2D'] != None:
             lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2D)
             rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
+        if keys['map_range'] != None:
+            lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
+            rng = map_range
         lonmin1,lonmax1,latmin1,latmax1,zmin1,zmax1 = _get_range_(paths)
         axx = Ax(approx_ticks=5)
         ayy = Ax(approx_ticks=5)
@@ -126,7 +129,11 @@ def plot_result(**keys):
         grdtomotmp = gmt.tempfilename('tomo_tmp.grd')
         tomocpt = gmt.tempfilename('tomo.cpt')
         lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2D)
-        gmt.xyz2grd(keys['map2D'],G=grdtomotmp,I='%f/%f'%(slon,slat),R='%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax),out_discard=True)
+        rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
+        if keys['map_range'] != None:
+            lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
+            rng = map_range
+        gmt.xyz2grd(keys['map2D'],G=grdtomotmp,I='%f/%f'%(slon,slat),R=rng,out_discard=True)
         gmt.grdsample(grdtomotmp,G=grdtomo,I='1m',Q='l',R=True,out_discard=True)
         gmt.grd2cpt(grdtomo,E=50,L='%f/%f'%(zmin,zmax),C="seis",out_filename=tomocpt)
         gmt.grdimage(grdtomo,R=True,J=scl,P=True,C=tomocpt,X=xshift)
@@ -174,10 +181,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for _p in period:
-        fout = '%s_%d.pdf'%(fileout,_p)
+        fout = '%s_%d.ps'%(fileout,_p)
         if plot_map:
             map2D = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d.1'%(prefix,_p))
-            fout = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d_%s_%s.pdf'%(prefix,_p,alpha,sigma))
+            fout = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d_%s_%s.ps'%(prefix,_p,alpha,sigma))
         else:
             map2D = None
         if plot_paths:

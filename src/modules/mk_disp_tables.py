@@ -8,7 +8,6 @@ inversion program
 
 import os, sys, optparse, os.path, string
 from obspy.sac import ReadSac, SacError, SacIOError
-#sys.path.append(os.path.join(os.environ['PROC_SRC'],'disp_curves'))
 from dispio import ReadDisp
 import numpy, glob
 import pylab as pl
@@ -29,7 +28,7 @@ class PrepDisp:
         self.snrthresh = int(cnf.get('mktables','snrthresh'))
         self.vmax      = eval(cnf.get('mktables','vmax'))
         self.periods   = eval(cnf.get('mktables','periods'))
-        self.dispdir   = cnf.get('mktables','dispdir')
+        self.dispdirs  = cnf.get('mktables','dispdir').split(',')
         self.outdir    = cnf.get('mktables','outdir')
         if not os.path.isdir(self.outdir):
             os.makedirs(self.outdir)
@@ -63,12 +62,13 @@ class PrepDisp:
         ### '_4_DISP.1'-ending (2nd iteration) and some have '_2_DISP.1'-ending (1st
         ### iteration) --> create a list of files, that contain the '_2_DISP.1' files
         ### unless there's only a '_4_DISP.1' file available
-        dispfiles = glob.glob(os.path.join(self.dispdir,self.spattern))
-        for _f in glob.glob(self.dispdir+'/*s_4_DISP.1'):
-            _a = _f.split('_4_')[0]+'_2_DISP.*'
-            _l = glob.glob(_a)
-            if len(_a)<1:
-                dispfiles.append(_f)
+        for _d in self.dispdirs:
+            dispfiles = glob.glob(os.path.join(_d,self.spattern))
+            for _f in glob.glob(_d+'/*s_4_DISP.1'):
+                _a = _f.split('_4_')[0]+'_2_DISP.*'
+                _l = glob.glob(_a)
+                if len(_a)<1:
+                    dispfiles.append(_f)
 
         if len(dispfiles)<1:
             print "file list to process is empty!"
@@ -88,12 +88,14 @@ class PrepDisp:
             a = os.path.basename(dispfn).split('_s_')
             snr_fn = os.path.join(self.dirs['xdir'],a[0]+'_s_snr.txt')
             if not os.path.isfile(snr_fn):
-                print "Cannot find snr-file for %s"%dispfn
+                print "Cannot find snr-file %s"%snr_fn
                 return
             for _p in self.periods:
                 try:
                     dispval = self.my_interp(_p,dispfn,type=self.dtype)
                 except PrepDispErr,e:
+                    continue
+                if dispval < 1.0 or dispval > 5.0:
                     continue
                 else:
                     try:
@@ -119,8 +121,8 @@ class PrepDisp:
 
 
     def my_interp(self,p,fn,type=None):
-        """ interpolate phase velocity dispersion curve using cubic
-        splines or linear interpolation and measure values at given periods"""
+        """ interpolate velocity dispersion curve using linear
+        interpolation and measure values at given periods"""
         if not type:
             raise PrepDispErr("Specify type of dispersion curve (group or phase)")
         if type == 'group':

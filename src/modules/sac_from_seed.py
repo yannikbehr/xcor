@@ -18,7 +18,7 @@ import time, glob, re, string
 sys.path.append('./modules')
 import pysacio as p
 import pytutil as pt
-from ConfigParser import SafeConfigParser
+from ConfigParser import SafeConfigParser, NoOptionError
 
 class SacFromSeed(seed_info.SeedInfo):
     def __init__(self, rdseed, bindir, sacroot):
@@ -327,6 +327,9 @@ if __name__ == '__main__':
         else:
             print "encountered unknown command line argument"
             raise Exception
+    except NoOptionError,e:
+        print e
+        sys.exit(1)
     except Exception:
         print "No configuration file found."
         sys.exit(1)

@@ -86,16 +86,18 @@ def whitening(sdb,ne,ns,plow,phigh,filename,testtrace=None):
     trace2sac(s,tr,filename)
     trace2sac(samp,tr,filename+'.am',delta=dom)
     trace2sac(sph,tr,filename+'.ph',delta=dom)
+    del tr
 
+    
 def trace2sac(trace,sacf,filename,**kw):
     """
     write trace as sac-file onto disc
     """
     nf = ReadSac()
     nf.seis = trace
-    nf.hf = sacf.hf.copy()
-    nf.hi = sacf.hi.copy()
-    nf.hs = sacf.hs.copy()
+    nf.hf = sacf.hf
+    nf.hi = sacf.hi
+    nf.hs = sacf.hs
     if len(kw.keys()) > 0:
         for _k in kw.keys():
             nf.SetHvalue(_k,kw[_k])

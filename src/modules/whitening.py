@@ -12,9 +12,10 @@ from obspy.sac import *
 from pylab import *
 import numpy as np
 from ConfigParser import SafeConfigParser
+import progressbar as pg
 
 class WhitenError(Exception): pass
-
+DEBUG = True
 
 def smooth(x,window_len=11,window='hanning'):
     if x.ndim != 1:
@@ -48,7 +49,7 @@ def running_av(x,window_len=20):
     return y
     
 
-def whitening(sdb, ne, ns, plow, phigh,testtrace=None):
+def whitening(sdb,ne,ns,plow,phigh,filename,testtrace=None):
     """
     this implements the spectral and temporal
     normalization suggested by Bensen et al.
@@ -76,11 +77,82 @@ def whitening(sdb, ne, ns, plow, phigh,testtrace=None):
         s, samp, sph = filter4.smooth_spec(testtrace.copy(),f1,f2,f3,f4,delta,npow=1,winlen=20)
     else:
         s, samp, sph = filter4.smooth_spec(ftr_norm.copy(),f1,f2,f3,f4,delta,npow=1,winlen=20)
-    return s, samp, sph, eqtr_s, ftr, ftr_norm
+
+    ### calculate sampling interval for amplitude and phase
+    npts = tr.GetHvalue('npts')
+    ns = 2**max(int(log(float(npts))/log(2.0))+1,13);
+    dom = 1.0/delta/ns
+    ### write traces to disc
+    trace2sac(s,tr,filename)
+    trace2sac(samp,tr,filename+'.am',delta=dom)
+    trace2sac(sph,tr,filename+'.ph',delta=dom)
+
+def trace2sac(trace,sacf,filename,**kw):
+    """
+    write trace as sac-file onto disc
+    """
+    nf = ReadSac()
+    nf.seis = trace
+    nf.hf = sacf.hf.copy()
+    nf.hi = sacf.hi.copy()
+    nf.hs = sacf.hs.copy()
+    if len(kw.keys()) > 0:
+        for _k in kw.keys():
+            nf.SetHvalue(_k,kw[_k])
+    nf.WriteSacBinary(filename)
     
 
+def make_file_name(sdb,ne,ns,rootdir,phigh,plow):
+    """
+    create output file
+    """
+    bpfile = "%.1fto%.1f"%(phigh,plow)
+    a = sdb.rec[ne][ns].ft_fname.split('/')
+    year = a[-4]
+    mon = a[-3]
+    day = a[-2]
+    newd = os.path.join(rootdir,bpfile,year,mon,day)
+    if not os.path.isdir(newd):
+        os.makedirs(newd)
+    newf = os.path.join(newd,a[-1])
+    return newf
+
+    
 if __name__ == '__main__':
-    pass
-    #conf = SafeConfigParser()
-    #dbname = conf.get("whiten","dbname")
-    #sdb = sac_db.read_db(dbname)
+    try:
+        if string.find(sys.argv[1],'-c')!=-1:
+            config=sys.argv[2]
+        else:
+            print "missing or unknown command line argument: %s"%sys.argv[1]
+            raise Exception
+    except Exception:
+        print "usage: %s -c config-file"%os.path.basename(sys.argv[0])
+        sys.exit(1)
+        
+    conf = SafeConfigParser()
+    conf.read(config)
+
+    ### frequency band +- 20% as taper
+    rootdir = conf.get("whitening","rootdir")
+    tmpdir = conf.get("whitening","tmpdir")
+    dbname = conf.get("whitening","dbname")
+    prefix = conf.get("whitening", "prefix")
+    phigh = float(conf.get("whitening", "upperperiod"))
+    plow = float(conf.get("whitening", "lowerperiod"))
+    sdb = read_db(os.path.join(tmpdir,dbname))
+    if not DEBUG:
+        widgets = ['whitening: ', pg.Percentage(), ' ', pg.Bar('#'),
+                   ' ', pg.ETA()]
+        pbar = pg.ProgressBar(widgets=widgets, maxval=sdb.nev*sdb.nst).start()
+
+    for ne in xrange(sdb.nev):
+        for ns in xrange(sdb.nst):
+            if not os.path.isfile(sdb.rec[ne][ns].ft_fname):continue
+            if not DEBUG:
+                pbar.update(ne*ns)
+            else:
+                print sdb.rec[ne][ns].fname
+            fn = make_file_name(sdb,ne,ns,rootdir,phigh,plow)
+            whitening(sdb,ne,ns,plow,phigh,fn)
+    if not DEBUG:
+        pbar.finish()

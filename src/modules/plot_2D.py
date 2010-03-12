@@ -133,6 +133,7 @@ def plot_result(**keys):
         if keys['map_range'] != None:
             lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
             rng = map_range
+        print slon,slat,rng
         gmt.xyz2grd(keys['map2D'],G=grdtomotmp,I='%f/%f'%(slon,slat),R=rng,out_discard=True)
         gmt.grdsample(grdtomotmp,G=grdtomo,I='1m',Q='l',R=True,out_discard=True)
         gmt.grd2cpt(grdtomo,E=50,L='%f/%f'%(zmin,zmax),C="seis",out_filename=tomocpt)

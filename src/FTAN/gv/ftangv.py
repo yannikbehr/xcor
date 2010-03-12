@@ -8,7 +8,7 @@ from matplotlib.mlab import load
 class FtanError(Exception): pass
 class FtanIOError(Exception): pass
 
-def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=2.,
+def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=1.0,
            vmax=4.,tmin=5,tmax=None,tmaxmax=35,thresh=10,ffact=1.,taperl=1,snr=0.1,
            phm=True,steps=False,extrace=None,level='strict'):
     """wrapper function to set ftan parameters and call ftan modules

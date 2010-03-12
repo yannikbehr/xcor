@@ -82,7 +82,7 @@ int main (int na, char **arg)
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
   /* change ft_fname value in sdb-struct */
-  sac_db_chng_new(pbdir);
+  sac_db_chng(pbdir);
 
   /*do all the work of correlations here  */
   do_cor(lag,cordir,pbdir);  
@@ -233,29 +233,43 @@ void sac_db_chng (char *pbdir )
 
 {
   int ie, is;
-  char *result, *filename, *daydir;
+  char *filename, *day,*month,*year,*cp,*ptr;
+
 
   for ( ie = 0; ie < sdb.nev; ie++ ) for ( is = 0; is < sdb.nst; is++ )
     {
       if(sdb.rec[ie][is].ft_fname == NULL){
-	printf("ERROR: ft_fname not found\n");
+	continue;
+      }else if(!strncmp(sdb.rec[ie][is].ft_fname,"\0",1)){
+	continue;
       }else {
-	result=strrchr(sdb.rec[ie][is].ft_fname,'/');
-	if(result != NULL){
-	  filename = strdup(result);
-	  *(result)='\0';
-	  result=strrchr(sdb.rec[ie][is].ft_fname,'/');
-	  daydir = strdup(result);
-	  *(result+1)='\0';
- 	  strcat(sdb.rec[ie][is].ft_fname,pbdir);
- 	  strcat(sdb.rec[ie][is].ft_fname,daydir);
-	  strcat(sdb.rec[ie][is].ft_fname,filename);
-	  printf("dir is: %s\n",sdb.rec[ie][is].ft_fname);
-	}else {
-	  continue;
+	/*cut off the last for parts of the path*/
+	cp = strdup(sdb.rec[ie][is].ft_fname);
+	ptr=strrchr(cp,'/');
+	if(ptr != NULL){
+	    filename = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr=strrchr(cp,'/');
+	    day = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr = strrchr(cp,'/');
+	    month = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr = strrchr(cp,'/');
+	    year = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr = strrchr(cp,'/');
+	    *(ptr)='\0';
 	}
+	/* put path together and put in pass-band dir */
+	sprintf(sdb.rec[ie][is].ft_fname,"%s/%s%s%s%s%s",
+		cp,pbdir,year,month,day,filename);
+	printf("%s\n",sdb.rec[ie][is].ft_fname);
 	free(filename);
-	free(daydir);
+	free(day);
+	free(month);
+	free(year);
+	free(cp);
       }
     }
   return;

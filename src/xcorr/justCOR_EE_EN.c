@@ -149,11 +149,11 @@ int check_info (int ne, int ns1, int ns2 )
     return 0;
   }
   if ( sdb.rec[ne][ns1].n <= 0 ) {
-    fprintf(stderr,"no data for station %s and event %s\n", sdb.st[ns1].name, sdb.ev[ne].name );
+    fprintf(stdout,"no data for station %s and event %s\n", sdb.st[ns1].name, sdb.ev[ne].name );
     return 0;
   }
   if ( sdb.rec[ne][ns2].n <= 0 ) {
-    fprintf(stderr,"no data for station %s and event %s\n", sdb.st[ns2].name, sdb.ev[ne].name );
+    fprintf(stdout,"no data for station %s and event %s\n", sdb.st[ns2].name, sdb.ev[ne].name );
     return 0;
   }
   if ( fabs(sdb.rec[ne][ns1].dt-sdb.rec[ne][ns2].dt) > .0001 ) {
@@ -228,7 +228,7 @@ int do_cor(int lag , char *cordir, char *pbdir, char *prefix)
 	sprintf( phase_sac2E, "%s.ph", name2_E );
 	sprintf( amp_sac2N, "%s.am", name2_N );
 	sprintf( phase_sac2N, "%s.ph", name2_N );
-	fprintf(stdout,"xcor: %s %s %s %s\n", name1_E,name1_N,name2_E,name2_N);
+	//fprintf(stdout,"xcor: %s %s %s %s\n", name1_E,name1_N,name2_E,name2_N);
 
 	/* compute correlation */
 	for(comp=0;comp<4;comp++){   
@@ -303,6 +303,7 @@ int do_cor(int lag , char *cordir, char *pbdir, char *prefix)
 	  shdamp1.unused1 = 1;
 	  strncpy(shdamp1.kevnm,sdb.st[jsta1].name,7);
 	  strncpy(shdamp1.kstnm,sdb.st[jsta2].name,7);
+	  fprintf(stderr,"%s %d %s\n",filename,ine,sdb.ev[ine].name);
 	  write_sac (filename, cor, &shdamp1);
 	}    //loop over comp
       }   //loop over jsta2
@@ -314,40 +315,90 @@ int do_cor(int lag , char *cordir, char *pbdir, char *prefix)
 
 
 /*--------------------------------------------------------------------------
-  insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
-  previous changes in the overall program structure makes it necessary
-  --------------------------------------------------------------------------*/
+insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
+previous changes in the overall program structure makes it necessary
+--------------------------------------------------------------------------*/
 void sac_db_chng (char *pbdir )
 
 {
   int ie, is;
-  char *result, *filename, *daydir;
+  char *filename, *day,*month,*year,*cp,*ptr;
+
 
   for ( ie = 0; ie < sdb.nev; ie++ ) for ( is = 0; is < sdb.nst; is++ )
     {
       if(sdb.rec[ie][is].ft_fname == NULL){
-	printf("ERROR: ft_fname not found\n");
+	continue;
+      }else if(!strncmp(sdb.rec[ie][is].ft_fname,"\0",1)){
+	continue;
       }else {
-	result=strrchr(sdb.rec[ie][is].ft_fname,'/');
-	if(result != NULL){
-	  filename = strdup(result);
-	  *(result)='\0';
-	  result=strrchr(sdb.rec[ie][is].ft_fname,'/');
-	  daydir = strdup(result);
-	  *(result+1)='\0';
-	  strcat(sdb.rec[ie][is].ft_fname,pbdir);
-	  strcat(sdb.rec[ie][is].ft_fname,daydir);
-	  strcat(sdb.rec[ie][is].ft_fname,filename);
-	  printf("dir is: %s\n",sdb.rec[ie][is].ft_fname);
-	}else {
-	  continue;
+	/*cut off the last for parts of the path*/
+	cp = strdup(sdb.rec[ie][is].ft_fname);
+	ptr=strrchr(cp,'/');
+	if(ptr != NULL){
+	    filename = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr=strrchr(cp,'/');
+	    day = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr = strrchr(cp,'/');
+	    month = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr = strrchr(cp,'/');
+	    year = strdup(ptr);
+	    *(ptr)='\0';
+	    ptr = strrchr(cp,'/');
+	    *(ptr)='\0';
 	}
+	/* put path together and put in pass-band dir */
+	sprintf(sdb.rec[ie][is].ft_fname,"%s/%s%s%s%s%s",
+		cp,pbdir,year,month,day,filename);
+	printf("%s\n",sdb.rec[ie][is].ft_fname);
 	free(filename);
-	free(daydir);
+	free(day);
+	free(month);
+	free(year);
+	free(cp);
       }
     }
   return;
 }
+
+/*--------------------------------------------------------------------------
+  insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
+  previous changes in the overall program structure makes it necessary
+  --------------------------------------------------------------------------*/
+//void sac_db_chng (char *pbdir )
+//
+//{
+//  int ie, is;
+//  char *result, *filename, *daydir;
+//
+//  for ( ie = 0; ie < sdb.nev; ie++ ) for ( is = 0; is < sdb.nst; is++ )
+//    {
+//      if(sdb.rec[ie][is].ft_fname == NULL){
+//	printf("ERROR: ft_fname not found\n");
+//      }else {
+//	result=strrchr(sdb.rec[ie][is].ft_fname,'/');
+//	if(result != NULL){
+//	  filename = strdup(result);
+//	  *(result)='\0';
+//	  result=strrchr(sdb.rec[ie][is].ft_fname,'/');
+//	  daydir = strdup(result);
+//	  *(result+1)='\0';
+//	  strcat(sdb.rec[ie][is].ft_fname,pbdir);
+//	  strcat(sdb.rec[ie][is].ft_fname,daydir);
+//	  strcat(sdb.rec[ie][is].ft_fname,filename);
+//	  printf("dir is: %s\n",sdb.rec[ie][is].ft_fname);
+//	}else {
+//	  continue;
+//	}
+//	free(filename);
+//	free(daydir);
+//      }
+//    }
+//  return;
+//}
 
 /*--------------------------------------------------------------------------
   function to find East-, North- and Z-component files for given date-dir
@@ -356,16 +407,16 @@ int find_n_comp(char *nameE, char *nameN, char *pbdir,char *prefix, int ne,int n
   char *dircp, *dirn, *base, *basecp;
   char pattern[LINEL], newdir[LINEL];
   glob_t match;
-  dircp = strdup(sdb.ev[ne].name);
-  basecp = strdup(sdb.ev[ne].name);
+  dircp = strdup(sdb.rec[ne][ns].ft_fname);
+  basecp = strdup(sdb.rec[ne][ns].ft_fname);
   dirn = dirname(dircp);
   base = basename(basecp);
-  assert((strlen(dirn)+strlen(pbdir)+strlen(base)+2)<LINEL-1);
-  sprintf(newdir,"%s/%s/%s",dirn,pbdir,base);
+  //assert((strlen(dirn)+strlen(pbdir)+strlen(base)+2)<LINEL-1);
+  //sprintf(newdir,"%s/%s/%s",dirn,pbdir,base);
   
   /* find N-component file*/
-  assert((strlen(newdir)+strlen(prefix)+strlen(sdb.st[ns].name)+11)<LINEL-1);
-  sprintf(pattern,"%s/%s_%s.*HN.SAC",newdir,prefix,sdb.st[ns].name);
+  //assert((strlen(newdir)+strlen(prefix)+strlen(sdb.st[ns].name)+11)<LINEL-1);
+  sprintf(pattern,"%s/%s_%s.*HN.SAC",dirn,prefix,sdb.st[ns].name);
   if(glob(pattern, 0, NULL, &match) == 0){
     if(match.gl_pathc>1){
       fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);

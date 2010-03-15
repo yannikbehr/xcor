@@ -197,9 +197,6 @@ class DoWhiten:
         if not len(dirlist) >0:
             raise Exception
         bpfile = "%.1fto%.1f"%(self.upperp,self.lowerp)
-#        if not os.path.isdir(dirname+'/'+month+'/'+bpfile):
-#            os.mkdir(dirname+'/'+month+'/'+bpfile)
-#            print "Creating dir structure: ", month
         for day in dirlist:
             try:
                 for _d in self.skipdir:
@@ -211,14 +208,11 @@ class DoWhiten:
             self.cnt = self.cnt + 1
             self.proclst.ydaydir.append({})
             self.proclst.ydaydir[self.cnt]['name'] = day
-            yeardir = os.path.basename(dirname)
+            #yeardir = os.path.basename(dirname)
+            yeardir = dirname.split('/')[-2]
             eqdir = os.path.join(self.rootdir,bpfile,yeardir,month,day,'eqband')
             if not os.path.isdir(eqdir):
                 os.makedirs(eqdir)
-#           if not os.path.isdir(dirname+'/'+month+'/'+bpfile+'/'+day):
-#                os.mkdir(dirname+'/'+month+'/'+bpfile+'/'+day)
-#            if not os.path.isdir(dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband'):
-#                os.mkdir(dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband')
             # get all ft-files with channel name given in complst;
             # write them into strct
             for i in range(0,len(self.complst)):
@@ -231,12 +225,9 @@ class DoWhiten:
                     for _fn in tmplist:
                         _fn = os.path.basename(_fn)
                         src = dirname+'/'+month+'/'+day+'/'+_fn
-#                        tar = dirname+'/'+month+'/'+bpfile+'/'+day+'/'+file
-#                        eqtar = dirname+'/'+month+'/'+bpfile+'/'+day+'/eqband/'+file
                         tar = os.path.join(self.rootdir,bpfile,yeardir,month,day,_fn)
                         eqtar = os.path.join(self.rootdir,bpfile,yeardir,month,day,'eqband',_fn)
                         self.proclst.ydaydir[self.cnt][self.complst[i]].append((src,tar,eqtar))
-
 
     def process(self):
         print "filtering...."

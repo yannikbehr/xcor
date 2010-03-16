@@ -421,13 +421,15 @@ int find_n_comp(char *nameE, char *nameN, char *pbdir,char *prefix, int ne,int n
     if(match.gl_pathc>1){
       fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);
       return 0;
-    }else if(abs(match.gl_pathc - 1)< 0.0001) {
-      strncpy(nameN,match.gl_pathv[0],LINEL-1);
     }else{
-      fprintf(stderr,"ERROR: no matching file found for %s\n",pattern);
-      return 0;
+      strncpy(nameN,match.gl_pathv[0],LINEL-1);
     }
+  }else{
+    fprintf(stderr,"ERROR: no matching file found for %s\n",pattern);
+    return 0;
   }
+  
+  printf("%s %s %s %d\n",nameE,nameN,pattern,glob(pattern, 0, NULL, &match));
 
   globfree(&match);
   free(dircp);

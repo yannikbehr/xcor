@@ -109,11 +109,11 @@ int check_info (int ne, int ns1, int ns2 )
     return 0;
   }
   if ( sdb.rec[ne][ns1].n <= 0 ) {
-    fprintf(stderr,"no data for station %s and event %s\n", sdb.st[ns1].name, sdb.ev[ne].name );
+    fprintf(stdout,"no data for station %s and event %s\n", sdb.st[ns1].name, sdb.ev[ne].name );
     return 0;
   }
   if ( sdb.rec[ne][ns2].n <= 0 ) {
-    fprintf(stderr,"no data for station %s and event %s\n", sdb.st[ns2].name, sdb.ev[ne].name );
+    fprintf(stdout,"no data for station %s and event %s\n", sdb.st[ns2].name, sdb.ev[ne].name );
     return 0;
   }
   if ( fabs(sdb.rec[ne][ns1].dt-sdb.rec[ne][ns2].dt) > .0001 ) {
@@ -144,13 +144,13 @@ int do_cor(int lag, char *cordir, char *pbdir)
 
   /*outermost loop over day number, then station number*/
   for( ine = 0; ine < sdb.nev; ine++ ) {
-    fprintf(stderr,"sdb.nev %d\n",ine);
+    fprintf(stdout,"sdb.nev %d\n",ine);
     make_dir(ine,cordir,pbdir,mondir);
     /*loop over "base" station number, this will be stored into common memory*/
     for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
       if(sdb.rec[ine][jsta1].n > 0){
 	if(sdb.rec[ine][jsta1].n > 86400/sdb.rec[ine][jsta1].dt){
-	  fprintf(stderr,"ERROR: trace longer than 84000 s (%d); %s\n",
+	  fprintf(stderr,"ERROR: trace longer than 84000 s (%ld); %s\n",
 		  sdb.rec[ine][jsta1].n, sdb.rec[ine][jsta1].ft_fname);
 	  continue;
 	}
@@ -170,14 +170,14 @@ int do_cor(int lag, char *cordir, char *pbdir)
 	for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
   	  if(sdb.rec[ine][jsta2].n > 0){
 	    if(sdb.rec[ine][jsta2].n > 86400/sdb.rec[ine][jsta2].dt){
-	      fprintf(stderr,"ERROR: trace longer than 84000 s (%d); %s\n",
+	      fprintf(stderr,"ERROR: trace longer than 84000 s (%ld); %s\n",
 		      sdb.rec[ine][jsta2].n, sdb.rec[ine][jsta2].ft_fname);
 	      continue;
 	    }
 	    // compute correlation
 	    sprintf(amp_sac, "%s.am", sdb.rec[ine][jsta2].ft_fname);
             sprintf(phase_sac, "%s.ph", sdb.rec[ine][jsta2].ft_fname);
-	    fprintf(stderr,"file %s  %s\n", sdb.rec[ine][jsta1].ft_fname,sdb.rec[ine][jsta2].ft_fname );
+	    fprintf(stdout,"xcor: %s  %s\n", sdb.rec[ine][jsta1].ft_fname,sdb.rec[ine][jsta2].ft_fname );
             // get array of floats for amp and phase of first signal
             if ( read_sac(amp_sac, amp, &shdamp2, 900000) ==NULL ) {
               fprintf(stderr,"file %s not found\n", amp_sac );

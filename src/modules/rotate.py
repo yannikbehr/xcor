@@ -8,8 +8,8 @@ from math import *
 sys.path.append('/home/behrya/dev/proc-scripts/')
 import delaz
 
-def one_pair(sacfile, stat1, stat2, sacdir):
-    saccmd = sacdir+'/sac 1>/dev/null'
+def one_pair(sacfile, stat1, stat2, sacbin):
+    saccmd = sacbin+' 1>/dev/null'
     child = os.popen(saccmd, 'w')
     print >>child, "r %s" %(sacfile)
     print >>child, "ch kevnm %s" %(stat1)
@@ -49,7 +49,7 @@ if __name__ == '__main__':
             cp = SafeConfigParser()
             cp.read(config)
             stackdir = cp.get('rotate','stackdir')
-            sacdir   = cp.get('rotate','sacdir')
+            sacbin   = cp.get('rotate','sacbin')
         else:
             print "encountered unknown command line argument"
             raise Exception
@@ -116,9 +116,9 @@ if __name__ == '__main__':
         p.WriteSacBinary(fileRT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[3]))
         stations = i.split('_')
         stat1 = stations[0]; stat2 = stations[1]
-        one_pair(fileTT, stat1, stat2, sacdir)
-        one_pair(fileRR, stat1, stat2, sacdir)
-        one_pair(fileTR, stat1, stat2, sacdir)
-        one_pair(fileRT, stat1, stat2, sacdir)
+        one_pair(fileTT, stat1, stat2, sacbin)
+        one_pair(fileRR, stat1, stat2, sacbin)
+        one_pair(fileTR, stat1, stat2, sacbin)
+        one_pair(fileRT, stat1, stat2, sacbin)
         
             

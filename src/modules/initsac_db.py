@@ -26,10 +26,10 @@ def initsacdb(datdir,regex='[!^ft]*Z.SAC',cnf='./config.txt',
     output.close()
     initcmd = os.path.join(_path,'bin/initsac_db')
     out,err = Popen([initcmd,'-c',cnf],stdout=PIPE,stderr=PIPE).communicate()
-    f = open('initsacdb.out','w')
+    f = open(os.path.join(tmpdir,'initsacdb.out'),'w')
     f.write(out)
     f.close()
-    f = open('initsacdb.err','w')
+    f = open(os.path.join(tmpdir,'initsacdb.err'),'w')
     f.write(err)
     f.close()
    # if os.path.isfile(cnf):
@@ -53,10 +53,3 @@ if __name__ == "__main__":
     _path = os.environ['AUTO_SRC']
     initcmd = os.path.join(_path,'bin/initsac_db')
     out,err = Popen([initcmd,'-c',cnffile]).communicate()
-#    out,err = Popen([initcmd,'-c',cnffile],stdout=PIPE,stderr=PIPE).communicate()
-#    f = open('initsacdb.out','w')
-#    f.write(out)
-#    f.close()
-#    f = open('initsacdb.err','w')
-#    f.write(err)
-#    f.close()

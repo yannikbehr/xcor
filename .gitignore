@@ -13,3 +13,4 @@ src/FTAN/pv/ftanpv.so
 src/xcorr/xcor_h
 src/modules/fft_filter.so
 src/modules/fft_filter_c.so
+src/modules/checkerboard.input

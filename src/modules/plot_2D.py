@@ -85,7 +85,7 @@ def plot_result(**keys):
     """
     plot measurements and 2D maps
     """
-    gmt = GMT()
+    gmt = GMT(config={'PAGE_ORIENTATION':'landscape'})
     paths = keys['paths']
     if keys['map_range'] == None:
         lonmin,lonmax,latmin,latmax,zmin,zmax = _get_range_(paths)
@@ -116,10 +116,12 @@ def plot_result(**keys):
         guru = ScaleGuru([([lonmin,lonmax],[latmin,latmax])], axes=(axx,ayy))
         s = guru.get_params()
         anot = 'a%ff%f/a%ff%fWSne'%(s['xinc'],s['xinc']/2.,s['yinc'],s['yinc']/2.)
-        gmt.psbasemap(R=rng,J=scl,V=True,B=anot,G='white')
+        gmt.psbasemap(R=rng,J=scl,V=True,B=anot,X='2c',Y='4c',G='white')
         gmt.pscoast(R=True,J=True,V=True,W='1/0/0/0',D='i')
         gmt.psxy(R=True,J=True,m=True,V=True,W='2',C=cptfile,in_string=_convert_result_(paths).getvalue())
         gmt.psscale(C=cptfile,V=True,D=scalebar,B='%f::/:km/s:'%_get_scale_tick_(zmin1,zmax1))
+        textstring = """%f %f 12 0 1 LT T=%d s"""%(lonmin,latmax,keys['period'])
+        gmt.pstext(R=True,J=True,D='j0.5',G='0/0/0',N=True,in_string=textstring)
 
     if keys['plot_map']:
         xshift = '0c'
@@ -192,4 +194,4 @@ if __name__ == '__main__':
             paths = os.path.join(pathdir,'%ss_%s.txt'%(_p,prefix))
         plot_result(paths=paths,map2D=map2D,map_range=map_range,
                     plot_paths=plot_paths,plot_map=plot_map,
-                    fileout=fout)
+                    fileout=fout,period=_p)

@@ -111,7 +111,7 @@ def write_stack(stackdir,par):
         dist = dist*math.pi*6371/180
         p.SetHvalue('dist',dist,hf,hi,hs)
         try:
-            app = par.spattern.split('.SAC')[1][0:-1]
+            app = par.spattern.split('.SAC')[1]
         except:
             app = ''
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app

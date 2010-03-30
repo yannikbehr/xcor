@@ -12,16 +12,15 @@ import ftanpv
 class FtanError(Exception): pass
 class FtanIOError(Exception): pass
 
-def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.5,
+def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
            vmax=4.5,tmin=5,tmax=None,thresh=20,ffact=1.,taperl=.5,snr=0.2,
            fmatch=2,piover4=-1,phm=True,steps=False):
 
-    [hf,hi,hs,seis,ok] = p.ReadSacFile(fn)
-    stat1 = string.rstrip(p.GetHvalue('kstnm',hf,hi,hs))
-    stat2 = string.rstrip(p.GetHvalue('kevnm',hf,hi,hs))
-    dt = p.GetHvalue('delta',hf,hi,hs)
-    n = p.GetHvalue('npts',hf,hi,hs)
-    delta = p.GetHvalue('dist',hf,hi,hs)
+    stat1 = tr.kstnm.rstrip()
+    stat2 = tr.kevnm.rstrip()
+    dt = tr.delta
+    n = tr.npts
+    delta = tr.dist
     if tmin*vmin > delta:
         raise FtanIOError("distance between stations is too small")
     if delta/vmax < 1.:
@@ -36,9 +35,8 @@ def myftan(fn,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.5,
     if not tmax > tmin:
         raise FtanIOError("tmax has to be bigger than tmin")
     trace = zeros(32768)
-    for i in range(0,len(seis)):
-        if i < 32767:
-            trace[i] = seis[i]
+    for i in range(0,min(len(tr.seis),32767)):
+        trace[i] = tr.seis[i]
     reftr = loadtxt(ref)
     phprper = zeros(300)
     phprvel = zeros(300)

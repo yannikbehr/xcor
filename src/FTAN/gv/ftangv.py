@@ -8,26 +8,22 @@ from matplotlib.mlab import load
 class FtanError(Exception): pass
 class FtanIOError(Exception): pass
 
-def myftan(fn, t0=0, nfin=100,npoints=3,perc=50.0,vmin=1.0,
+def myftan(tr, t0=0, nfin=100,npoints=3,perc=50.0,vmin=1.0,
            vmax=4.,tmin=5,tmax=None,tmaxmax=35,thresh=10,ffact=1.,taperl=1,snr=0.1,
            phm=True,steps=False,extrace=None,level='strict'):
     """wrapper function to set ftan parameters and call ftan modules
     1st step raw ftan; 2nd step ftan with phase-matched filtering from
     1st step prediction curve;
     set tmax to the maximum observable (still reliable) wavelength"""
-    [hf,hi,hs,seis,ok] = p.ReadSacFile(fn)
-    if not ok:
-        raise FtanIOError('cannot read sac file')
-    stat1 = string.rstrip(p.GetHvalue('kstnm',hf,hi,hs))
-    stat2 = string.rstrip(p.GetHvalue('kevnm',hf,hi,hs))
-    dt    = p.GetHvalue('delta',hf,hi,hs)
+    stat1 = tr.kstnm.rstrip()
+    stat2 = tr.kevnm.rstrip()
+    dt    = tr.delta
     trace = zeros(32768)
-    for i in range(0,len(seis)):
-        if i < 32767:
-            trace[i] = seis[i]
+    for i in range(0,min(32767,len(tr.seis))):
+        trace[i] = tr.seis[i]
     
-    n = p.GetHvalue('npts',hf,hi,hs)
-    delta = p.GetHvalue('dist',hf,hi,hs)
+    n = tr.npts
+    delta = tr.dist
     if tmin*vmin > delta:
         raise FtanIOError("distance between stations is too small")
     if tmax==None:

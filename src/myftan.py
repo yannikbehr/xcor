@@ -12,6 +12,7 @@ import ftangv
 import pysacio as p
 import progressbar as pg
 import scipy.io as sio
+from obspy.sac import *
 
 DEBUG=True
 
@@ -85,13 +86,21 @@ if __name__ == '__main__':
                 pbar.update(cnt)
             else:
                 print fn
+            try:
+                tr = ReadSac(fn)
+            except SacIOError:
+                print "file %s can't be read"%fn
+                continue
+            except SacError:
+                print "file %s not a valid sac-file"%fn
+                continue
             outfile = '%s_2_DISP.1'%fn
             if explore:
                 if tmin == None:
                     tmin = 2.
                 while True:
                     try:
-                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,tmin=tmin,ffact=fltfact,
+                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(tr,tmin=tmin,ffact=fltfact,
                                                                            extrace=refdsp,tmaxmax=30,phm=True)
                     except ftangv.FtanError:
                         tmin += 1.
@@ -104,15 +113,15 @@ if __name__ == '__main__':
                         break
             else:
                 try:
-                    cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=fltfact,extrace=refdsp)
+                    cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(tr,ffact=fltfact,extrace=refdsp)
                 except ftangv.FtanError:
                     try:
                         outfile = '%s_2_DISP.2'%fn
-                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,ffact=0.5,extrace=refdsp)
+                        cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(tr,ffact=0.5,extrace=refdsp)
                     except ftangv.FtanError:
                         try:
                             outfile = '%s_2_DISP.3'%fn
-                            cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(fn,steps=True,phm=False)
+                            cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(tr,steps=True,phm=False)
                         except ftangv.FtanError, e:
                             mylogger.error('%s: %s'%(fn,e))
                             continue
@@ -141,13 +150,21 @@ if __name__ == '__main__':
                 pbar.update(cnt)
             else:
                 print fn
+            try:
+                tr = ReadSac(fn)
+            except SacIOError:
+                print "file %s can't be read"%fn
+                continue
+            except SacError:
+                print "file %s not a valid sac-file"%fn
+                continue
             outfile='%s_2_DISP.c1'%fn
             if explore:
                 if tmin == None:
                     tmin = 2.
                 while True:
                     try:
-                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact,vmin=1.0)
+                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact,vmin=1.0)
                     except ftanc.FtanError:
                         tmin += 1.0
                     except ftanc.FtanIOError:
@@ -158,18 +175,18 @@ if __name__ == '__main__':
                         break
             else:
                 try:
-                    cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,ffact=fltfact)
+                    cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,ffact=fltfact)
                 except ftanc.FtanIOError,e:
                     mylogger.error('%s: %s'%(fn,e))
                     continue
                 except ftanc.FtanError:
                     try:
                         outfile = '%s_2_DISP.c2'%fn
-                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=8,tmax=35,ffact=fltfact)
+                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=8,tmax=35,ffact=fltfact)
                     except ftanc.FtanError:
                         try:
                             outfile = '%s_2_DISP.c3'%fn
-                            cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(fn,refdsp,tmin=12,tmax=35,ffact=fltfact)
+                            cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=12,tmax=35,ffact=fltfact)
                         except ftanc.FtanError,e:
                             mylogger.error('%s: %s'%(fn,e))
                             continue

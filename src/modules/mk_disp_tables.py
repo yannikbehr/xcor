@@ -62,13 +62,14 @@ class PrepDisp:
         ### '_4_DISP.1'-ending (2nd iteration) and some have '_2_DISP.1'-ending (1st
         ### iteration) --> create a list of files, that contain the '_2_DISP.1' files
         ### unless there's only a '_4_DISP.1' file available
+        dispfiles = []
         for _d in self.dispdirs:
-            dispfiles = glob.glob(os.path.join(_d,self.spattern))
-            for _f in glob.glob(_d+'/*s_4_DISP.1'):
-                _a = _f.split('_4_')[0]+'_2_DISP.*'
-                _l = glob.glob(_a)
-                if len(_a)<1:
-                    dispfiles.append(_f)
+            dispfiles = dispfiles + glob.glob(os.path.join(_d,self.spattern))
+            #for _f in glob.glob(_d+'/*s_4_DISP.1'):
+            #    _a = _f.split('_4_')[0]+'_2_DISP.*'
+            #    _l = glob.glob(_a)
+            #    if len(_a)<1:
+            #        dispfiles.append(_f)
 
         if len(dispfiles)<1:
             print "file list to process is empty!"
@@ -86,7 +87,10 @@ class PrepDisp:
                 cnt += 1
                 pbar.update(cnt)
             a = os.path.basename(dispfn).split('_s_')
-            snr_fn = os.path.join(self.dirs['xdir'],a[0]+'_s_snr.txt')
+            if self.dirs['xdir'] != '':
+                snr_fn = os.path.join(self.dirs['xdir'],a[0]+'_s_snr.txt')
+            else:
+                snr_fn = os.path.join(os.path.dirname(dispfn),a[0]+'_s_snr.txt')
             if not os.path.isfile(snr_fn):
                 print "Cannot find snr-file %s"%snr_fn
                 return

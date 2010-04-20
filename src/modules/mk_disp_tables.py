@@ -18,7 +18,7 @@ import logging, logging.handlers
 from ConfigParser import SafeConfigParser
 import progressbar as pg
 
-DEBUG=True
+DEBUG=False
 
 class PrepDispErr(Exception): pass
 
@@ -30,6 +30,7 @@ class PrepDisp:
         self.periods   = eval(cnf.get('mktables','periods'))
         self.dispdirs  = cnf.get('mktables','dispdir').split(',')
         self.outdir    = cnf.get('mktables','outdir')
+        self.radial = True
         if not os.path.isdir(self.outdir):
             os.makedirs(self.outdir)
         self.spattern  = cnf.get('mktables','spattern')
@@ -55,9 +56,11 @@ class PrepDisp:
     def __call__(self):
         fhs = {}
         for p in self.periods:
-            f0 = open("%s/%ds_%dlambda_%d.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
-            f1 = open("%s/%ds_%dlambda_%d_gv.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
-            fhs[p]=(f0,f1)
+            if self.dtype == 'phase':
+                f = open("%s/%ds_%dlambda_%d.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
+            if self.dtype == 'group':
+                f = open("%s/%ds_%dlambda_%d_gv.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
+            fhs[p]=f
         ### from the manually picked dispersion curves it can happen that some have
         ### '_4_DISP.1'-ending (2nd iteration) and some have '_2_DISP.1'-ending (1st
         ### iteration) --> create a list of files, that contain the '_2_DISP.1' files
@@ -98,6 +101,8 @@ class PrepDisp:
                 try:
                     dispval = self.my_interp(_p,dispfn,type=self.dtype)
                 except PrepDispErr,e:
+                    if DEBUG:
+                        print dispfn,e
                     continue
                 if dispval < 1.0 or dispval > 5.0:
                     continue
@@ -105,24 +110,26 @@ class PrepDisp:
                     try:
                         snrval = self.my_interp(_p,snr_fn,type='snr')
                     except PrepDispErr,e:
-                        print snr_fn,e
+                        if DEBUG:
+                            print snr_fn,e
                         continue
                     else:
                         if snrval > self.snrthresh:
                             try:
                                 if self.dtype == 'phase':
-                                    self.write_table(dispfn,dispval,_p, fhs[_p][0],snrval,dirs=self.dirs)
-                                if self.dtype == 'group':
-                                    self.write_table(dispfn,dispval,_p, fhs[_p][1],snrval,dirs=self.dirs)
+                                    if self.radial:
+                                        x = ReadSac(snr_fn.split('_s_snr.txt')[0])
+                                        dispval = x.dist/(x.dist/dispval+_p/4)
+                                self.write_table(dispfn,dispval,_p, fhs[_p],snrval,dirs=self.dirs)
                             except PrepDispErr,e:
+                                if DEBUG:
+                                    print dispfn,e
                                 continue
     
         for i in fhs.keys():
-            fhs[i][0].close()
-            fhs[i][1].close()
+            fhs[i].close()
         if not DEBUG:
             pbar.finish()
-
 
     def my_interp(self,p,fn,type=None):
         """ interpolate velocity dispersion curve using linear

@@ -9,6 +9,15 @@ import tempfile, shutil
 from ConfigParser import SafeConfigParser
 from subprocess import *
 from numpy import *
+import progressbar as pg
+
+DEBUG = 2
+
+class Invert2DError(Exception): pass
+########### set up progress bar ############################
+widgets = ['inv2D: ', pg.Percentage(), ' ', pg.Bar('#'),
+           ' ', pg.ETA()]
+############################################################
 
 class Inv2D:
 
@@ -57,9 +66,22 @@ class Inv2D:
 
 
     def __call__(self):
+        if not DEBUG:
+            pbar = pg.ProgressBar(widgets=widgets, maxval=len(self.period)).start()
+        cnt = 0
         for _p in self.period:
-            self.run_inv2D(_p)
+            if not DEBUG:
+                pbar.update(cnt)
+                cnt += 1
+            try:
+                self.run_inv2D(_p)
+            except Invert2DError,e:
+                if DEBUG:
+                    print e
+                continue
             self.copy_res(_p)
+        if not DEBUG:
+            pbar.finish()
 
 
     def run_inv2D(self,period,ray=False,datafile=None):
@@ -68,6 +90,8 @@ class Inv2D:
         ############## generate script to be run on the remote machine ####
         if datafile is None:
             datafile = os.path.join(self.datadir,'%ds_%s.txt'%(period,self.name))
+        if os.stat(datafile).st_size == 0:
+            raise Invert2DError("file %s is empty"%datafile)
         if ray:
             p = Popen('%s %s %s %d'\
                       %(self.tomoray,datafile,self.name,period),shell=True,stdin=PIPE)
@@ -78,14 +102,24 @@ class Inv2D:
             p.wait()
             
         else:
-            p = Popen('%s %s %s %d'\
-                      %(self.tomobin,datafile,self.name,period),shell=True,stdin=PIPE)
+            if DEBUG == 1:
+                p = Popen('%s %s %s %d'\
+                          %(self.tomobin,datafile,self.name,period),shell=True,stdin=PIPE)
+            elif DEBUG == 2:
+                command = '%s %s %s %d 1>/dev/null'%(self.tomobin,datafile,self.name,period)
+                print datafile
+                p = Popen(command,shell=True,stdin=PIPE)
+            else:
+                command = '%s %s %s %d 1>/dev/null'%(self.tomobin,datafile,self.name,period)
+                p = Popen(command,shell=True,stdin=PIPE)
+
             f = p.stdin
             for _pm in self.param:
                 print >>f,_pm
             f.close()
             ret = p.wait()
-            print ret
+            if ret != 0:
+                raise Invert2DError("Inversion failed with exit code %d"%ret)
 
 
     def copy_res(self,p):

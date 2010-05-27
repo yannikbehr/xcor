@@ -59,24 +59,25 @@ def _get_2dmap_lim_(map2D):
     latmax = val[:,1].max()
     zmin = val[:,2].min()
     zmax = val[:,2].max()
+    zmean = val[:,2].mean()
     steplon = val[1,0] - val[0,0]
     _i = 1
     while True:
         steplat = val[_i,1] - val[_i-1,1]
         if steplat > 0.0001: break
         _i += 1
-    return lonmin,lonmax,latmin,latmax,zmin,zmax,steplon, steplat
+    return lonmin,lonmax,latmin,latmax,zmin,zmax,zmean,steplon, steplat
 
 def _get_scale_tick_(zmin,zmax):
     """
     Find the right increment to put 5 anotations on the scalebar.
     """
-    nticks = 5
+    nticks = 4
     while True:
         sb = Ax(approx_ticks = nticks)
         sb_guru = ScaleGuru([([zmin,zmin],[zmax,zmax])], axes=(sb,sb))
         vstep = sb_guru.get_params()['xinc']
-        if (zmax-zmin)/vstep >= 5: break
+        if (zmax-zmin)/vstep >= 4: break
         nticks += 1
     return vstep
 
@@ -106,7 +107,7 @@ def plot_result(**keys):
         cptfile=gmt.tempfilename('colorpalette.txt')
         mymkcpt.make_cpt((a for a in _get_extrema_(paths)),cptfile)
         if keys['map2D'] != None:
-            lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2D)
+            lonmin,lonmax,latmin,latmax,zmin,zmax,zmean,slon,slat = _get_2dmap_lim_(map2D)
             rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
         if keys['map_range'] != None:
             lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
@@ -132,7 +133,7 @@ def plot_result(**keys):
         grdtomo = gmt.tempfilename('tomo.grd')
         grdtomotmp = gmt.tempfilename('tomo_tmp.grd')
         tomocpt = gmt.tempfilename('tomo.cpt')
-        lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2D)
+        lonmin,lonmax,latmin,latmax,zmin,zmax,zmean,slon,slat = _get_2dmap_lim_(map2D)
         rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
         if keys['map_range'] != None:
             lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
@@ -144,12 +145,15 @@ def plot_result(**keys):
         anot = 'a%ff%f/a%ff%fWSne'%(s['xinc'],s['xinc']/2.,s['yinc'],s['yinc']/2.)
         gmt.xyz2grd(keys['map2D'],G=grdtomotmp,I='%f/%f'%(slon,slat),R=rng,out_discard=True)
         gmt.grdsample(grdtomotmp,G=grdtomo,I='1m',Q='l',R=True,out_discard=True)
-        gmt.grd2cpt(grdtomo,E=50,L='%f/%f'%(zmin,zmax),C="seis",out_filename=tomocpt)
+        #gmt.grd2cpt(grdtomo,E=50,L='%f/%f'%(zmin,zmax),C="seis",out_filename=tomocpt)
+        mymkcpt.make_cpt((zmin,zmax,zmean),tomocpt)
         if keys['colormap'] is not None:
             tomocpt = keys['colormap']
         gmt.grdimage(grdtomo,R=True,J=scl,P=True,C=tomocpt,X=xshift)
         gmt.pscoast(R=True,J=scl,B=anot,D='i',W='thinnest' )
         gmt.psscale(C=tomocpt,D=scalebar,B='%f::/:km/s:'%_get_scale_tick_(zmin,zmax))
+        if keys['text'] is not None:
+            gmt.pstext(R=True,J=True,D='j0.5',G='0/0/0',N=True,in_string=keys['text'])
 
     #### plot resolution maps
     if keys['plot_res']:
@@ -158,7 +162,7 @@ def plot_result(**keys):
         grdtomo = gmt.tempfilename('tomo.grd')
         grdtomotmp = gmt.tempfilename('tomo_tmp.grd')
         tomocpt = gmt.tempfilename('tomo.cpt')
-        lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2Dres)
+        lonmin,lonmax,latmin,latmax,zmin,zmax,zmean,slon,slat = _get_2dmap_lim_(map2Dres)
         rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
         if keys['map_range'] != None:
             lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
@@ -192,8 +196,10 @@ if __name__ == '__main__':
     from ConfigParser import SafeConfigParser
     map_range = None
     colormap = None
+    text = None
     plot_paths = False
     plot_map = False
+    fileout = None
     try:
         if string.find(sys.argv[1],'-c')!=-1:
             config=sys.argv[2]
@@ -204,7 +210,6 @@ if __name__ == '__main__':
             plot_map = cp.getboolean('plotting','plot_map')
             plot_res = cp.getboolean('plotting','plot_res')
             plot_hist = cp.getboolean('plotting','plot_hist')
-            fileout = cp.get('plotting','fileout')
             if plot_paths:
                 pathdir = cp.get('plotting','pathdir')
                 prefix = cp.get('plotting','prefix')
@@ -222,6 +227,10 @@ if __name__ == '__main__':
                 map_range = cp.get('plotting','map_range')
             if cp.has_option('plotting','colormap'):
                 colormap = cp.get('plotting','colormap')
+            if cp.has_option('plotting','text'):
+                text = eval(cp.get('plotting','text'))
+            if cp.has_option('plotting','fileout'):
+                fileout = cp.get('plotting','fileout')
             
         else:
             print "encountered unknown command line argument"
@@ -231,7 +240,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for _p in period:
-        fout = '%s_%d.pdf'%(fileout,_p)
         if plot_map:
             map2D = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d.1'%(prefix,_p))
             if not os.path.isfile(map2D): continue
@@ -250,6 +258,9 @@ if __name__ == '__main__':
             residf = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d.resid'%(prefix,_p))
         else:
             residf = None
+        if fileout is not None:
+            fout = fileout
         plot_result(paths=paths,map2D=map2D,map2Dres=map2Dres,map_range=map_range,
                     plot_paths=plot_paths,plot_map=plot_map,plot_res=plot_res,
-                    fileout=fout,period=_p,colormap=colormap,plot_hist=plot_hist,residf=residf)
+                    fileout=fout,period=_p,colormap=colormap,plot_hist=plot_hist,
+                    residf=residf,text=text)

@@ -1,4 +1,7 @@
-#!/usr/local/bin/python
+#!/usr/bin/env mypython
+"""
+make substacks in order to calculate error of ftan method
+"""
 
 import os, os.path, sys, string
 import glob, time, bisect, logging
@@ -80,7 +83,7 @@ def mklist(pattern,datadir):
 def write_stack(stackdir,mystack,nsub):
     """write contents of global 'COR'-file dict to disk"""
     if not os.path.isdir(stackdir):
-        os.mkdir(stackdir)
+        os.makedirs(stackdir)
     for stat in mystack.keys():
         # write stacked correlation
         seis = mystack[stat]['trace']
@@ -105,7 +108,7 @@ def write_stack(stackdir,mystack,nsub):
         p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
         p.SetHvalue('b',0,hf,hi,hs)
         p.SetHvalue('o',0, hf,hi,hs)
-        outputfile = stackdir+'/'+mystack[stat]['fn']+'_'+str(nsub)
+        outputfile = stackdir+'/'+mystack[stat]['fn']+'_err_'+str(nsub)
         p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',newseis[null:]))
 
 

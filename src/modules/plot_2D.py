@@ -97,15 +97,14 @@ def plot_result(**keys):
         rng = map_range
     scl = 'M10c'
     scalebar = '3.c/-1.6c/6c/.2ch'
-    cptfile=gmt.tempfilename('colorpalette.txt')
-    mymkcpt.make_cpt((a for a in _get_extrema_(paths)),cptfile)
-
     ### create temporary files
     tmppath=gmt.tempfilename('paths.txt')
     fileout = keys['fileout']
 
     #### plot measurements
     if keys['plot_paths']:
+        cptfile=gmt.tempfilename('colorpalette.txt')
+        mymkcpt.make_cpt((a for a in _get_extrema_(paths)),cptfile)
         if keys['map2D'] != None:
             lonmin,lonmax,latmin,latmax,zmin,zmax,slon,slat = _get_2dmap_lim_(map2D)
             rng = '%f/%f/%f/%f'%(lonmin,lonmax,latmin,latmax)
@@ -127,7 +126,7 @@ def plot_result(**keys):
 
     ##### plot velocity maps 
     if keys['plot_map']:
-        xshift = '0c'
+        xshift = '2c'
         if keys['plot_paths']:
             xshift = '12c'
         grdtomo = gmt.tempfilename('tomo.grd')
@@ -138,7 +137,11 @@ def plot_result(**keys):
         if keys['map_range'] != None:
             lonmin,lonmax,latmin,latmax = map(float,map_range.split('/'))
             rng = map_range
-        print slon,slat,rng
+        axx = Ax(approx_ticks=5)
+        ayy = Ax(approx_ticks=5)
+        guru = ScaleGuru([([lonmin,lonmax],[latmin,latmax])], axes=(axx,ayy))
+        s = guru.get_params()
+        anot = 'a%ff%f/a%ff%fWSne'%(s['xinc'],s['xinc']/2.,s['yinc'],s['yinc']/2.)
         gmt.xyz2grd(keys['map2D'],G=grdtomotmp,I='%f/%f'%(slon,slat),R=rng,out_discard=True)
         gmt.grdsample(grdtomotmp,G=grdtomo,I='1m',Q='l',R=True,out_discard=True)
         gmt.grd2cpt(grdtomo,E=50,L='%f/%f'%(zmin,zmax),C="seis",out_filename=tomocpt)
@@ -181,7 +184,7 @@ def plot_result(**keys):
         gmt.pshistogram(R="%f/%f/0/%f"%(resid.min(),resid.max(),resid.size),
                         B="a5f5:Misfit [s]:/a50f10::WSne",J='X10c/8.5c',G='gray',
                         W='3',L='thinner',X=xshift,Y=yshift,in_string=fstr.getvalue())
-    gmt.save(fileout) 
+    gmt.save(fileout)
     os.system('gv '+fileout+'&')
 
 
@@ -228,11 +231,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for _p in period:
-        fout = '%s_%d.ps'%(fileout,_p)
+        fout = '%s_%d.pdf'%(fileout,_p)
         if plot_map:
             map2D = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d.1'%(prefix,_p))
             if not os.path.isfile(map2D): continue
-            fout = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d_%s_%s.ps'%(prefix,_p,alpha,sigma))
+            fout = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d_%s_%s.pdf'%(prefix,_p,alpha,sigma))
         else:
             map2D = None
         if plot_res:

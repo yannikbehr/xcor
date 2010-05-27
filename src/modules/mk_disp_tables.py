@@ -24,13 +24,13 @@ class PrepDispErr(Exception): pass
 
 class PrepDisp:
     def __init__(self,cnf):
-        self.dthresh   = int(cnf.get('mktables','dthresh'))
+        self.dthresh = int(cnf.get('mktables','dthresh'))
         self.snrthresh = int(cnf.get('mktables','snrthresh'))
-        self.vmax      = eval(cnf.get('mktables','vmax'))
-        self.periods   = eval(cnf.get('mktables','periods'))
-        self.dispdirs  = cnf.get('mktables','dispdir').split(',')
-        self.outdir    = cnf.get('mktables','outdir')
-        self.radial = True
+        self.vmax = eval(cnf.get('mktables','vmax'))
+        self.periods = eval(cnf.get('mktables','periods'))
+        self.dispdirs = cnf.get('mktables','dispdir').split(',')
+        self.outdir = cnf.get('mktables','outdir')
+        self.radial = cnf.getboolean('mktables','radial')
         if not os.path.isdir(self.outdir):
             os.makedirs(self.outdir)
         self.spattern  = cnf.get('mktables','spattern')

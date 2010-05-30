@@ -162,7 +162,7 @@ if __name__ == '__main__':
                     tmin = 2.
                 while True:
                     try:
-                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact,vmin=1.0)
+                        cper,aper,gv,pv,gvamp,gvsnr,gvwdth,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=tmin,tmax=tmax,ffact=fltfact,vmin=1.0)
                     except ftanc.FtanError:
                         tmin += 1.0
                     except ftanc.FtanIOError:
@@ -173,18 +173,18 @@ if __name__ == '__main__':
                         break
             else:
                 try:
-                    cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,ffact=fltfact)
+                    cper,aper,gv,pv,gvamp,gvsnr,gvwdth,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,ffact=fltfact)
                 except ftanc.FtanIOError,e:
                     mylogger.error('%s: %s'%(fn,e))
                     continue
                 except ftanc.FtanError:
                     try:
                         outfile = '%s_2_DISP.c2'%fn
-                        cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=8,tmax=35,ffact=fltfact)
+                        cper,aper,gv,pv,gvamp,gvsnr,gvwdth,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=8,tmax=35,ffact=fltfact)
                     except ftanc.FtanError:
                         try:
                             outfile = '%s_2_DISP.c3'%fn
-                            cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=12,tmax=35,ffact=fltfact)
+                            cper,aper,gv,pv,gvamp,gvsnr,gvwdth,ampv,amps,refper,refvel = ftanc.myftan(tr,refdsp,tmin=12,tmax=35,ffact=fltfact)
                         except ftanc.FtanError,e:
                             mylogger.error('%s: %s'%(fn,e))
                             continue
@@ -195,7 +195,7 @@ if __name__ == '__main__':
             if (aper[-1]-aper[0]) > 2.:
                 f = open(outfile,'w')
                 for ii in range(0,len(cper)):
-                    print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii])
+                    print >>f,'%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f'%(ii,cper[ii],aper[ii],gv[ii],pv[ii],gvamp[ii],gvsnr[ii],gvwdth[ii])
                 f.close()
                 if writeamps:
                     sio.savemat(outfile+'_amp.mat',{'cper':cper,'ampv':ampv,'amps':amps})

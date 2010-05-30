@@ -85,9 +85,10 @@ def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
     pv    = array(arr2[3][0:nfout2])
     gvamp = array(arr2[4][0:nfout2])
     gvsnr = array(arr2[5][0:nfout2])
+    gvwdth = array(arr2[6][0:nfout2])
     ampv  = array(vels)
     amps  = amp[0:len(vels),0:nrow]
-    return (cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,phprper,phprvel[i])
+    return (cper,aper,gv,pv,gvamp,gvsnr,gvwdth,ampv,amps,phprper,phprvel[i])
 
 
 if __name__=='__main__':

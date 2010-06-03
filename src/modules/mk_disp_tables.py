@@ -22,6 +22,8 @@ DEBUG=False
 
 class PrepDispErr(Exception): pass
 
+errfunc = lambda x: 8.55505471/x**4+0.04123099
+
 class PrepDisp:
     def __init__(self,cnf):
         self.dthresh = int(cnf.get('mktables','dthresh'))
@@ -58,9 +60,13 @@ class PrepDisp:
         for p in self.periods:
             if self.dtype == 'phase':
                 f = open("%s/%ds_%dlambda_%d.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
+                fmax = open("%s/%ds_%dlambda_%d_max.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
+                fmin = open("%s/%ds_%dlambda_%d_min.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
             if self.dtype == 'group':
                 f = open("%s/%ds_%dlambda_%d_gv.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
-            fhs[p]=f
+                fmax = open("%s/%ds_%dlambda_%d_gv_max.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
+                fmin = open("%s/%ds_%dlambda_%d_gv_min.txt"%(self.outdir,p,self.dthresh,self.snrthresh), 'w')
+            fhs[p]=(f,fmax,fmin)
         ### from the manually picked dispersion curves it can happen that some have
         ### '_4_DISP.1'-ending (2nd iteration) and some have '_2_DISP.1'-ending (1st
         ### iteration) --> create a list of files, that contain the '_2_DISP.1' files
@@ -127,7 +133,9 @@ class PrepDisp:
                                 continue
     
         for i in fhs.keys():
-            fhs[i].close()
+            fhs[i][0].close()
+            fhs[i][1].close()
+            fhs[i][2].close()
         if not DEBUG:
             pbar.finish()
 
@@ -183,7 +191,14 @@ class PrepDisp:
         if dist > self.dthresh*vmax*per:
             newline = "%d  %f  %f  %f  %f  %f  1  1  %s %s %f"\
                       %(per,evla,evlo,stla,stlo,dispval,st1nm,st2nm,snrval)
-            print >>fh, newline
+            print >>fh[0], newline
+            newline = "%d  %f  %f  %f  %f  %f  1  1  %s %s %f"\
+                      %(per,evla,evlo,stla,stlo,dispval+errfunc(snrval),st1nm,st2nm,snrval)
+            print >>fh[1], newline
+            newline = "%d  %f  %f  %f  %f  %f  1  1  %s %s %f"\
+                      %(per,evla,evlo,stla,stlo,dispval-errfunc(snrval),st1nm,st2nm,snrval)
+            print >>fh[2], newline
+            
         else:
             self.mylogger.debug('distance too short: T=%f delta=%f file:%s'%(per,dist,d.xname))
             raise PrepDispErr('distance too short: T=%f delta=%f file:%s'%(per,dist,d.xname))

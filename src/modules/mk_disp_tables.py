@@ -22,7 +22,8 @@ DEBUG=False
 
 class PrepDispErr(Exception): pass
 
-errfunc = lambda x: 8.55505471/x**4+0.04123099
+#errfunc = lambda x: 8.55505471/x**4+0.04123099
+errfunc = lambda x: exp(-0.31848102*x-0.98812633)
 
 class PrepDisp:
     def __init__(self,cnf):

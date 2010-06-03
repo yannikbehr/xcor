@@ -6,9 +6,13 @@ slices and assigns a color to each slice
 """
 import sys, os, os.path
 
-def _get_color_tuple_():
-    return ((0,0,0),(255,0,0),(255,85,0),(237,255,0),(255,255,255),
-            (150,255,50),(0,85,255),(0,0,255),(85,0,255))
+def _get_color_tuple_(invert=False):
+    if not invert:
+        return ((0,0,0),(255,0,0),(255,85,0),(237,255,0),(255,255,255),
+                (150,255,50),(0,85,255),(0,0,255),(85,0,255))
+    else:
+        return ((85,0,255),(0,0,255),(0,85,255),(150,255,50),(255,255,255),
+                (237,255,0),(255,85,0),(255,0,0),(0,0,0))
 
 def _get_slices_(zmin,zmax,mean):
     lmean = (mean-0.001*mean)
@@ -24,9 +28,9 @@ def _get_slices_(zmin,zmax,mean):
     uslices = [uslice,uslice,uslice,sl2]
     return lslices,uslices,lmean,umean
 
-def make_cpt((zmin,zmax,mean),filen):
+def make_cpt((zmin,zmax,mean),filen,invert=False):
     lslices,uslices,lmean,umean = _get_slices_(zmin,zmax,mean)
-    colors = _get_color_tuple_()
+    colors = _get_color_tuple_(invert=invert)
     f = open(filen,'w')
     print >>f,"# cpt-file created by script ",sys.argv[0]
     zold = zmin

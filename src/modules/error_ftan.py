@@ -97,22 +97,36 @@ def ev_err(dirn,averr=True,errvssnr=False):
         savefig('error_vs_period.pdf')
 
         figure()
+        ax1 = subplot(111)
         x = gsnr.mean(axis=0)
         y = (eu.mean(axis=0)-el.mean(axis=0))/2.
-        plot(x,y,'k.')
-        fitfunc = lambda p,x: p[0]/x**4+p[1]
+        sidx = argsort(x.data)
+        xs = x[sidx]
+        ys = y[sidx]
+        plot(xs,ys,'k.')
+        #fitfunc = lambda p,x: p[0]/x**4+p[1]
+        fitfunc = lambda p,x: p[0]*x+p[1]
         errfunc = lambda p,x,y: fitfunc(p,x)-y
-        p0=[1.,0.]
-        p1, success = optimize.leastsq(errfunc,p0[:],args=(x,y))
+        p0=[-1.,0.]
+        cidx = where((xs>=2.5) & (ys>0.01))
+        p1, success = optimize.leastsq(errfunc,p0[:],args=(xs[cidx],log(ys[cidx])))
+        #p1, success = optimize.fmin(errfunc,p0,args=(xs[cidx],log(ys[cidx])))
         print p1
-        nv = fitfunc(p1,x)
-        plot(x,nv)
+        nv = fitfunc(p1,xs[cidx])
+        plot(xs[cidx],exp(nv))
+        ax1.set_ylabel('Mean error [km/s]')
+
+        ax2 = ax1.twinx()
+        a,b = histogram(xs,range=(0,10),normed=True)
+        plot(b[:-1]+diff(b)/2,cumsum(a),'r')
+        ax2.set_ylabel('Cumulative histogram')
         xlabel('SNR [dB]')
-        ylabel('Mean error [km/s]')
         savefig('snr_vs_error.pdf')
+
+        
         figure()
         plot(periods,y)
-        plot(periods,nv)
+        plot(periods,exp(fitfunc(p1,x)))
         xlabel('Period [s]')
         ylabel('Mean error [km/s]')
         savefig('comp_error.pdf')

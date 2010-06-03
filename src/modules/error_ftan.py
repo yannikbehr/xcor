@@ -37,7 +37,7 @@ def err_seas_var(fdisp):
     dispersion curves
     """
     fl = glob.glob(fdisp.replace('_s_2_DISP.c1','_err*DISP*.c1'))
-    if len(fl) < 2:
+    if len(fl) < 6:
         raise ErrorEstimateError("not enough substack dispersion curves")
     po,co = loadtxt(fdisp,usecols=(2,4),unpack=True)
     derr = zeros((len(fl),len(po)))
@@ -100,7 +100,7 @@ def ev_err(dirn,averr=True,errvssnr=False):
         x = gsnr.mean(axis=0)
         y = (eu.mean(axis=0)-el.mean(axis=0))/2.
         plot(x,y,'k.')
-        fitfunc = lambda p,x: p[0]/x+p[1]
+        fitfunc = lambda p,x: p[0]/x**4+p[1]
         errfunc = lambda p,x,y: fitfunc(p,x)-y
         p0=[1.,0.]
         p1, success = optimize.leastsq(errfunc,p0[:],args=(x,y))
@@ -110,8 +110,14 @@ def ev_err(dirn,averr=True,errvssnr=False):
         xlabel('SNR [dB]')
         ylabel('Mean error [km/s]')
         savefig('snr_vs_error.pdf')
+        figure()
+        plot(periods,y)
+        plot(periods,nv)
+        xlabel('Period [s]')
+        ylabel('Mean error [km/s]')
+        savefig('comp_error.pdf')
         
-        
+            
     if errvssnr:
         fl = glob.glob(os.path.join(dirn,'*.mean_err'))
         for _f in fl:

@@ -14,7 +14,7 @@ class FtanIOError(Exception): pass
 
 def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
            vmax=4.5,tmin=5,tmax=None,thresh=20,ffact=1.,taperl=.5,snr=0.2,
-           fmatch=2,piover4=-1,phm=True,steps=False):
+           fmatch=2,piover4=-1,phm=True,steps=False,extrace=None,level='strict'):
 
     stat1 = tr.kstnm.rstrip()
     stat2 = tr.kevnm.rstrip()
@@ -50,9 +50,13 @@ def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
                                                                      tmax,thresh,ffact,perc,
                                                                      npoints,taperl,nfin,snr,
                                                                      nphpr,phprper,phprvel)
-            
-    if ierr == 2 or ierr == 1 or nfout2 == 2:
-        raise FtanError("ERROR in ftan-method (1st step)")
+    if level == 'strict':
+        if ierr == 2 or ierr == 1 or nfout2 == 0:
+            raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
+    if level == 'easy':
+        if ierr == 2 or nfout2 == 0:
+            raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
+           
 
     if phm:
         pred = zeros((300,2))
@@ -60,15 +64,22 @@ def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
             pred[i][0] = arr2[1][i]
             pred[i][1] = arr2[2][i]
     
-        ffact = 2.0
-        fmatch = 2.0
+        ffact = ffact
+        fmatch = fmatch
         npred  = nfout2
         tmin = arr2[1][0];
         tmax = arr2[1][nfout2-1];
         amp   = []
         arr1  = []
         arr2  = []
-        
+        if extrace:
+            tr = loadtxt(extrace)
+            npred = len(tr)
+            pred = zeros((300,2))
+            for i in range(npred):
+                pred[i][0] = tr[i][0]
+                pred[i][1] = tr[i][1]
+
         nfout1,arr1,nfout2,arr2,tamp,nrow,ncol,amp,ierr = ftanpv.aftanipg(piover4,n,trace,t0,dt,
                                                                           delta,vmin,vmax,tmin,
                                                                           tmax,thresh,ffact,perc,
@@ -76,8 +87,12 @@ def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
                                                                           snr,fmatch,npred,pred,
                                                                           nphpr,phprper,phprvel)
     
-        if ierr == 2 or ierr == 1 or nfout2 == 2:
-            raise FtanError("ERROR in ftan-method (2nd step)")
+        if level == 'strict':
+            if ierr == 2 or ierr == 1 or nfout2 == 0:
+                raise FtanError("ERROR in ftan-method (1st step): nfout=%d ierr=%d "%(nfout2,ierr))
+        if level == 'easy':
+            if ierr == 2 or nfout2 == 0:
+                raise FtanError("ERROR in ftan-method (2nd step): nfout=%d ierr=%d "%(nfout2,ierr))
 
     cper  = array(arr2[0][0:nfout2])
     aper  = array(arr2[1][0:nfout2])

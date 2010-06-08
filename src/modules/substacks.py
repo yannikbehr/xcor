@@ -182,7 +182,7 @@ if __name__ == '__main__':
     tmppar = PAR()
     tmppar.cnt = 0
     def cntf(tmppar,dirname,files):
-        flist = glob.glob(dirname+'/'+tmppar.pattern)
+        flist = glob.glob(os.path.join(dirname,tmppar.pattern))
         if len(flist) > 0:
             tmppar.cnt = tmppar.cnt+1
 

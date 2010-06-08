@@ -8,6 +8,8 @@ from math import *
 sys.path.append('/home/behrya/dev/proc-scripts/')
 import delaz
 
+DEBUG = True
+
 def one_pair(sacfile, stat1, stat2, sacbin):
     saccmd = sacbin+' 1>/dev/null'
     child = os.popen(saccmd, 'w')
@@ -57,9 +59,9 @@ if __name__ == '__main__':
         print "no configuration file found"
         sys.exit(1)
 
-    pattern  = r'COR_(\w*_\w*).SAC_(\w*)'
+    pattern  = r'COR_(\w*_\w*).SAC_(EE\w*)'
     statpair = {}
-    for myfile in glob.glob(stackdir+'/COR*.SAC*'):
+    for myfile in glob.glob(stackdir+'/COR*.SAC_EE*'):
         mt = re.search(pattern, myfile)
         if mt:
             if mt.group(1) not in statpair.keys():
@@ -72,53 +74,67 @@ if __name__ == '__main__':
 
     for i in statpair.keys():
         for j in statpair[i].keys():
-            if j == 'EE':
-                [hfEE,hiEE,hsEE,seisEE,okEE] = p.ReadSacFile(statpair[i][j])
+            if j != 'EE_s':
+                fn_ee = statpair[i][j]
+                [hfEE,hiEE,hsEE,seisEE,okEE] = p.ReadSacFile(fn_ee)
                 if not okEE:
-                    print "ERROR: cannot read in sacfile %s!" %(statpair[i][j])
-            if j == 'NN':
-                [hfNN,hiNN,hsNN,seisNN,okNN] = p.ReadSacFile(statpair[i][j])
+                    print "ERROR: cannot read in sacfile %s!" %(fn_ee)
+                fn_nn = fn_ee.replace('EE','NN')
+                [hfNN,hiNN,hsNN,seisNN,okNN] = p.ReadSacFile(fn_nn)
                 if not okNN:
-                    print "ERROR: cannot read in sacfile %s!" %(statpair[i][j])
-            if j == 'EN':
-                [hfEN,hiEN,hsEN,seisEN,okEN] = p.ReadSacFile(statpair[i][j])
+                    print "ERROR: cannot read in sacfile %s!" %(fn_nn)
+                fn_en = fn_ee.replace('EE','EN')
+                [hfEN,hiEN,hsEN,seisEN,okEN] = p.ReadSacFile(fn_en)
                 if not okEN:
-                    print "ERROR: cannot read in sacfile %s!" %(statpair[i][j])
-            if j == 'NE':
-                [hfNE,hiNE,hsNE,seisNE,okNE] = p.ReadSacFile(statpair[i][j])
+                    print "ERROR: cannot read in sacfile %s!" %(fn_en)
+                fn_ne = fn_ee.replace('EE','NE')
+                [hfNE,hiNE,hsNE,seisNE,okNE] = p.ReadSacFile(fn_ne)
                 if not okNE:
-                    print "ERROR: cannot read in sacfile %s!" %(statpair[i][j])
-        st1lat = hfNN[31]
-        st1lon = hfNN[32]
-        st2lat = hfNN[35]
-        st2lon = hfNN[36]
-        dist, az, baz = delaz.delaz(st1lat, st1lon, st2lat, st2lon, 0)
-        tmp1 = ((az - 180)/180)*pi
-        cos1=cos(tmp1);
-        sin1=sin(tmp1);
-        tmp2 = ((baz -180)/180.0)*pi
-        cos2=cos(tmp2);
-        sin2=sin(tmp2);
-        #print i,tmp1,sin1,cos1,tmp2,sin2,cos2
-        rotmat = np.array([[-1*cos1*cos2, +cos1*sin2, -sin1*sin2, sin1*cos2],
-                           [-1*sin1*sin2, -sin1*cos2, -cos1*cos2, -cos1*sin2],
-                           [-1*cos1*sin2, -cos1*cos2, sin1*cos2, sin1*sin2],
-                           [-1*sin1*cos2, sin1*sin2, cos1*sin2, -cos1*cos2]])
-        tracemat = np.array([seisEE,seisEN,seisNN,seisNE])
-        resmat = np.dot(rotmat, tracemat)
-        fileTT = os.path.join(stackdir,'COR_'+i+'.SAC_TT')
-        fileRR = os.path.join(stackdir,'COR_'+i+'.SAC_RR')
-        fileTR = os.path.join(stackdir,'COR_'+i+'.SAC_TR')
-        fileRT = os.path.join(stackdir,'COR_'+i+'.SAC_RT')
-        p.WriteSacBinary(fileTT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[0]))
-        p.WriteSacBinary(fileRR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[1]))
-        p.WriteSacBinary(fileTR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[2]))
-        p.WriteSacBinary(fileRT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[3]))
-        stations = i.split('_')
-        stat1 = stations[0]; stat2 = stations[1]
-        one_pair(fileTT, stat1, stat2, sacbin)
-        one_pair(fileRR, stat1, stat2, sacbin)
-        one_pair(fileTR, stat1, stat2, sacbin)
-        one_pair(fileRT, stat1, stat2, sacbin)
+                    print "ERROR: cannot read in sacfile %s!" %(fn_ne)
+                if DEBUG:
+                    print fn_ee
+                    print fn_nn
+                    print fn_en
+                    print fn_ne
+            st1lat = hfNN[31]
+            st1lon = hfNN[32]
+            st2lat = hfNN[35]
+            st2lon = hfNN[36]
+            dist, az, baz = delaz.delaz(st1lat, st1lon, st2lat, st2lon, 0)
+            tmp1 = ((az - 180)/180)*pi
+            cos1=cos(tmp1);
+            sin1=sin(tmp1);
+            tmp2 = ((baz -180)/180.0)*pi
+            cos2=cos(tmp2);
+            sin2=sin(tmp2);
+            #print i,tmp1,sin1,cos1,tmp2,sin2,cos2
+            rotmat = np.array([[-1*cos1*cos2, +cos1*sin2, -sin1*sin2, sin1*cos2],
+                               [-1*sin1*sin2, -sin1*cos2, -cos1*cos2, -cos1*sin2],
+                               [-1*cos1*sin2, -cos1*cos2, sin1*cos2, sin1*sin2],
+                               [-1*sin1*cos2, sin1*sin2, cos1*sin2, -cos1*cos2]])
+            tracemat = np.array([seisEE,seisEN,seisNN,seisNE])
+            resmat = np.dot(rotmat, tracemat)
+            fileTT = fn_ee.replace('EE','TT')
+            fileRR = fn_ee.replace('EE','RR')
+            fileTR = fn_ee.replace('EE','TR')
+            fileRT = fn_ee.replace('EE','RT')
+            p.WriteSacBinary(fileTT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[0]))
+            p.WriteSacBinary(fileRR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[1]))
+            p.WriteSacBinary(fileTR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[2]))
+            p.WriteSacBinary(fileRT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[3]))
+            stations = i.split('_')
+            stat1 = stations[0]; stat2 = stations[1]
+            if DEBUG:
+                print "writing: ",fileTT
+            one_pair(fileTT, stat1, stat2, sacbin)
+            if DEBUG:
+                print "writing: ",fileRR
+            one_pair(fileRR, stat1, stat2, sacbin)
+            if DEBUG:
+                print "writing: ",fileTR
+            one_pair(fileTR, stat1, stat2, sacbin)
+            if DEBUG:
+                print "writing: ",fileRT
+            one_pair(fileRT, stat1, stat2, sacbin)
         
             

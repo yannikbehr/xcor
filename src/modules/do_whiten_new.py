@@ -1,259 +1,180 @@
 #!/usr/bin/env mypython
-"""module for calling filter4.f and whiten_phamp.f with appropriate values
-and creating output directory\n
-$Log$
-Revision 1.7  2007/07/09 02:01:01  behrya
-obtaining tempdir-name from config-file
-
+"""Do temporal and spectral normalization by calling sac-routines and
+the fortran routines filter4.f, white_phamp_2cmp.f and
+white_phamp_1cmp.f by calling their respective C-drivers.
 """
 
-import os, os.path, string, shutil, glob, sys
+import os, string, sys
 import subprocess as sp
+import sac_db
 from ConfigParser import SafeConfigParser
+import progressbar as pg
 
-import pysacio as p
+DEBUG=False
+months = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',
+          10:'Oct',11:'Nov',12:'Dec'}
 
-class ProcLst: pass
-
-
-class DoWhiten:
-    """class that comprises routines for performing filtering\n
-    and spectral whitening"""
-    def __init__(self,sacdir,rootdir,prefix,complist,sacbin='/usr/local/sac/bin/',
-                 bindir=os.path.join(os.environ['AUTO_SRC'],'bin'),
-                 upperp=5,lowerp=100,skipdir=[]):
-        self.sacdir  = sacdir
-        self.rootdir = rootdir
-        self.prefix  = prefix
-        self.complst = complist.split(',')
-        self.sacbin  = sacbin
-        self.bindir  = bindir
-        self.upperp  = upperp
-        self.lowerp  = lowerp
-        self.skipdir = skipdir
-        self.eqband = [50, 15]
-        self.months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-        self.npow = 1
-        self.proclst = ProcLst()
-        self.proclst.ydaydir = []
-        self.cnt = -1
-
-
-    def filter4_f(self, upperp, lowerp):
-        """ calls the c-driver for the fortran 77 program filter4.f"""
-        utaper = upperp - (float(upperp)/100)*20
-        ltaper = lowerp + (float(lowerp)/100)*20
-        equtaper = self.eqband[1] - (float(self.eqband[1])/100)*20
-        eqltaper = self.eqband[0] + (float(self.eqband[0])/100)*20
-        filtercmd = self.bindir+"/filter4"
-        for i in self.proclst.ydaydir:
-            if len(i.keys()) == len(self.complst) + 1:
-                for j in self.complst:
-                    for k in i[j]:
-                        src, tar, eqtar = k
-                        p = sp.Popen(filtercmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
-                        child = p.stdin
-                        print >>child, ltaper, lowerp, upperp, utaper, self.npow, src, tar
-                        err = child.close()
-                        ret = p.wait()
-                        if err or ret != 0:
-                            raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
-                        p = sp.Popen(filtercmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
-                        child = p.stdin
-                        print >>child, eqltaper, self.eqband[0], self.eqband[1], equtaper, self.npow, tar, eqtar
-                        err = child.close()
-                        ret = p.wait()
-                        if err or ret != 0:
-                            raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
-                        #shutil.copy2(tar,tar+'_filter')
-        return 1
-
-
-    def white_1_comp(self, upperp, lowerp):
-        """ calls sac routines to conduct whitening for Z-component"""
-        utaper = upperp - (float(upperp)/100)*20
-        ltaper = lowerp + (float(lowerp)/100)*20
-        saccmd = self.sacbin+' 1>/dev/null'
-        #whitefilter = self.bindir+'/white_1cmp'+' 1>/dev/null'
-        whitefilter = self.bindir+'/white_1cmp'
-        for i in self.proclst.ydaydir:
-            if len(i.keys()) == len(self.complst) +1:
-                for j in self.complst:
-                    for k in i[j]:
-                        p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
-                        child1 = p1.stdin
-                        src, tar, eqtar = k
-                        print tar
-                        print >>child1, "r %s" %(eqtar)
-                        print >>child1, "abs"
-                        print >>child1, "smooth mean h 128"
-                        print >>child1, "w over a1.avg"
-                        print >>child1, "r %s" %(tar)
-                        print >>child1, "divf a1.avg"
-                        print >>child1, "w over %s" %(tar)
-                        print >>child1, "q"
-                        err1 = child1.close()
-                        ret1 = p1.wait()
-                        if os.path.isfile('a1.avg'):
-                            #shutil.copy2(tar,tar+'_smooth')
-                            os.remove('a1.avg')
-                        if err1 or ret1 != 0:
-                            raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
-                        p2 = sp.Popen(whitefilter, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
-                        child2 = p2.stdin
-                        print >>child2, ltaper, lowerp, upperp, utaper, self.npow, tar
-                        err2 = child2.close()
-                        ret2 = p2.wait()
-                        if err2 or ret2 != 0:
-                            raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
-        return 1
-
-
-    def xtract_fn(self, file1, file2):
-        """check if 2 sacfiles have same station name and different horiz.
-        components (E and N)"""
-        [hf1, hi1, hs1, ok1] = p.ReadSacHeader(file1)
-        [hf2, hi2, hs2, ok2] = p.ReadSacHeader(file2)
-        if ok1:
-            stat1 = string.strip(p.GetHvalue('kstnm',hf1,hi1,hs1))
-            comp1 = string.strip(p.GetHvalue('kcmpnm',hf1,hi1,hs1))
-        else:
-            print "ERROR: cannot read in sac-header for file: ", src1
-            return 0
-        if ok2:
-            stat2 = string.strip(p.GetHvalue('kstnm',hf2,hi2,hs2))
-            comp2 = string.strip(p.GetHvalue('kcmpnm',hf2,hi2,hs2))
-        else:
-            print "ERROR: cannot read in sac-header for file: ", src2
-            return 0
-        if stat1 == stat2:
-            if comp1.endswith('N') and comp2.endswith('E'):
-                return 1
-            elif comp1.endswith('E') and comp2.endswith('N'):
-                return 1
-        else:
-            print "ERROR: station names are not the same"
-            return 0
-
-
-    def white_2_comp(self, upperp, lowerp):
-        """ call sac routines conduct whitening for North and East component"""
-        utaper = upperp - (float(upperp)/100)*20
-        ltaper = lowerp + (float(lowerp)/100)*20
-        whitefilter = self.bindir+'/white_2cmp'
-        saccmd = self.sacbin
-        for i in self.proclst.ydaydir:
-            if len(i.keys()) == len(self.complst) +1:
-                for j in i[self.complst[0]]:
-                    for k in i[self.complst[1]]:
-                        src1, tar1, eqtar1 = j
-                        src2, tar2, eqtar2 = k
-                        if not self.xtract_fn(src1, src2):
-                            print "ERROR: files %s and %s inadequate!" %(src1, src2)
-                        else:
-                            p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
-                            child1 = p1.stdin
-                            print src1, src2
-                            print >>child1, "r %s %s" %(eqtar1, eqtar2)
-                            print >>child1, "abs"
-                            print >>child1, "smooth mean h 128"
-                            print >>child1, "w aaa bbb"
-                            print >>child1, "r aaa"
-                            print >>child1, "subf bbb"
-                            print >>child1, "abs"
-                            print >>child1, "addf aaa"
-                            print >>child1, "addf bbb"
-                            print >>child1, "div 2"
-                            print >>child1, "w a1.avg"
-                            print >>child1, "r %s %s" %(tar1, tar2)
-                            print >>child1, "divf a1.avg"
-                            print >>child1, "w %s %s" %(tar1, tar2)
-                            print >>child1, "q"
-                            err1 = child1.close()
-                            ret1 = p1.wait()
-                            if err1 or ret1 != 0:
-                                raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
-                            if os.path.isfile('./aaa'):
-                                os.remove('./aaa')
-                            if os.path.isfile('./bbb'):
-                                os.remove('./bbb')
-                            if os.path.isfile('./a1.avg'):
-                                os.remove('./a1.avg')
-                            p2 = sp.Popen(whitefilter, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
-                            child2 = p2.stdin
-                            print >>child2, ltaper, lowerp, upperp, utaper, self.npow, tar1, tar2
-                            err2 = child2.close()
-                            ret2 = p2.wait()
-                            if err2 or ret2 != 0:
-                                raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
-        return 1
+def white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
+    """Downweight parts with earthquakes and smooth the spectrum for
+    the vertical component"""
+    whitefilter = bindir+'/white_1cmp'+' 1>/dev/null'
+    #whitefilter = bindir+'/white_1cmp'
+    saccmd = sacbin+' 1>/dev/null'
+    p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+    child1 = p1.stdin
+    src, tar, eqtar = fns[0]
+    print >>child1, "r %s" %(eqtar+'_tmp')
+    print >>child1, "abs"
+    print >>child1, "smooth mean h 128"
+    print >>child1, "w over a1.avg"
+    print >>child1, "r %s" %(tar+'_tmp')
+    print >>child1, "divf a1.avg"
+    print >>child1, "w over %s" %(tar)
+    print >>child1, "q"
+    err1 = child1.close()
+    ret1 = p1.wait()
+    os.remove('a1.avg')
+    os.remove(eqtar+'_tmp')
+    os.remove(tar+'_tmp')
+    if err1 or ret1 != 0:
+        raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
+    p2 = sp.Popen(whitefilter, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+    child2 = p2.stdin
+    print >>child2, ltaper, lowerp, upperp, utaper, npow, tar
+    err2 = child2.close()
+    ret2 = p2.wait()
+    if err2 or ret2 != 0:
+        raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
+    os.remove(tar)
+    return 1
 
 
 
-    def create_dir_struct(self, dirname, month):
-        """ creates the dir-structure for the filtering and whitening step\n
-        and calls the filter and whitening subroutines"""
-        dirlist = os.listdir(dirname+'/'+month)
-        if not len(dirlist) >0:
-            raise Exception
-        bpfile = "%.1fto%.1f"%(self.upperp,self.lowerp)
-        for day in dirlist:
-            try:
-                for _d in self.skipdir:
-                    if day.find(_d) != -1:
-                        raise Exception()
-            except:
-                continue
-#            if day != bpfile and string.find(day, '.svn') == -1 and string.find(day, '5to100') == -1 and string.find(day, '5to100_EN') == -1:
-            self.cnt = self.cnt + 1
-            self.proclst.ydaydir.append({})
-            self.proclst.ydaydir[self.cnt]['name'] = day
-            #yeardir = os.path.basename(dirname)
-            yeardir = dirname.split('/')[-2]
-            eqdir = os.path.join(self.rootdir,bpfile,yeardir,month,day,'eqband')
-            if not os.path.isdir(eqdir):
-                os.makedirs(eqdir)
-            # get all ft-files with channel name given in complst;
-            # write them into strct
-            for i in range(0,len(self.complst)):
-                pattern="%s/%s/%s/%s*.%s.SAC"\
-                         %(dirname,month,day,self.prefix,self.complst[i])
-                print pattern
-                tmplist = glob.glob(pattern)
-                if len(tmplist) > 0:
-                    self.proclst.ydaydir[self.cnt][self.complst[i]] = []
-                    for _fn in tmplist:
-                        _fn = os.path.basename(_fn)
-                        src = dirname+'/'+month+'/'+day+'/'+_fn
-                        tar = os.path.join(self.rootdir,bpfile,yeardir,month,day,_fn)
-                        eqtar = os.path.join(self.rootdir,bpfile,yeardir,month,day,'eqband',_fn)
-                        self.proclst.ydaydir[self.cnt][self.complst[i]].append((src,tar,eqtar))
+def white_2_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
+    """Downweight parts with earthquakes and smooth the spectrum for
+    the two horizontal components simultaneously"""
+    whitefilter = bindir+'/white_2cmp'+' 1>/dev/null'
+    #whitefilter = bindir+'/white_2cmp'
+    saccmd = sacbin+' 1>/dev/null'
+    srcE, tarE, eqtarE = fns[0]
+    srcN, tarN, eqtarN = fns[1]
+    p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+    child1 = p1.stdin
+    print >>child1, "r %s %s" %(eqtarE+'_tmp', eqtarN+'_tmp')
+    print >>child1, "abs"
+    print >>child1, "smooth mean h 128"
+    print >>child1, "w aaa bbb"
+    print >>child1, "r aaa"
+    print >>child1, "subf bbb"
+    print >>child1, "abs"
+    print >>child1, "addf aaa"
+    print >>child1, "addf bbb"
+    print >>child1, "div 2"
+    print >>child1, "w a1.avg"
+    print >>child1, "r %s %s" %(tarE+'_tmp', tarN+'_tmp')
+    print >>child1, "divf a1.avg"
+    print >>child1, "w %s %s" %(tarE, tarN)
+    print >>child1, "q"
+    err1 = child1.close()
+    ret1 = p1.wait()
+    if err1 or ret1 != 0:
+        raise RuntimeError, '%r failed with exit code %d' %(saccmd, err1)
+    if os.path.isfile('./aaa'):
+        os.remove('./aaa')
+    if os.path.isfile('./bbb'):
+        os.remove('./bbb')
+    if os.path.isfile('./a1.avg'):
+        os.remove('./a1.avg')
+    os.remove(eqtarN+'_tmp')
+    os.remove(eqtarE+'_tmp')
+    os.remove(tarN+'_tmp')
+    os.remove(tarE+'_tmp')
+    p2 = sp.Popen(whitefilter, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+    child2 = p2.stdin
+    print >>child2, ltaper, lowerp, upperp, utaper, npow, tarE, tarN
+    err2 = child2.close()
+    ret2 = p2.wait()
+    if err2 or ret2 != 0:
+        raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
+    os.remove(tarE)
+    os.remove(tarN)
+    return 1
 
-    def process(self):
-        print "filtering...."
-        self.filter4_f(self.upperp, self.lowerp)
-        if len(self.complst) < 2:
-            print "whitening...."
-            self.white_1_comp(self.upperp, self.lowerp)
-        elif len(self.complst) == 2:
-            print "whitening 2 components...."
-            self.white_2_comp(self.upperp, self.lowerp)
-        else:
-            print "ERROR: number of components too big or too small!"
-            sys.exit(1)
+def filter_f(fns,ltaper,lowerp,upperp,utaper,eqband,eqltaper,equtaper,npow,bindir):
+    """
+    Filter seismograms in analysis band and earthquake band
+    """
+    #filtercmd = bindir+"/filter4"
+    filtercmd = bindir+"/filter4 1>/dev/null"
+    for src,tar,eqtar in fns:
+        p = sp.Popen(filtercmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+        child = p.stdin
+        print >>child, ltaper, lowerp, upperp, utaper, npow, src, tar+'_tmp'
+        err = child.close()
+        ret = p.wait()
+        if err or ret != 0:
+            raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
+        p = sp.Popen(filtercmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
+        child = p.stdin
+        print >>child, eqltaper, eqband[0], eqband[1], equtaper, npow, tar+'_tmp', eqtar+'_tmp'
+        err = child.close()
+        ret = p.wait()
+        if err or ret != 0:
+            raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
+    return 1
+
+def specnorm(sdb,ne,ns,upperp,lowerp,rootdir,polarity='vertical',eqband=[50,15],
+             bindir=os.path.join(os.environ['AUTO_SRC'],'bin'),sacbin=None,npow=1):
+    """
+    Check filenames and call filtering and normalization functions.
+    """
+    utaper = upperp - (float(upperp)/100)*20
+    ltaper = lowerp + (float(lowerp)/100)*20
+    equtaper = eqband[1] - (float(eqband[1])/100)*20
+    eqltaper = eqband[0] + (float(eqband[0])/100)*20
+    if polarity == 'horizontal':
+        srcE = sdb.rec[ne][ns].ft_fname
+        srcN = srcE.replace('E.SAC','N.SAC')
+        if not os.path.isfile(srcE): return 1
+        if not os.path.isfile(srcN): return 1
+        bpfile = "%.1fto%.1f"%(upperp,lowerp)
+        year = str(sdb.ev[ne].yy)
+        month = months[sdb.ev[ne].mm]
+        day = "%s_%d_%d_0_0_0"%(year,sdb.ev[ne].mm,sdb.ev[ne].dd)
+        bpdir = os.path.join(rootdir,bpfile,year,month,day)
+        eqdir = os.path.join(rootdir,bpfile,year,month,day,'eqband')
+        if not os.path.isdir(eqdir):
+            os.makedirs(eqdir)
+        eqtarE = os.path.join(eqdir,os.path.basename(srcE))
+        tarE = os.path.join(bpdir,os.path.basename(srcE))
+        eqtarN = os.path.join(eqdir,os.path.basename(srcN))
+        tarN = os.path.join(bpdir,os.path.basename(srcN))
+        fns = [(srcE,tarE,eqtarE),(srcN,tarN,eqtarN)]
+    if polarity == 'vertical':
+        src = sdb.rec[ne][ns].ft_fname
+        if not os.path.isfile(src): return 1
+        bpfile = "%.1fto%.1f"%(upperp,lowerp)
+        year = str(sdb.ev[ne].yy)
+        month = months[sdb.ev[ne].mm]
+        day = "%s_%d_%d_0_0_0"%(year,sdb.ev[ne].mm,sdb.ev[ne].dd)
+        bpdir = os.path.join(rootdir,bpfile,year,month,day)
+        eqdir = os.path.join(rootdir,bpfile,year,month,day,'eqband')
+        if not os.path.isdir(eqdir):
+            os.makedirs(eqdir)
+        eqtar = os.path.join(eqdir,os.path.basename(src))
+        tar = os.path.join(bpdir,os.path.basename(src))
+        fns = [(src,tar,eqtar)]
+        
+    ### filtering and temporal normalization
+    filter_f(fns,ltaper,lowerp,upperp,utaper,eqband,eqltaper,equtaper,npow,bindir)
+    ### whitening
+    if polarity == 'vertical':
+        white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin)
+    if polarity == 'horizontal':
+        white_2_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin)
+    return 1
 
 
-    def dir_walk(self, arg, dirname, names):
-        """ called by os.path.walk; checks if the directory 'dirname\n
-        holds any 'month' subdirectories"""
-        try:
-            for i in names:
-                if i in self.months:
-                    self.create_dir_struct(dirname, i)
-                else:
-                    continue
-        except Exception,e:
-            print "ERROR in dir_walk function: ",e
         
 
 if __name__ == '__main__':
@@ -274,16 +195,35 @@ if __name__ == '__main__':
     conf.read(config)
 
     # frequency band +- 20% as taper
-    sacdir  = conf.get("whitening", "sacfiles")
     rootdir = conf.get("whitening","rootdir")
     sacbin  = conf.get("whitening", "sacbin")
     bindir  = conf.get("whitening", "bindir")
-    prefix  = conf.get("whitening", "prefix")
     upperp  = float(conf.get("whitening", "upperperiod"))
     lowerp  = float(conf.get("whitening", "lowerperiod"))
-    complst = conf.get("whitening","complist")
-    skipdir = conf.get("whitening","skip_directories").split(',')
-    test = DoWhiten(sacdir,rootdir,prefix,complst,sacbin=sacbin,bindir=bindir,\
-                    upperp=upperp,lowerp=lowerp,skipdir=skipdir)
-    os.path.walk(test.sacdir, test.dir_walk, 0)
-    test.process()
+    polarity = conf.get("whitening","polarity")
+    tmpdir = conf.get("whitening","tmpdir")
+    dbname = conf.get("whitening","dbname")
+    sdbf = os.path.join(tmpdir,dbname)
+    sdb = sac_db.read_db(sdbf)
+    if not DEBUG:
+        widgets = ['whitening: ', pg.Percentage(), ' ', pg.Bar('#'),
+                   ' ', pg.ETA()]
+        pbar = pg.ProgressBar(widgets=widgets, maxval=sdb.nev).start()
+    for ne in xrange(sdb.nev):
+        if not DEBUG:
+            pbar.update(ne)
+        for ns in xrange(sdb.nst):
+            specnorm(sdb,ne,ns,upperp,lowerp,rootdir,polarity=polarity,sacbin=sacbin,bindir=bindir)
+        try:
+            year = str(sdb.ev[ne].yy)
+            month = months[sdb.ev[ne].mm]
+            day = "%s_%d_%d_0_0_0"%(year,sdb.ev[ne].mm,sdb.ev[ne].dd)
+            bpfile = "%.1fto%.1f"%(upperp,lowerp)
+            eqdir = os.path.join(rootdir,bpfile,year,month,day,'eqband')
+            os.rmdir(eqdir)
+        except:
+            print "cannot remove %s"%eqdir
+            continue
+    if not DEBUG:
+        pbar.finish()
+            

@@ -40,7 +40,7 @@ int main (int argc, char *argv[])
 	}
       n  = shd.npts;
       dt = shd.delta;
-      fprintf(stderr,"%d %f\n",n,dt);
+      fprintf(stdout,"%d %f\n",n,dt);
       /* ==========================================================
        * Parameters for filter4 function:
        * Input parameters:
@@ -55,13 +55,13 @@ int main (int argc, char *argv[])
        * ==========================================================
        */
       f1 = 1.0/t1; f2 = 1.0/t2; f3 = 1.0/t3; f4 = 1.0/t4;
-      fprintf(stderr,"Parameters for filter 4 are:\n");
-      fprintf(stderr,"--> f1: %f\n", f1);
-      fprintf(stderr,"--> f2: %f\n", f2);
-      fprintf(stderr,"--> f3: %f\n", f3);
-      fprintf(stderr,"--> f4: %f\n", f4);
-      fprintf(stderr,"--> filein: %s\n", name_in);
-      fprintf(stderr,"--> fileout: %s\n", name_out);
+      fprintf(stdout,"Parameters for filter 4 are:\n");
+      fprintf(stdout,"--> f1: %f\n", f1);
+      fprintf(stdout,"--> f2: %f\n", f2);
+      fprintf(stdout,"--> f3: %f\n", f3);
+      fprintf(stdout,"--> f4: %f\n", f4);
+      fprintf(stdout,"--> filein: %s\n", name_in);
+      fprintf(stdout,"--> fileout: %s\n", name_out);
       filter4_(&f1,&f2,&f3,&f4,&npow,&dt,&n,seis_in,seis_out);
 
       /*write results to SAC file*/

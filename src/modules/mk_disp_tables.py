@@ -23,7 +23,12 @@ DEBUG=False
 class PrepDispErr(Exception): pass
 
 #errfunc = lambda x: 8.55505471/x**4+0.04123099
-errfunc = lambda x: exp(-0.31848102*x-0.98812633)
+errfunc_ray_c = lambda x: exp(-0.31848102*x-0.98812633)
+errfunc_ray_u = lambda x: exp(-0.20673484*x-1.12889062)
+#errfunc_love_c = lambda x: -0.0849934*x+0.61839154
+#errfunc_love_u = lambda x: -0.09042785*x+0.66026575
+errfunc_love_u = lambda x: exp(-0.6629919*x+1.74697943)
+errfunc_love_c = lambda x: exp(-0.76648915*x+2.22832571)
 
 class PrepDisp:
     def __init__(self,cnf):
@@ -34,6 +39,7 @@ class PrepDisp:
         self.dispdirs = cnf.get('mktables','dispdir').split(',')
         self.outdir = cnf.get('mktables','outdir')
         self.radial = cnf.getboolean('mktables','radial')
+        self.wtype = cnf.get('mktables','wtype')
         if not os.path.isdir(self.outdir):
             os.makedirs(self.outdir)
         self.spattern  = cnf.get('mktables','spattern')
@@ -185,19 +191,31 @@ class PrepDisp:
         st1nm = xtr.GetHvalue('kstnm')
         st2nm = xtr.GetHvalue('kevnm')
         dist  = xtr.GetHvalue('dist')
+        if self.wtype == 'rayleigh':
+            if self.dtype == 'group':
+                errfunc = errfunc_ray_u
+            if self.dtype == 'phase':
+                errfunc = errfunc_ray_c
+        if self.wtype == 'love':
+            if self.dtype == 'group':
+                errfunc = errfunc_love_u
+            if self.dtype == 'phase':
+                errfunc = errfunc_love_c
+                
         for _i in sorted(self.vmax.keys()):
             if per <= _i:
                 vmax = self.vmax[_i]
                 break
         if dist > self.dthresh*vmax*per:
+            error = abs(dispval-pl.normal(dispval,abs(errfunc(snrval))))
             newline = "%d  %f  %f  %f  %f  %f  1  1  %s %s %f"\
                       %(per,evla,evlo,stla,stlo,dispval,st1nm,st2nm,snrval)
             print >>fh[0], newline
             newline = "%d  %f  %f  %f  %f  %f  1  1  %s %s %f"\
-                      %(per,evla,evlo,stla,stlo,dispval+errfunc(snrval),st1nm,st2nm,snrval)
+                      %(per,evla,evlo,stla,stlo,dispval+error,st1nm,st2nm,snrval)
             print >>fh[1], newline
             newline = "%d  %f  %f  %f  %f  %f  1  1  %s %s %f"\
-                      %(per,evla,evlo,stla,stlo,dispval-errfunc(snrval),st1nm,st2nm,snrval)
+                      %(per,evla,evlo,stla,stlo,dispval-error,st1nm,st2nm,snrval)
             print >>fh[2], newline
             
         else:

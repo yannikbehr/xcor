@@ -242,7 +242,9 @@ if __name__ == '__main__':
     for _p in period:
         if plot_map:
             map2D = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d.1'%(prefix,_p))
-            if not os.path.isfile(map2D): continue
+            if not os.path.isfile(map2D):
+                print "cannot find ",map2D
+                continue
             fout = os.path.join(mapdir,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_%d_%s_%s.pdf'%(prefix,_p,alpha,sigma))
         else:
             map2D = None

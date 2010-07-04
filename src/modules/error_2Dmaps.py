@@ -41,14 +41,24 @@ def _get_scale_tick_(zmin,zmax):
     return vstep
 
 periods = range(3,26)
-#periods = range(4,5)
-mapdirmax = '/data/wanakaII/yannik/cnipse/inversion/phase_maps_max/zz/'
-mapdirmin = '/data/wanakaII/yannik/cnipse/inversion/phase_maps_min/zz/'
-mapdirerr = '/data/wanakaII/yannik/cnipse/inversion/phase_maps_error/zz/'
-alpha = 400
-sigma = 400
+#periods = range(8,9)
+periods = range(3,13)
+
+mapdirmax = '/data/wanakaII/yannik/cnipse/inversion/group_maps_max/zz/'
+mapdirmin = '/data/wanakaII/yannik/cnipse/inversion/group_maps_min/zz/'
+mapdirerr = '/data/wanakaII/yannik/cnipse/inversion/group_maps_error/zz/'
+mapdirmax = '/data/wanakaII/yannik/cnipse/inversion/group_maps_max/tt/'
+mapdirmin = '/data/wanakaII/yannik/cnipse/inversion/group_maps_min/tt/'
+mapdirerr = '/data/wanakaII/yannik/cnipse/inversion/group_maps_error/tt/'
+mapdirmax = '/data/wanakaII/yannik/cnipse/inversion/phase_maps_max/tt/'
+mapdirmin = '/data/wanakaII/yannik/cnipse/inversion/phase_maps_min/tt/'
+mapdirerr = '/data/wanakaII/yannik/cnipse/inversion/phase_maps_error/tt/'
+if not os.path.isdir(mapdirerr):
+    os.makedirs(mapdirerr)
+alpha = 200
+sigma = 200
 beta = 1
-prefix = '2lambda_7'
+prefix = '2lambda_5'
 for _p in periods:
     map2Dmax = os.path.join(mapdirmax,str(_p),'%s_%s_%s'%(alpha,sigma,beta),'%s_max_%d.1'%(prefix,_p))
     if not os.path.isfile(map2Dmax):continue
@@ -57,7 +67,7 @@ for _p in periods:
 
     lon,lat,vmax = loadtxt(map2Dmax,unpack=True)
     vmin = loadtxt(map2Dmin,usecols=(2,))
-    err = (vmax-vmin)/2.
+    err = abs((vmax-vmin))/2.
     gmt = GMT()
     scl = 'M10c'
     scalebar = '3.c/-1.6c/6c/.2ch'

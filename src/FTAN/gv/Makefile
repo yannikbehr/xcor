@@ -11,11 +11,11 @@ ofiles = dspline.o\
 	 lim.o
 
 %.o:%.f
-	gfortran -c -ffixed-line-length-none $<
+	gfortran -c -ffixed-line-length-none -fPIC $<
 
 
 aftan4i: $(ofiles)
-	$(F2PY) -c ftan.pyf ftan.f $(ofiles) -lfftw3
+	$(F2PY)  -c ftan.pyf ftan.f $(ofiles) -lfftw3
 
 
 clean:

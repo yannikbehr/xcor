@@ -3,7 +3,7 @@
 CC = gcc
 CPP = g++
 FC = gfortran
-F2PY = /usr/bin/f2py2.5
+F2PY = /usr/local/python2.6/bin/f2py
 
 PYTHON = /usr/include/python2.4 
 NUMPY = /usr/lib/python2.4/site-packages/numpy/core/include/numpy

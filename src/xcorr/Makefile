@@ -28,13 +28,17 @@ FFLAGS = $(DBG)  $(fflags)
 
 CFLAGS = $(DBG) $(cflags)
 
-LDLIBS = -lfftw3 -lgcc -lm -lgsl -lgslcblas
+#LDLIBS = -lfftw3 -lgcc -lm -lgsl -lgslcblas
+LDLIBS = -lfftw3 -lgcc -lm -limf
 
 FOBJS = dcommon.o dmultifft.o 
 
+#binofiles = justCOR.o\
+#	    justCOR_EE_EN.o\
+#	    xcor_h.o
+
 binofiles = justCOR.o\
-	    justCOR_EE_EN.o\
-	    xcor_h.o
+	    justCOR_EE_EN.o
 
 ofiles = $(VPATH)/iniparser.o\
 	 $(VPATH)/mysac.o
@@ -45,7 +49,8 @@ ofiles = $(VPATH)/iniparser.o\
 %.o:%.f 
 	$(FC) $(FFLAGS) $<
 
-all: $(BIN1) $(BIN2) $(BIN3)
+#all: $(BIN1) $(BIN2) $(BIN3)
+all: $(BIN1) $(BIN2)
 
 $(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj 
 	$(CC) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS)
@@ -53,12 +58,12 @@ $(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj
 $(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
 	$(CC) justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS)
 
-$(BIN3) :   module_obj
-	$(CC) -g -Wall -I $(VPATH) xcor_h.c $(ofiles) -o $(BIN3) $(LDLIBS)
+#$(BIN3) :   module_obj
+#	$(CC) -g -Wall -I $(VPATH) xcor_h.c $(ofiles) -o $(BIN3) $(LDLIBS)
 
-test: test_xcor_h.c xcor_h.c
-	$(CC) -D TEST -I $(VPATH) -g -c xcor_h.c;
-	$(CC) -D TEST -I $(VPATH) -g test_xcor_h.c -o test xcor_h.o $(ofiles) -lm -lgsl -lgslcblas
+#test: test_xcor_h.c xcor_h.c
+#	$(CC) -D TEST -I $(VPATH) -g -c xcor_h.c;
+#	$(CC) -D TEST -I $(VPATH) -g test_xcor_h.c -o test xcor_h.o $(ofiles) -lm -lgsl -lgslcblas
 
 module_obj:
 	cd $(VPATH); make objects

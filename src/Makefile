@@ -6,7 +6,7 @@
 #%.o:%.cpp
 #	g++ -g -c $<
 ############## INSTALLER ########################
-BINDIR = ../bin
+BINDIR = ../bin/
 
 include makeauto.macro
 VPATH = modules
@@ -27,7 +27,7 @@ options = -g -Wall -I/usr/local/include -L/usr/local/lib
 all: cut initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter
 
 cut: 	module_obj cut_trans_mod.c
-	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm
+	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm -limf
 
 initsacdb: module_obj initsac_db.c
 	$(CC) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
@@ -61,7 +61,7 @@ install:
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
 	install	./xcorr/justCOR_EE_EN $(BINDIR);\
-	install	./xcorr/xcor_h $(BINDIR);\
+#	install	./xcorr/xcor_h $(BINDIR);\
 	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\
@@ -74,7 +74,7 @@ clean:
 	rm ../bin/*;\
 	cd ./FTAN/pv; make clean; cd -;\
 	cd ./FTAN/gv; make clean;\
-	
+
 
 tilde: 
 	-rm -f $(VPATH)/*~ 

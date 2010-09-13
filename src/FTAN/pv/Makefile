@@ -11,7 +11,7 @@ ofiles = mspline.o\
 	 tgauss.o
 
 %.o:%.f
-	gfortran -c -ffixed-line-length-none $<
+	gfortran -c -ffixed-line-length-none -fPIC  $<
 
 
 aftan4i: $(ofiles)

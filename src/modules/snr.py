@@ -1,4 +1,4 @@
-#!/usr/bin/env mypython
+#!/usr/bin/env python
 
 """
 measure signal-to-noise ratios of cross-correlations
@@ -43,8 +43,10 @@ def get_snr(xcorfiles,pattern):
         snr = array([])
         ### define the signal window
         minT = max(int(x.b),int(x.dist/maxV - maxP))
+        #print "minT is: %i" % minT
         e = x.b+x.npts*x.delta
         maxT = min(int(e-1000),int(x.dist/minV + 2*maxP))
+        #print "maxT is: %i" % maxT
         for k in xrange(1,freqs.size-1):
             f2 = freqs[k+1]
             f3 = freqs[k-1]

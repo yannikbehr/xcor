@@ -23,7 +23,6 @@ def abs_time(yy,jday,hh,mm,ss,ms):
     return 24.*3600.*(nyday+jday) + 3600.*hh + 60.*mm + ss + 0.001*ms
 
 
-
 def cut(sdb,ne,ns,t1,nos):
     """
     cut traces precisely
@@ -43,14 +42,35 @@ def cut(sdb,ne,ns,t1,nos):
     ss   = p.GetHvalue('nzsec')
     ms   = p.GetHvalue('nzmsec')
     b    = p.GetHvalue('b')
+    
+    if DEBUG:
+        print dt
+        print npts
+        print yy
+        print jday
+        print hh
+        print mm
+        print ss
+        print ms
+        print b
+        
     ### correct for milli-seconds in trace by linear interpolation
     tb   = sdb.rec[ne][ns].t0
     te   = sdb.ev[ne].t0
     t2   = t1 + (nos-1)
     t1b  = tb-te
     t1e  = t1b + (npts-1)*dt
+    
+    if DEBUG:
+        
+        print tb
+        print te
+        print t2
+        print t1b
+        print t1e
+        
     if t1b>t1 or t1e<t2 or t1e > 100000/dt:
-        #print "ERROR: incompatible time limits for %s; cannot cut"%(fin)
+        print "ERROR: incompatible time limits for %s; cannot cut"%(fin)
         return
     if ms > 0.:
         frac = (int((0.001*ms+dt)/dt)*dt-0.001*ms)/dt
@@ -79,7 +99,7 @@ def cut(sdb,ne,ns,t1,nos):
 
 
 def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
-            plow=160.,phigh=4.,sacbin = '/usr/local/sac/bin/sac',
+            plow=160.,phigh=4.,sacbin = '/usr/local/sac101.3b/bin/sac',
             t1=1000,nos=84000):
     """
     downsample traces, remove mean, trend, cut them to the exact same

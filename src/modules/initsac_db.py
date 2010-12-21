@@ -1,4 +1,4 @@
-#!/usr/bin/env mypython
+#!/usr/bin/env python
 """
 wrapper for initsac_db C-routine
 """

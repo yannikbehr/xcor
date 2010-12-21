@@ -1,4 +1,4 @@
-#!/usr/bin/env mypython
+#!/usr/bin/env python
 """extract mseed data from geonet download and put them into the right\n
 directory structure together with their corresponding response files"""
 
@@ -8,8 +8,9 @@ import subprocess as sp
 import pysacio as p
 from ConfigParser import SafeConfigParser
 import progressbar as pg
+from obspy.sac import *
 
-DEBUG = False
+DEBUG = True
 
 class SaFromMseed:
     def __init__(self, dataless, respdir, outputdir, bindir, rdseed):
@@ -25,6 +26,8 @@ class SaFromMseed:
 
     def __call__(self, mseedir, sacdiroot, spat):
         self.proc_mseed(mseedir, sacdiroot, spat)
+    #def __call__(self, mseedir, sacdiroot, spat):
+        #self.proc_mseed_file(mseedfile, sacdiroot, mseedir)
 
 
 
@@ -53,7 +56,9 @@ class SaFromMseed:
                `d.tm_year`+'_'+`d.tm_mon`+'_'+`d.tm_mday`+'_0_0_0/'
         if not os.path.isdir(ddir):
             os.makedirs(ddir)
-        filename = ddir+'/'+stn+'.'+chan+'.SAC'
+	filename = os.path.join(ddir,stn+'.'+chan+'.SAC')
+
+        #filename = ddir+'/'+stn+'.'+chan+'.SAC'
         return filename
     
 
@@ -62,14 +67,16 @@ class SaFromMseed:
         listfiles = glob.glob(dir+'/*.SAC')
         stations = {}
         for file in listfiles:
-            [hf,hi,hs,ok] = p.ReadSacHeader(file)
-            if not ok:
-                print "ERROR: cannot read in sac-header: ", file
+             
+            try:
+		trace = SacIO(file, headonly=True)
+	    except SacIOError:	
+		print "ERROR: cannot read in sac-header: ", file
             else:
-                year = `p.GetHvalue('nzyear',hf,hi,hs)`
-                yday = `p.GetHvalue('nzjday',hf,hi,hs)`
-                stn  = p.GetHvalue('kstnm',hf,hi,hs).strip()
-                chan = p.GetHvalue('kcmpnm',hf,hi,hs).strip()
+                year = `trace.GetHvalue('nzyear')`
+                yday = `trace.GetHvalue('nzjday')`
+                stn  = trace.GetHvalue('kstnm').strip()
+                chan = trace.GetHvalue('kcmpnm').strip()
                 date = time.strptime(year+" "+yday,"%Y %j")
                 if stn not in stations.keys():
                     stations[stn] = {}
@@ -90,7 +97,10 @@ class SaFromMseed:
         """run c-code to merge several sac-files of the same day into
         one big sac-file"""
         try:
-            mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn+" 2>/dev/null 1>/dev/null"
+            #mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn+" 2>/dev/null 1>/dev/null"
+	    mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn
+	    if DEBUG:
+		print "Merge cmd: ", mergesaccmd
             p = sp.Popen(mergesaccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
             child = p.stdin
             for i in filelist:
@@ -125,6 +135,9 @@ class SaFromMseed:
         if DEBUG:
             print "searching for pattern %s"%os.path.join(mseedir,spat)
         files = glob.glob(os.path.join(mseedir,spat))
+	if len(files) < 1:
+		print "No files found!"
+		return
         cnt = 0
         if not DEBUG:
             widgets = ['mSEED2sac: ', pg.Percentage(), ' ', pg.Bar('#'),
@@ -138,22 +151,80 @@ class SaFromMseed:
                 pbar.update(cnt)
 
             if os.path.isfile(fn):
-                if not os.path.isdir(mseedir+self.outputdir):
-                    os.mkdir(mseedir+self.outputdir)
+                tempout = os.path.join(mseedir,'sacfiles_local')
+                #tempout = os.path.join(mseedir,self.outputdir)
+		if not os.path.isdir(tempout):
+                    os.mkdir(tempout)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
-                          mseedir+self.outputdir+' -b 9000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
+                          tempout+' -b 512000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
                 if DEBUG:
                     print command
                 os.system(command)
-                g = self.get_ms_cont(mseedir+self.outputdir)
+                g = self.get_ms_cont(tempout)
                 for i in g.keys():
                     for j in g[i].keys():
                         if j != 'date':
                             filename = self.mk_fn(i,j,g[i]['date'], sacdir)
+			    
+			    if os.path.isfile(filename):
+			      pass
+			    else:
+			    
+			      if DEBUG:
+				  print "--> writing file ", filename
+			      if self.merge_sac(g[i][j],filename):
+				  pass
+				#self.cp_resp(i, j, filename)
+				# file name is not actually being transferred i nthis function but in merge_sac which is not working
+				
+                            for k in g[i][j]:
+                                pass
+				#os.remove(k)
+        if not DEBUG:
+            pbar.finish()
+            
+    def proc_mseed_file(self, mseedfile, sacdir, mseedir):
+        """main function to process mseed files"""
+        if DEBUG:
+            print "searching for file: %s" % os.path.join(mseedfile)
+        files = glob.glob(os.path.join(mseedfile))
+	if len(files) < 1:
+		print "No files found!"
+		return
+        cnt = 0
+        if not DEBUG:
+            widgets = ['mSEED2sac: ', pg.Percentage(), ' ', pg.Bar('#'),
+                            ' ', pg.ETA()]
+            pbar = pg.ProgressBar(widgets=widgets, maxval=len(files)).start()
+        for fn in files:
+            if DEBUG:
+                print fn
+            else:
+                cnt +=1
+                pbar.update(cnt)
+
+            if os.path.isfile(fn):
+                tempout = os.path.join(mseedir,self.outputdir)
+		if not os.path.isdir(tempout):
+                    os.mkdir(tempout)
+                command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
+                          tempout+' -b 9000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
+                if DEBUG:
+                    print command
+                os.system(command)
+                g = self.get_ms_cont(tempout)
+                for i in g.keys():
+                    for j in g[i].keys():
+                        if j != 'date':
+                            filename = self.mk_fn(i,j,g[i]['date'], sacdir)
+			    
                             if DEBUG:
                                 print "--> writing file ", filename
                             if self.merge_sac(g[i][j],filename):
-                                self.cp_resp(i, j, filename)
+                                pass
+				#self.cp_resp(i, j, filename)
+				# file name is not actually being transferred i nthis function but in merge_sac which is not working
+				
                             for k in g[i][j]:
                                 os.remove(k)
         if not DEBUG:
@@ -171,11 +242,10 @@ if __name__ == '__main__':
             rdseed = cp.get('mseed2sac','rdseed')
             bindir   = cp.get('mseed2sac','bindir')
             mseedir  = cp.get('mseed2sac','mseedir')
-            sacfiles = cp.get('mseed2sac','sacfiles')
+            outputdir = cp.get('mseed2sac','outputdir')
             dataless = cp.get('mseed2sac','dataless')
-            respfiles= cp.get('mseed2sac','respfiles')
+            respdir = cp.get('mseed2sac','respdir')
             spat     = cp.get('mseed2sac','search_pattern')
-            outputdir = 'sacfiles'
         else:
             print "encountered unknown command line argument"
             raise Exception
@@ -183,5 +253,5 @@ if __name__ == '__main__':
         print "usage: %s -c config-file"%os.path.basename(sys.argv[0])
         sys.exit(1)
 
-    t = SaFromMseed(dataless, respfiles, outputdir, bindir, rdseed)
-    t(mseedir, sacfiles, spat)
+    t = SaFromMseed(dataless, respdir, outputdir, bindir, rdseed)
+    t(mseedir, outputdir, spat)

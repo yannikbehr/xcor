@@ -53,7 +53,7 @@ SAC_HD *read_sac_header(char *fname, SAC_HD *SHD)
  FILE *fsac;
 /*..........................................................................*/
         if((fsac = fopen(fname, "rb")) == NULL) {
-          printf("could not open sac file to read\n");
+          fprintf(stderr,"Could not open sac file %s to read\n",fname);
           exit(1);
         }
 
@@ -97,7 +97,7 @@ int write_sac (char *fname, float *sig, SAC_HD *SHD){
   int i, ret;
   fsac = fopen(fname, "wb");
   if( NULL == fsac ) {
-    fprintf(stderr,"could not open sac file to write\n");
+    fprintf(stderr,"Could not open sac file %s to write\n",fname);
     return 0;
    }
   if ( !SHD ) SHD = &SAC_HEADER;
@@ -148,6 +148,8 @@ float *read_sac_dyn (char *fname, SAC_HD *SHD){
   if(sig != NULL){
     fread(sig,sizeof(float),(int)(SHD->npts),fsac);
   }else{
+    printf("%s\n", fname);
+    printf("%d\n", (int)(SHD->npts));
     printf("ERROR: nomore virtual RAM available!\n");
     return NULL;
   } 

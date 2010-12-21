@@ -3,7 +3,10 @@
 CC = gcc
 CPP = g++
 FC = gfortran
-F2PY = /usr/local/python2.6/bin/f2py
+F2PY = /usr/bin/f2py26
+CFLAGS = -m32
+MODULES = /Users/home/carrizad/Desktop/xcorr/xcorr_git/src/modules
 
-PYTHON = /usr/include/python2.4 
-NUMPY = /usr/lib/python2.4/site-packages/numpy/core/include/numpy
+# Change back to python2.4 if not working
+PYTHON = /usr/include/python2.6
+NUMPY = /usr/lib/python2.6/site-packages/numpy/core/include/numpy

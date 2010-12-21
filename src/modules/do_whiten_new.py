@@ -1,4 +1,4 @@
-#!/usr/bin/env mypython
+#!/usr/bin/env python
 """Do temporal and spectral normalization by calling sac-routines and
 the fortran routines filter4.f, white_phamp_2cmp.f and
 white_phamp_1cmp.f by calling their respective C-drivers.
@@ -9,6 +9,8 @@ import subprocess as sp
 import sac_db
 from ConfigParser import SafeConfigParser
 import progressbar as pg
+from obspy.core import read
+from obspy.sac import *
 
 DEBUG=False
 months = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',
@@ -23,7 +25,9 @@ def white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
     p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
     child1 = p1.stdin
     src, tar, eqtar = fns[0]
+    print src, tar, eqtar
     print >>child1, "r %s" %(eqtar+'_tmp')
+    print "r %s" %(eqtar+'_tmp')
     print >>child1, "abs"
     print >>child1, "smooth mean h 128"
     print >>child1, "w over a1.avg"
@@ -113,7 +117,7 @@ def filter_f(fns,ltaper,lowerp,upperp,utaper,eqband,eqltaper,equtaper,npow,bindi
         err = child.close()
         ret = p.wait()
         if err or ret != 0:
-            raise RuntimeError, '%r failed with exit code %d' %(filtercmd, err)
+            raise RuntimeError, '%r failed with exit code %d' % (filtercmd, err)
         p = sp.Popen(filtercmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
         child = p.stdin
         print >>child, eqltaper, eqband[0], eqband[1], equtaper, npow, tar+'_tmp', eqtar+'_tmp'

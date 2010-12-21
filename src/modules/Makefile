@@ -1,35 +1,46 @@
 include ../makeauto.macro
 
-FFLAGS = -I /usr/local/include -I /usr/include
+FFLAGS = -I /usr/local/include -I /usr/includ
+CFLAGS = -m32 
 
 hfiles = \
-	iniparser.h
+	iniparser.h\
+	mysac.h
+
 
 ofiles = \
-	iniparser.o\
-	filter4.o\
-	white_phamp_2cmp.o\
+ 	mysac.o\
 	white_phamp_1cmp.o\
-	mysac.o
+	white_phamp_2cmp.o\
+	filter4.o\
+	iniparser.o\
 
-sofiles = \
-	fft_filter.so\
-	fft_filter_c.so
+
+
+#sofiles = \
+#	fft_filter.so\
+#	fft_filter_c.so
 
 %.o:%.c 
-	$(CC) -g -c  $<  
+	$(CC) -g  -c $(CFLAGS) $<  
 
 %.o:%.f 
-	$(FC) -g -c $(FFLAGS) $<  
+	$(FC) -g -c $(FFLAGS)  $<  
 
-%.so:%.f90
-	$(FC) -g $(FFLAGS) -shared $< -o $@ -lfftw3 -fPIC
+#%.so:%.f90
+	$(FC) -g $(FFLAGS) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
 
 %.so:%.c
-	$(FC) -g $(FFLAGS) -shared $< -o $@ -lfftw3 -fPIC
+	$(FC) -g $(FFLAGS) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
 
 objects: $(ofiles) $(hfiles) $(sofiles)
 
 
 clean:
 	rm *.o *.pyc
+
+	#iniparser.o\
+	#white_phamp_2cmp.o\
+	#white_phamp_1cmp.o\
+	#mysac.o
+#

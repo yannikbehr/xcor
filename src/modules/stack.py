@@ -1,13 +1,16 @@
-#!/usr/bin/env mypython
+#!/usr/bin/env python
 """script to stack horizontal component cross-correlation results"""
 
 import numpy as np
 import array as a
-import pysacio as p
-import os.path, glob, re, sys, string, math
+import pysacio as pysac
+from obspy.sac import *
+import os, os.path, glob, re, sys, string, math
 from ConfigParser import SafeConfigParser
-sys.path.append('/home/behrya/dev/proc-scripts')
-import delaz as dz
+sys.path.append('/Users/home/carrizad/Desktop/xcorr/xcorr_git/src/modules')
+#import delaz as dz
+from obspy.signal.rotate import gps2DistAzimuth
+
 import logging
 
 class PAR: pass
@@ -23,23 +26,34 @@ def find_match(par,dirname,filelist):
             return
         
     print '... in %s'%dirname
-    corfiles = glob.glob(dirname+'/COR*')
+    corfiles = glob.glob(os.path.join(dirname,par.spattern))
     if len(corfiles) > 0:
         for f in corfiles:
-            match = re.search(par.spattern,f)
+            match = re.search('COR_(\\w*_\\w*).SAC',f)
+            #print match
             if match:
-                [hf,hi,hs,seis,ok] = p.ReadSacFile(f)
-                if not ok:
-                    par.log.error("ERROR: cannot read sac-file %s" %(f))
-                    return -1
-                trace = np.array(seis, dtype=float)
+                #[hf,hi,hs,seis,ok] = p.ReadSacFile(f)
+                p = SacIO(f)
+                #hf = p.GetHvalue('hf')
+                #hi = p.GetHvalue('hi')
+                #hs = p.GetHvalue('hs')
+                hf = p.hf
+                hi = p.hi
+                hs = p.hs
+                
+#                if not ok:
+#                    par.log.error("ERROR: cannot read sac-file %s" %(f))
+#                    return -1
+                trace = np.array(p.seis, dtype=float)
                 ### check if trace has values other than 'nan'
                 if np.all(np.isnan(trace)):
                     par.log.error('no data for %s'%f)
                     continue
-                nstack = p.GetHvalue('mag',hf,hi,hs)
-                stat1 = match.group(1)
-                stat2 = match.group(2)
+                nstack = p.GetHvalue('mag')
+                stats = string.split(match.group(1),'_')
+                stat1 = stats[0]
+                stat2 = stats[1]
+                #print stat1, stat2
                 # account for the fact that the correlation could be
                 # either COR_MATA_TIKO.SAC or COR_TIKO_MATA.SAC
                 comb1=stat1+'_'+stat2
@@ -48,10 +62,9 @@ def find_match(par,dirname,filelist):
                     oldtrace = np.array(par.mystack[comb1]['trace'], dtype=float)
                     newtrace = oldtrace+trace
                     if len(newtrace) > 0:
-                        oldstack = p.GetHvalue('mag',par.mystack[comb1]['hf'],par.mystack[comb1]['hi'],
-                                               par.mystack[comb1]['hs'])
+                        oldstack = p.GetHvalue('mag')
                         newstack = nstack+oldstack
-                        p.SetHvalue('mag',newstack,hf,hi,hs)
+                        p.SetHvalue('mag',newstack)
                         new = {}
                         new[comb1] = {}
                         new[comb1]['trace'] = newtrace
@@ -60,15 +73,15 @@ def find_match(par,dirname,filelist):
                         new[comb1]['hi'] = hi
                         par.mystack.update(new)
                         continue
-                    else: return -1
+                    else: 
+			return -1
                 elif comb2 in par.mystack.keys():
                     oldtrace = np.array(par.mystack[comb2]['trace'], dtype=float)
                     newtrace = oldtrace+trace[::-1]
                     if len(newtrace) > 0:
-                        oldstack = p.GetHvalue('mag',par.mystack[comb2]['hf'],par.mystack[comb2]['hi'],
-                                               par.mystack[comb2]['hs'])
+                        oldstack = p.GetHvalue('mag')
                         newstack = nstack+oldstack
-                        p.SetHvalue('mag',newstack,hf,hi,hs)
+                        p.SetHvalue('mag',newstack)
                         new = {}
                         new[comb2] = {}
                         new[comb2]['trace'] = newtrace
@@ -81,9 +94,9 @@ def find_match(par,dirname,filelist):
                 else:
                     par.mystack[comb1] = {}
                     par.mystack[comb1]['trace'] = trace
-                    par.mystack[comb1]['hf']    = hf
-                    par.mystack[comb1]['hs']    = hs
-                    par.mystack[comb1]['hi']    = hi
+                    par.mystack[comb1]['hf'] = hf
+                    par.mystack[comb1]['hs'] = hs
+                    par.mystack[comb1]['hi'] = hi
                     continue
 
     return 0
@@ -96,37 +109,43 @@ def write_stack(stackdir,par):
     for stat in par.mystack.keys():
         # write stacked correlation
         seis = par.mystack[stat]['trace']
+        #p.seis = seis
         hf = par.mystack[stat]['hf']
         hs = par.mystack[stat]['hs']
         hi = par.mystack[stat]['hi']
         stat1, stat2 = stat.split('_')
-        p.SetHvalue('kevnm',stat1, hf,hi,hs)
-        p.SetHvalue('kstnm',stat2, hf,hi,hs)
-        b = p.GetHvalue('b',hf,hi,hs)
-        lat1 = p.GetHvalue('evla',hf,hi,hs)
-        lon1 = p.GetHvalue('evlo',hf,hi,hs)
-        lat2 = p.GetHvalue('stla',hf,hi,hs)
-        lon2 = p.GetHvalue('stlo',hf,hi,hs)
-        dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
-        dist = dist*math.pi*6371/180
-        p.SetHvalue('dist',dist,hf,hi,hs)
+        pysac.SetHvalue('kevnm',stat1,hf,hi,hs)
+        pysac.SetHvalue('kstnm',stat2,hf,hi,hs)
+        b = pysac.GetHvalue('b',hf,hi,hs)
+        lat1 = pysac.GetHvalue('evla',hf,hi,hs)
+        lon1 = pysac.GetHvalue('evlo',hf,hi,hs)
+        lat2 = pysac.GetHvalue('stla',hf,hi,hs)
+        lon2 = pysac.GetHvalue('stlo',hf,hi,hs)
+        #use the obspy version here
+        dist, dump1, dump2 = gps2DistAzimuth(lat1,lon1,lat2,lon2)
+        dist = dist/1000.0
+        #dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
+        #dist = dist*math.pi*6371/180
+        pysac.SetHvalue('dist',dist,hf,hi,hs)
         try:
             app = par.spattern.split('.SAC')[1]
         except:
             app = ''
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app
-        p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))
+        #p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))
+        pysac.WriteSacBinary(outputfile,hf,hi,hs,a.array('f',seis))
 
         # write symmetric part 
-        delta = p.GetHvalue('delta',hf,hi,hs)
+        delta = pysac.GetHvalue('delta',hf,hi,hs)
         null = int(round(-1*b/delta))
         reversed = seis[::-1]
-        newseis = seis+reversed
-        p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
-        p.SetHvalue('b',0,hf,hi,hs)
-        p.SetHvalue('o',0, hf,hi,hs)
+        newseis = seis + reversed
+        pysac.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
+#        p.seis = p.seis[null:]
+        pysac.SetHvalue('b',0,hf,hi,hs)
+        pysac.SetHvalue('o',0,hf,hi,hs)
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app+'_s'
-        p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',newseis[null:]))
+        pysac.WriteSacBinary(outputfile,hf,hi,hs,a.array('f',newseis[null:]))
 
 
 if __name__ == '__main__':
@@ -141,12 +160,12 @@ if __name__ == '__main__':
             stackdir = cp.get('stack','stackdir')
             spattern = cp.get('stack','spattern')
             tmpdir   = cp.get('stack','tmpdir')
-            skipdir  = cp.get('stack','skip_directories')
+            skipdir  = cp.get('stack','skipdir')
         else:
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
-        print "no configuration file found"
+        print "usage: %s -c config-file"%os.path.basename(sys.argv[0])
         sys.exit(1)
         
     ######## setup logging ################
@@ -167,6 +186,7 @@ if __name__ == '__main__':
         par          = PAR()
         par.mystack  = {}
         par.spattern = sp
+        #par.spattern = 'COR_(\\w*_\\w*).SAC'
         par.skipdir  = skipdir.split(',')
         par.log      = mylogger
         print 'searching for files matching %s'%sp

@@ -22,30 +22,30 @@ ofiles = \
 options = -g -Wall -I/usr/local/include -L/usr/local/lib
 
 %.o:%.c
-	$(CC) -g -c  $<  
+	$(CC) $(CFLAGS) -g -c  $<  
 
-all: cut initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter
+all: initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter
 
 cut: 	module_obj cut_trans_mod.c
-	$(CC) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm -limf
+	$(CC) $(CFLAGS) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm -limf
 
 initsacdb: module_obj initsac_db.c
-	$(CC) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
+	$(CC) $(CFLAGS) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
 xcor: 
 	cd ./xcorr; make
 
 filter: filter4_driver.c module_obj
-	$(CC) $(options) filter4_driver.c -o filter4 -I $(VPATH) ./modules/filter4.o ./modules/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I $(VPATH) ./modules/filter4.o ./modules/mysac.o -lfftw3 -lgfortran 
 
 whiteout1cmp: white_1cmp_driver.c module_obj
-	$(CC) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) ./modules/white_phamp_1cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) ./modules/white_phamp_1cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
 
 whiteout2cmp: white_2cmp_driver.c module_obj
-	$(CC) $(options) white_2cmp_driver.c -o white_2cmp -I $(VPATH) ./modules/white_phamp_2cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I $(VPATH) ./modules/white_phamp_2cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
 
 mergesac: merge_sac.c module_obj $(hfiles)
-	$(CC) -Wall -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)
+	$(CC) -Wall $(CFLAGS) -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)
 
 ftan:	ftan-module
 
@@ -61,7 +61,7 @@ install:
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
 	install	./xcorr/justCOR_EE_EN $(BINDIR);\
-#	install	./xcorr/xcor_h $(BINDIR);\
+	install	./xcorr/xcor_h $(BINDIR);\
 	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\

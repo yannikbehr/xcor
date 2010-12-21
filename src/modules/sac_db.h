@@ -20,7 +20,7 @@ conf element for config filename added
 typedef struct event
 {
   float lat, lon;
-  int yy, mm, dd, h, m, s, ms, jday;
+  long yy, mm, dd, h, m, s, ms, jday;
   double t0;
   char name[HLINE];
 }
@@ -52,9 +52,9 @@ typedef struct sac_dbase
   STATION st[NSTATION];
   RECORD rec[NEVENTS][NSTATION];
   char conf[HLINE];
-  int nev, nst;
-  int cntst;
-  int cntev;
+  long nev, nst;
+  long cntst;
+  long cntev;
 }
 SAC_DB;
 
@@ -65,6 +65,6 @@ typedef struct sac_dbase3
   RECORD rz[NEVENTS][NSTATION];
   RECORD rn[NEVENTS][NSTATION];
   RECORD re[NEVENTS][NSTATION];
-  int nev, nst;
+  long nev, nst;
 }
 SAC_DB3;

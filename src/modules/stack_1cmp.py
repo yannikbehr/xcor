@@ -1,7 +1,12 @@
-#!/usr/bin/env python
-"""
-make substacks in order to calculate error of ftan method
-"""
+#! /usr/bin/env python
+'''
+Created on Dec 3, 2010
+
+@author: Adam Carrizales
+
+Stack all xcorr files sitting in directory tree
+
+'''
 
 import os, os.path, sys, string
 
@@ -23,7 +28,6 @@ def add2dict(mydict,astr,f,log,rev=False,newentry=False):
     [hf,hi,hs,seis,ok] = p.ReadSacFile(f)
     if not ok:
         log.error("ERROR: cannot read sac-file %s" %(f))
-        print "ERROR: cannot read sac-file %s" % f
         return 1
     trace = np.array(seis, dtype=float)
     ### check if trace has values other than 'nan'
@@ -59,7 +63,8 @@ def add2dict(mydict,astr,f,log,rev=False,newentry=False):
         new[astr]['fn'] = os.path.basename(f)
         mydict.update(new)
         return 1
-    else: return 0
+    else: 
+	return 0
 
 
 def ls(par,dirname,filelist):
@@ -112,7 +117,7 @@ def write_stack(stackdir,mystack,nsub):
         p.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
         p.SetHvalue('b',0,hf,hi,hs)
         p.SetHvalue('o',0, hf,hi,hs)
-        outputfile = stackdir+'/'+mystack[stat]['fn']+'_err_'+str(nsub)
+        outputfile = stackdir+'/'+mystack[stat]['fn']+'_sub_'+str(nsub)
         p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',newseis[null:]))
 
 
@@ -145,7 +150,6 @@ def substack(corfiles,spattern,stackdir,log,stackl,shift):
         cnt  = cnt + shift 
     return 1
 
-
 if __name__ == '__main__':
 
     try:
@@ -154,23 +158,22 @@ if __name__ == '__main__':
             print "config file is: ",sys.argv[2]
             cp = SafeConfigParser()
             cp.read(config)
-            datdir   = cp.get('daterr','cordir')
-            stackdir = cp.get('daterr','stackdir')
-            spattern = cp.get('daterr','spattern')
-            tmpdir   = cp.get('daterr','tmpdir')
-            skipdir  = cp.get('daterr','skip_directories')
-            stackl   = int(cp.get('daterr','stack_length'))
-            shift    = int(cp.get('daterr','shift'))
+            datdir   = cp.get('stack','cordir')
+            stackdir = cp.get('stack','stackdir')
+            spattern = cp.get('stack','spattern')
+            tmpdir   = cp.get('stack','tmpdir')
+            skipdir  = cp.get('stack','skipdir')
+            stackl   = int(cp.get('stack','stack_length'))
+            shift    = int(cp.get('stack','shift'))
         else:
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
         print "no configuration file found"
         sys.exit(1)
-        
-    ######## setup logging ################
-    DBG_FILENAME = tmpdir+'/substack.log'
-    ERR_FILENAME = tmpdir+'/substack.err'
+    
+    DBG_FILENAME = tmpdir+'/stack.log'
+    ERR_FILENAME = tmpdir+'/stack.err'
 
     mylogger = logging.getLogger('MyLogger')
     mylogger.setLevel(logging.DEBUG)
@@ -180,7 +183,7 @@ if __name__ == '__main__':
 
     mylogger.addHandler(handlerdbg)
     mylogger.addHandler(handlererr)
-
+    
     ########### set up progress bar ############################
     ### count files for progressbar
     tmppar = PAR()
@@ -192,15 +195,15 @@ if __name__ == '__main__':
 
     for tmppar.pattern in spattern.split(','):
         os.path.walk(datdir,cntf,tmppar)
-    widgets = ['substacks: ', pg.Percentage(), ' ', pg.Bar('#'),
+    widgets = ['stacking: ', pg.Percentage(), ' ', pg.Bar('#'),
                ' ', pg.ETA()]
     pbar = pg.ProgressBar(widgets=widgets, maxval=tmppar.cnt).start()
     ############################################################
 
     cnt = 0
     for sp in spattern.split(','):
-        al = mklist(sp,datdir)
-        substack(al,sp,stackdir,mylogger,stackl,shift)
-        cnt = cnt + len(al)
+        files = mklist(sp,datdir)
+        substack(files,sp,stackdir,mylogger,stackl,shift)
+        cnt = cnt + len(files)
         pbar.update(cnt)
-    pbar.finish()
+    pbar.finish()  

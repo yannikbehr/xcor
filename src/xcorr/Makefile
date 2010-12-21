@@ -17,10 +17,12 @@ BIN2  = justCOR_EE_EN
 BIN3  = xcor_h
 
 VPATH = ../modules
+#LPATH = /opt/intel/Compiler/11.1/072/lib/intel64
+LPATH = /usr/local/lib -L /opt/intel/Compiler/11.1/072/lib/intel32
 
-fflags = -O2 -Wall -c -ffixed-line-length-none
+fflags = -O2 -Wall -c -ffixed-line-length-none -m32
 
-cflags = -O2 -Wall -c -I $(VPATH)
+cflags = -O2 -m32 -Wall  -c -I $(VPATH)
 
 DBG = -g
 
@@ -29,7 +31,7 @@ FFLAGS = $(DBG)  $(fflags)
 CFLAGS = $(DBG) $(cflags)
 
 #LDLIBS = -lfftw3 -lgcc -lm -lgsl -lgslcblas
-LDLIBS = -lfftw3 -lgcc -lm -limf
+LDLIBS = -lfftw3 -lgcc -lm 
 
 FOBJS = dcommon.o dmultifft.o 
 
@@ -53,10 +55,10 @@ ofiles = $(VPATH)/iniparser.o\
 all: $(BIN1) $(BIN2)
 
 $(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj 
-	$(CC) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS)
+	$(CC) $(DBG) -m32 justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS) -L $(LPATH)
 
 $(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
-	$(CC) justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS)
+	$(CC)  justCOR_EE_EN.o $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS) -L $(LPATH)
 
 #$(BIN3) :   module_obj
 #	$(CC) -g -Wall -I $(VPATH) xcor_h.c $(ofiles) -o $(BIN3) $(LDLIBS)

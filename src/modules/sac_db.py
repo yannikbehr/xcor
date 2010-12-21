@@ -43,7 +43,7 @@ class Record(Structure):
         ('chan', c_char*7),
         ('t0', c_double),
         ('dt', c_float),
-        ('n', c_long)
+        ('n', c_int)
         ]
 
 class SacDb(Structure):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """Do temporal and spectral normalization by calling sac-routines and
 the fortran routines filter4.f, white_phamp_2cmp.f and
 white_phamp_1cmp.f by calling their respective C-drivers.
@@ -25,9 +25,9 @@ def white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
     p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
     child1 = p1.stdin
     src, tar, eqtar = fns[0]
-    print src, tar, eqtar
+    if DEBUG:
+        print src, tar, eqtar
     print >>child1, "r %s" %(eqtar+'_tmp')
-    print "r %s" %(eqtar+'_tmp')
     print >>child1, "abs"
     print >>child1, "smooth mean h 128"
     print >>child1, "w over a1.avg"
@@ -225,8 +225,10 @@ if __name__ == '__main__':
             bpfile = "%.1fto%.1f"%(upperp,lowerp)
             eqdir = os.path.join(rootdir,bpfile,year,month,day,'eqband')
             os.rmdir(eqdir)
-        except:
-            print "cannot remove %s"%eqdir
+        except Exception, e:
+            if DEBUG:
+                print "cannot remove %s"%eqdir
+                print e
             continue
     if not DEBUG:
         pbar.finish()

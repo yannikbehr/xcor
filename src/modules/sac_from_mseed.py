@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """extract mseed data from geonet download and put them into the right\n
 directory structure together with their corresponding response files"""
 
@@ -10,7 +10,7 @@ from ConfigParser import SafeConfigParser
 import progressbar as pg
 from obspy.sac import *
 
-DEBUG = True
+DEBUG = False
 
 class SaFromMseed:
     def __init__(self, dataless, respdir, outputdir, bindir, rdseed):
@@ -97,8 +97,10 @@ class SaFromMseed:
         """run c-code to merge several sac-files of the same day into
         one big sac-file"""
         try:
-            #mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn+" 2>/dev/null 1>/dev/null"
-	    mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn
+            if DEBUG:
+                mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn
+            else:
+                mergesaccmd = os.path.join(self.bindir,"merge_sac")+" "+outputfn+" 2>/dev/null 1>/dev/null"
 	    if DEBUG:
 		print "Merge cmd: ", mergesaccmd
             p = sp.Popen(mergesaccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
@@ -152,7 +154,6 @@ class SaFromMseed:
 
             if os.path.isfile(fn):
                 tempout = os.path.join(mseedir,'sacfiles_local')
-                #tempout = os.path.join(mseedir,self.outputdir)
 		if not os.path.isdir(tempout):
                     os.mkdir(tempout)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
@@ -178,8 +179,9 @@ class SaFromMseed:
 				# file name is not actually being transferred i nthis function but in merge_sac which is not working
 				
                             for k in g[i][j]:
-                                pass
-				#os.remove(k)
+                                if DEBUG:
+                                    print "removing ",k
+				os.remove(k)
         if not DEBUG:
             pbar.finish()
             
@@ -249,9 +251,13 @@ if __name__ == '__main__':
         else:
             print "encountered unknown command line argument"
             raise Exception
-    except Exception:
+    except Exception, e:
+        print e
         print "usage: %s -c config-file"%os.path.basename(sys.argv[0])
         sys.exit(1)
 
+    if not os.path.isdir(outputdir):
+        print "creating SAC-file directory"
+        os.makedirs(outputdir)
     t = SaFromMseed(dataless, respdir, outputdir, bindir, rdseed)
     t(mseedir, outputdir, spat)

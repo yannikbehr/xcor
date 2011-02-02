@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """script to stack horizontal component cross-correlation results"""
 
 import numpy as np
@@ -26,10 +26,11 @@ def find_match(par,dirname,filelist):
             return
         
     print '... in %s'%dirname
-    corfiles = glob.glob(os.path.join(dirname,par.spattern))
+    corfiles = glob.glob(os.path.join(dirname,'COR*'))
     if len(corfiles) > 0:
         for f in corfiles:
-            match = re.search('COR_(\\w*_\\w*).SAC',f)
+            #match = re.search('COR_(\\w*_\\w*).SAC',f)
+            match = re.search(par.spattern,f)
             #print match
             if match:
                 #[hf,hi,hs,seis,ok] = p.ReadSacFile(f)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """
 remove instrument response using sac and cut precisely
 """

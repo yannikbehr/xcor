@@ -15,7 +15,7 @@ def initsacdb(datdir,regex='[!^ft]*Z.SAC',cnf='./config.txt',
     outlines = []
     outlines.append("[init_sacdb]\n")
     outlines.append("search_directories="+datdir+"\n")
-    outlines.append("skip_directories=5to100, eqband, 1to40\n")
+    outlines.append("skip_directories=5.0to100.0, eqband, 1to40\n")
     outlines.append("flag="+srchflag+"\n")
     outlines.append("search_string="+regex+"\n")
     outlines.append("resp_dir="+resp_dir+"\n")

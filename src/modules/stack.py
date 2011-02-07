@@ -3,7 +3,7 @@
 
 import numpy as np
 import array as a
-import pysacio as pysac
+#import pysacio as pysac
 from obspy.sac import *
 import os, os.path, glob, re, sys, string, math
 from ConfigParser import SafeConfigParser
@@ -109,44 +109,46 @@ def write_stack(stackdir,par):
         os.mkdir(stackdir)
     for stat in par.mystack.keys():
         # write stacked correlation
-        seis = par.mystack[stat]['trace']
+        t = SacIO()
+        t.seis = par.mystack[stat]['trace']
         #p.seis = seis
-        hf = par.mystack[stat]['hf']
-        hs = par.mystack[stat]['hs']
-        hi = par.mystack[stat]['hi']
+        t.hf = par.mystack[stat]['hf']
+        t.hs = par.mystack[stat]['hs']
+        t.hi = par.mystack[stat]['hi']
         stat1, stat2 = stat.split('_')
-        pysac.SetHvalue('kevnm',stat1,hf,hi,hs)
-        pysac.SetHvalue('kstnm',stat2,hf,hi,hs)
-        b = pysac.GetHvalue('b',hf,hi,hs)
-        lat1 = pysac.GetHvalue('evla',hf,hi,hs)
-        lon1 = pysac.GetHvalue('evlo',hf,hi,hs)
-        lat2 = pysac.GetHvalue('stla',hf,hi,hs)
-        lon2 = pysac.GetHvalue('stlo',hf,hi,hs)
+        t.SetHvalue('kevnm',stat1)
+        t.SetHvalue('kstnm',stat2)
+        b = t.GetHvalue('b')
+        lat1 = t.GetHvalue('evla')
+        lon1 = t.GetHvalue('evlo')
+        lat2 = t.GetHvalue('stla')
+        lon2 = t.GetHvalue('stlo')
         #use the obspy version here
         dist, dump1, dump2 = gps2DistAzimuth(lat1,lon1,lat2,lon2)
         dist = dist/1000.0
         #dist, dump1, dump2 = dz.delaz(lat1,lon1,lat2,lon2,0)
         #dist = dist*math.pi*6371/180
-        pysac.SetHvalue('dist',dist,hf,hi,hs)
+        t.SetHvalue('dist',dist)
         try:
             app = par.spattern.split('.SAC')[1]
         except:
             app = ''
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app
         #p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))
-        pysac.WriteSacBinary(outputfile,hf,hi,hs,a.array('f',seis))
+        t.WriteSacBinary(outputfile)
 
-        # write symmetric part 
-        delta = pysac.GetHvalue('delta',hf,hi,hs)
+        # write symmetric part
+        delta = t.GetHvalue('delta')
         null = int(round(-1*b/delta))
-        reversed = seis[::-1]
-        newseis = seis + reversed
-        pysac.SetHvalue('npts',len(newseis[null:]),hf,hi,hs)
+        reversed = t.seis[::-1]
+        newseis = t.seis + reversed
+        t.seis = newseis[null:]
+        t.SetHvalue('npts',len(newseis[null:]))
 #        p.seis = p.seis[null:]
-        pysac.SetHvalue('b',0,hf,hi,hs)
-        pysac.SetHvalue('o',0,hf,hi,hs)
+        t.SetHvalue('b',0)
+        t.SetHvalue('o',0)
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app+'_s'
-        pysac.WriteSacBinary(outputfile,hf,hi,hs,a.array('f',newseis[null:]))
+        t.WriteSacBinary(outputfile)
 
 
 if __name__ == '__main__':

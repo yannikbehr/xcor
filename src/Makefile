@@ -41,7 +41,7 @@ filter: filter4_driver.c module_obj
 	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I $(VPATH) $(MODULES)/filter4.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
 
 whiteout1cmp: white_1cmp_driver.c module_obj
-	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) $(MODULES)/white_phamp_1cmp.o $(MODULES)s/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) $(MODULES)/white_phamp_1cmp.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
 
 whiteout2cmp: white_2cmp_driver.c module_obj
 	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I $(VPATH) $(MODULES)/white_phamp_2cmp.o $(MODULES)/mysac.o -lfftw3 -lgfortran 

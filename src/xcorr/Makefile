@@ -63,7 +63,7 @@ $(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
 	$(CC) justCOR_EE_EN.o $(DBG) -m32 $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS) -L $(LPATH)
 
 $(BIN4) : $(FOBJS) $(COBJS) $(binofiles) module_obj
-	$(CC) autoCOR.o $(DBG) -m32 $(ofiles) $(FOBJS) -o $(BIN1) $(LDLIBS) -L $(LPATH)
+	$(CC) autoCOR.o $(DBG) -m32 $(ofiles) $(FOBJS) -o $(BIN4) $(LDLIBS) -L $(LPATH)
 
 #$(BIN3) :   module_obj
 #	$(CC) -g -Wall -I $(VPATH) xcor_h.c $(ofiles) -o $(BIN3) $(LDLIBS)

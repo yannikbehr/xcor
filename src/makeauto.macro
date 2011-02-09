@@ -5,7 +5,7 @@ CPP = g++
 FC = gfortran
 F2PY = /usr/bin/f2py26
 CFLAGS = -m32
-MODULES = /Users/home/carrizad/Desktop/xcorr/xcorr_git/src/modules
+MODULES = /Users/home/carrizad/xcorr/src/modules
 
 # Change back to python2.4 if not working
 PYTHON = /usr/include/python2.6

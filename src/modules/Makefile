@@ -1,7 +1,7 @@
 include ../makeauto.macro
 
-FFLAGS = -I /usr/local/include -I /usr/includ
-CFLAGS = -m32 
+FFLAGS = -I /usr/local/include -I /usr/include
+#CFLAGS = -m32 
 
 hfiles = \
 	iniparser.h\
@@ -18,8 +18,8 @@ ofiles = \
 
 
 #sofiles = \
-#	fft_filter.so\
-#	fft_filter_c.so
+	fft_filter.so\
+	fft_filter_c.so
 
 %.o:%.c 
 	$(CC) -g  -c $(CFLAGS) $<  

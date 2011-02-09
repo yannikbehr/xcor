@@ -42,6 +42,7 @@ void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int 
 int check_info (int ne, int ns1, int ns2 );
 int do_cor(int lag, char *cordir,char *pbdir, char *prefix);
 void sac_db_chng (char *pbdir);
+void sac_db_chng_new (char *pbdir);
 void get_args(int argc, char** argv);
 //int find_n_comp(char *nameE, char *nameN);
 int find_n_comp(char *nameE, char *nameN, char *pbdir,char *prefix, int ne,int ns);
@@ -83,7 +84,8 @@ int main (int na, char **arg)
   fclose(ff);
 
   /* change ft_fname value in sdb-struct */
-  sac_db_chng(pbdir);
+  sac_db_chng_new(pbdir);
+  //sac_db_chng(pbdir);
 
   /*do all the work of correlations here  */
   do_cor(lag,cordir,pbdir,prefix);  
@@ -365,6 +367,44 @@ void sac_db_chng (char *pbdir )
 }
 
 /*--------------------------------------------------------------------------
+insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
+previous changes in the overall program structure makes it necessary
+--------------------------------------------------------------------------*/
+void sac_db_chng_new (char *pbdir )
+{
+  int ie, is;
+  char *result, *filename;
+  int month, year, day;
+  char months[12][4] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+
+  for ( ie = 0; ie < sdb.nev; ie++ ) for ( is = 0; is < sdb.nst; is++ )
+    {
+      if(sdb.rec[ie][is].ft_fname == NULL){
+	printf("ERROR: ft_fname not found\n");
+      }else {
+	result=strrchr(sdb.rec[ie][is].ft_fname,'/');
+	if(result != NULL){
+	  filename = strdup(result);
+	  year = sdb.ev[ie].yy;
+	  month = sdb.ev[ie].mm;
+	  day   = sdb.ev[ie].dd;
+	  sprintf(sdb.rec[ie][is].ft_fname,"%s/%d/%s/%d_%d_%d_0_0_0%s",
+		  pbdir,year,months[month-1],year,month,day,filename);
+	  /*
+	  sprintf(sdb.rec[ie][is].ft_fname,"%s/%s/%d_%d_%d_0_0_0/%s",
+		  pbdir,months[month-1],year,month,day,filename);
+	  */
+	  printf("dir is: %s\n",sdb.rec[ie][is].ft_fname);
+	}else {
+	  continue;
+	}
+	free(filename);
+      }
+    }
+  return;
+}
+
+/*--------------------------------------------------------------------------
   insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';
   previous changes in the overall program structure makes it necessary
   --------------------------------------------------------------------------*/
@@ -403,35 +443,76 @@ void sac_db_chng (char *pbdir )
 /*--------------------------------------------------------------------------
   function to find East-, North- and Z-component files for given date-dir
    ------------------------------------------------------------------------*/
+//int find_n_comp(char *nameE, char *nameN, char *pbdir,char *prefix, int ne,int ns){
+//  char *dircp, *dirn, *base, *basecp;
+//  char pattern[LINEL], newdir[LINEL];
+//  glob_t match;
+//  dircp = strdup(sdb.rec[ne][ns].ft_fname);
+//  basecp = strdup(sdb.rec[ne][ns].ft_fname);
+//  dirn = dirname(dircp);
+//  base = basename(basecp);
+//  //assert((strlen(dirn)+strlen(pbdir)+strlen(base)+2)<LINEL-1);
+//  //sprintf(newdir,"%s/%s/%s",dirn,pbdir,base);
+//  
+//  /* find N-component file*/
+//  //assert((strlen(newdir)+strlen(prefix)+strlen(sdb.st[ns].name)+11)<LINEL-1);
+//  sprintf(pattern,"%s/%s_%s.*HN.SAC*",dirn,prefix,sdb.st[ns].name);
+//  if(glob(pattern, 0, NULL, &match) == 0){
+//    if(match.gl_pathc>1){
+//      fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);
+//      return 0;
+//    }else{
+//      strncpy(nameN,match.gl_pathv[0],LINEL-1);
+//    }
+//  }else{
+//    fprintf(stderr,"ERROR: no matching file found for %s\n",pattern);
+//    return 0;
+//  }
+//  
+//  printf("%s %s %s %d\n",nameE,nameN,pattern,glob(pattern, 0, NULL, &match));
+//
+//  globfree(&match);
+//  free(dircp);
+//  free(basecp);
+//  return 1;
+//}
+
+
 int find_n_comp(char *nameE, char *nameN, char *pbdir,char *prefix, int ne,int ns){
-  char *dircp, *dirn, *base, *basecp;
+  char *dircp, *dirn, *base, *basecp, *cp, *ptr;
   char pattern[LINEL], newdir[LINEL];
   glob_t match;
   dircp = strdup(sdb.rec[ne][ns].ft_fname);
   basecp = strdup(sdb.rec[ne][ns].ft_fname);
-  dirn = dirname(dircp);
+  dirn = dirname(dircp);  
   base = basename(basecp);
-  //assert((strlen(dirn)+strlen(pbdir)+strlen(base)+2)<LINEL-1);
-  //sprintf(newdir,"%s/%s/%s",dirn,pbdir,base);
-  
+  //assert((strlen(dirn)+strlen(pbdir)+strlen(base)+2)<LINEL-1);                                                                                                                                               
+  //sprintf(newdir,"%s/%s/%s",dirn,pbdir,base);                                                                                                                                                                
+
   /* find N-component file*/
-  //assert((strlen(newdir)+strlen(prefix)+strlen(sdb.st[ns].name)+11)<LINEL-1);
-  sprintf(pattern,"%s/%s_%s.*HN.SAC",dirn,prefix,sdb.st[ns].name);
+  //assert((strlen(newdir)+strlen(prefix)+strlen(sdb.st[ns].name)+11)<LINEL-1);                                                                                                                                
+  sprintf(pattern,"%s/%s_%s.*HN.SAC.am",dirn,prefix,sdb.st[ns].name);
   if(glob(pattern, 0, NULL, &match) == 0){
     if(match.gl_pathc>1){
       fprintf(stderr,"WARNING: found more than 1 matching file for %s\n",pattern);
       return 0;
     }else{
-      strncpy(nameN,match.gl_pathv[0],LINEL-1);
+      cp = strdup(match.gl_pathv[0]);
+      ptr=strrchr(cp,'.');
+      if(ptr != NULL){
+        *(ptr)='\0';
+      }
+      strncpy(nameN,cp,LINEL-1);
     }
   }else{
     fprintf(stderr,"ERROR: no matching file found for %s\n",pattern);
     return 0;
   }
-  
-  printf("%s %s %s %d\n",nameE,nameN,pattern,glob(pattern, 0, NULL, &match));
+
+  //printf("%s %s %s %d\n",nameE,nameN,pattern,glob(pattern, 0, NULL, &match));                                                                                                                                
 
   globfree(&match);
+  free(cp);
   free(dircp);
   free(basecp);
   return 1;

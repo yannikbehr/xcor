@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 """
 remove instrument response using sac and cut precisely
 """
@@ -43,16 +43,6 @@ def cut(sdb,ne,ns,t1,nos):
     ms   = p.GetHvalue('nzmsec')
     b    = p.GetHvalue('b')
     
-    if DEBUG:
-        print dt
-        print npts
-        print yy
-        print jday
-        print hh
-        print mm
-        print ss
-        print ms
-        print b
         
     ### correct for milli-seconds in trace by linear interpolation
     tb   = sdb.rec[ne][ns].t0
@@ -60,14 +50,6 @@ def cut(sdb,ne,ns,t1,nos):
     t2   = t1 + (nos-1)
     t1b  = tb-te
     t1e  = t1b + (npts-1)*dt
-    
-    if DEBUG:
-        
-        print tb
-        print te
-        print t2
-        print t1b
-        print t1e
         
     if t1b>t1 or t1e<t2 or t1e > 100000/dt:
         print "ERROR: incompatible time limits for %s; cannot cut"%(fin)
@@ -120,14 +102,22 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
     print >>cd1, "rmean"
     print >>cd1, "rtrend"
     print >>cd1, "interpolate delta %f "%delta
+    if DEBUG:
+        print "The resp file is: %s " % sdb.rec[ne][ns].resp_fname
+        print "The PZ file is: %s " % sdb.rec[ne][ns].pz_fname
     if rminst:
-        if instype == 'resp':
+        if os.path.isfile(sdb.rec[ne][ns].resp_fname):
             print >>cd1, "transfer from evalresp fname %s to vel freqlimits\
             %f %f %f %f"%(sdb.rec[ne][ns].resp_fname,fl1,fl2,fl3,fl4)
-        if instype == 'pz':
-            if sdb.rec[ne][ns].pz_fname != '':
-                print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
-                %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
+        #if instype == 'resp':
+        elif os.path.isfile(sdb.rec[ne][ns].pz_fname):
+            print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
+            %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
+        else:
+            print "Could not find PZ or RESP file for: ", sdb.rec[ne][ns].fname
+        #if instype == 'pz':
+        #if sdb.rec[ne][ns].pz_fname != '':
+                
     if filter:
         print >>cd1,"bandpass npoles 4 corner %f %f"%(fl2,fl3)
     print >>cd1, "w %s"%(sdb.rec[ne][ns].ft_fname+'_tmp')

@@ -34,12 +34,11 @@
 #define MODUS 0711
 #define STRING 300
 #define SSTRING 150
-#define INPUT_ARRAY_SIZE  2000000
 
-/* Function prototypes */
+/* Function prorotypes */
 void dcommon_(int *len, float *amp,float *phase);
 void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int *ns);
-int check_info (int ne, int ns1, int ns2 );
+int check_info (int ne, int ns1);
 int do_cor(int lag, char *cordir,char *pbdir);
 void sac_db_chng (char *pbdir);
 void sac_db_chng_new (char *pbdir );
@@ -48,15 +47,11 @@ void make_dir(int ie, char *cordir, char *pbdir, char *daydir);
 
 
 SAC_DB sdb;
-SAC_HD shdamp1, shdph1, shdamp2, shdph2;
-
+SAC_HD shdamp1, shdph1;
 
 /* as there are sometimes problems with very large arrays that are defined 
- within functions, we define them here
-*
-*
-*/
-float amp[INPUT_ARRAY_SIZE], phase[INPUT_ARRAY_SIZE], cor[INPUT_ARRAY_SIZE];
+within functions, we define them here*/
+float amp[900000], phase[900000], cor[900000];
 float seis_out[2000000];
 
 /*c/////////////////////////////////////////////////////////////////////////*/
@@ -73,12 +68,12 @@ int main (int na, char **arg)
 
   /* read in parameters from config file*/
   dd         = iniparser_new(fconf);
-  tmpdir     = iniparser_getstr(dd, "xcor:tmpdir");
-  cordir     = iniparser_getstr(dd, "xcor:cordir");
-  lag        = iniparser_getint(dd, "xcor:lag", 3000);
-  pbdir      = iniparser_getstr(dd, "xcor:pbdir");
-  sacdbname  = iniparser_getstr(dd, "xcor:dbname");
-  prefix     = iniparser_getstr(dd, "xcor:prefix");
+  tmpdir     = iniparser_getstr(dd, "autocorr:tmpdir");
+  cordir     = iniparser_getstr(dd, "autocorr:cordir");
+  lag        = iniparser_getint(dd, "autocorr:lag", 3000);
+  pbdir      = iniparser_getstr(dd, "autocorr:pbdir");
+  sacdbname  = iniparser_getstr(dd, "autocorr:dbname");
+  prefix     = iniparser_getstr(dd, "autocorr:prefix");
 
   /* open sac-database file and read into memory*/
   assert((strlen(tmpdir)+strlen(sacdbname)+1) < STRING);
@@ -91,40 +86,28 @@ int main (int na, char **arg)
 
   /*do all the work of correlations here  */
   do_cor(lag,cordir,pbdir);  
-  printf("correlations finished\n");
+  printf("auto-correlations finished\n");
   iniparser_free(dd);
   return 0;
 }
 
 
 /*----------------------------------------------------------------------------
-  evaluate ne, ns1, ns2 against SAC_DB values
+  evaluate ne, ns1 against SAC_DB values
   ne  = number of event
   ns1 = number of first station
-  ns2 = number of second station
 ----------------------------------------------------------------------------*/
-int check_info (int ne, int ns1, int ns2 )
+int check_info (int ne, int ns1)
 {
   if ( ne >= sdb.nev ) {
     fprintf(stderr,"cannot make correlation: too large event number\n");
-    return 0;
-  }
-  if ( (ns1>=sdb.nst) ||(ns2>=sdb.nst)  ) {
-    fprintf(stderr,"cannot make correlation: too large station number\n");
     return 0;
   }
   if ( sdb.rec[ne][ns1].n <= 0 ) {
     fprintf(stdout,"no data for station %s and event %s\n", sdb.st[ns1].name, sdb.ev[ne].name );
     return 0;
   }
-  if ( sdb.rec[ne][ns2].n <= 0 ) {
-    fprintf(stdout,"no data for station %s and event %s\n", sdb.st[ns2].name, sdb.ev[ne].name );
-    return 0;
-  }
-  if ( fabs(sdb.rec[ne][ns1].dt-sdb.rec[ne][ns2].dt) > .0001 ) {
-    fprintf(stderr,"incompatible DT\n");
-    return 0;
-  }
+
   return 1;
 }
 
@@ -142,93 +125,59 @@ int check_info (int ne, int ns1, int ns2 )
 ----------------------------------------------------------------------------*/
 int do_cor(int lag, char *cordir, char *pbdir)
 {
-  int ine, jsta1, jsta2;
+  int ine, jsta1;
   int len,ns,i; 
   char filename[STRING], amp_sac[STRING], phase_sac[STRING];
   char mondir[STRING];
 
-  /*outermost loop over day number, then station number*/
-  for( ine = 0; ine < sdb.nev; ine++ ) {
-    fprintf(stdout,"sdb.nev %d\n",ine);
-    make_dir(ine,cordir,pbdir,mondir);
-    /*loop over "base" station number, this will be stored into common memory*/
-    for( jsta1 = 0; jsta1 < sdb.nst; jsta1++ ) {  
-      if(sdb.rec[ine][jsta1].n > 0){
-	if(sdb.rec[ine][jsta1].n > 86400/sdb.rec[ine][jsta1].dt){
-	  fprintf(stderr,"ERROR: trace longer than 84000 s (%ld); %s\n",
-		  sdb.rec[ine][jsta1].n, sdb.rec[ine][jsta1].ft_fname);
-	  continue;
-	}
-        sprintf( amp_sac, "%s.am", sdb.rec[ine][jsta1].ft_fname );
-        sprintf( phase_sac, "%s.ph", sdb.rec[ine][jsta1].ft_fname );
-	// read amp and phase files and read into common memory
-        if ( read_sac(amp_sac, amp, &shdamp1, INPUT_ARRAY_SIZE )==NULL ) {
-  	  fprintf( stderr,"file %s not found\n", amp_sac );
-   	  continue;
-        }
-        if ( read_sac(phase_sac, phase, &shdph1, INPUT_ARRAY_SIZE)== NULL ) {
-          fprintf( stderr,"file %s not found\n", phase_sac );
-          continue;
-	  }
-	len = shdamp1.npts;
-        dcommon_( &len, amp, phase ); // reads amp and phase files into common memory
-	for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
-  	  if(sdb.rec[ine][jsta2].n > 0){
-	    if(sdb.rec[ine][jsta2].n > 86400/sdb.rec[ine][jsta2].dt){
-	      fprintf(stderr,"ERROR: trace longer than 84000 s (%ld); %s\n",
-		      sdb.rec[ine][jsta2].n, sdb.rec[ine][jsta2].ft_fname);
-	      continue;
-	    }
-	    // compute correlation
-	    sprintf(amp_sac, "%s.am", sdb.rec[ine][jsta2].ft_fname);
-            sprintf(phase_sac, "%s.ph", sdb.rec[ine][jsta2].ft_fname);
-	    fprintf(stdout,"xcor: %s  %s\n", sdb.rec[ine][jsta1].ft_fname,sdb.rec[ine][jsta2].ft_fname );
-            // get array of floats for amp and phase of first signal
-            if ( read_sac(amp_sac, amp, &shdamp2, INPUT_ARRAY_SIZE) ==NULL ) {
-              fprintf(stderr,"file %s not found\n", amp_sac );
-              continue;
-            }
-            if ( read_sac(phase_sac, phase, &shdph2, INPUT_ARRAY_SIZE)==NULL ) {
-              fprintf(stderr,"file %s not found\n", phase_sac );
-              continue;
-	      }
-	    len = shdamp2.npts;
-            if(!check_info(ine, jsta1, jsta2 )) {
-              fprintf(stderr,"files incompatible\n");
-              return 0;
-            }
-            else
-	      {
-		dmultifft_(&len, amp, phase, &lag, seis_out,&ns);
-		cor[lag] = seis_out[0];
-		for( i = 1; i< (lag+1); i++)
-		  { 
-		    cor[lag-i] =  seis_out[i];
-		    cor[lag+i] =  seis_out[ns-i];
+  /* outermost loop over day number, then each station -> docor() */
+  for( ine= 0; ine < sdb.nev; ine++ ) {
+	  fprintf(stdout,"sdb.nev %d\n",ine);
+	  make_dir(ine,cordir,pbdir,mondir);
+	  /*loop over "base" station number, stored in common memory*/
+	  for(jsta1=0; jsta1 < sdb.nst; jsta1++) {
+		  if(sdb.rec[ine][jsta1].n > 0){
+			  if(sdb.rec[ine][jsta1].n > 86400/sdb.rec[ine][jsta1].dt){
+				  fprintf(stderr,"ERROR: trace longer than 84000 s (%ld); %s\n",
+						  sdb.rec[ine][jsta1].n, sdb.rec[ine][jsta1].ft_fname);
+				  continue;
+			  }
+			  sprintf( amp_sac, "%s.am", sdb.rec[ine][jsta1].ft_fname);
+			  sprintf( phase_sac, "%s.ph", sdb.rec[ine][jsta1].ft_fname);
+			  // read amp and phase files and read into common memory
+			  if ( read_sac(amp_sac, amp, &shdamp1, 900000)==NULL ){
+				  fprintf(stderr, "file %s not found\n", amp_sac);
+				  continue;
+			  }
+			  if ( read_sac(phase_sac, phase, &shdph1, 9000000)== NULL ){
+				  fprintf(stderr,"file %s not found\n", phase_sac );
+				  continue;
+			  }
+			  len = shdamp1.npts;
+			  dcommon_( &len, amp, phase ); // reads amp and phase files into common memory
+			  // compute auto-correlation
+			  dmultifft_(&len,amp,phase,&lag,seis_out,&ns);
+			  cor[lag] = seis_out[0];
+			  for ( i = 1; i < (lag+1); i++){
+				  cor[lag-i] = seis_out[i];
+				  cor[lag+i] = seis_out[ns-i];
+			  }
+			  sprintf(filename, "%s/ACOR_%s.SAC",mondir,
+					  sdb.st[jsta1].name);
+			  shdamp1.delta = sdb.rec[ine][jsta1].dt;
+			  shdamp1.evla =  sdb.st[jsta1].lat;
+			  shdamp1.evlo =  sdb.st[jsta1].lon;
+			  shdamp1.npts =  2*lag+1;
+			  shdamp1.b    = -(lag)*shdamp1.delta;
+			  shdamp1.unused1 = 1;
+			  strncpy(shdamp1.kevnm,sdb.st[jsta1].name,7);
+			  write_sac (filename, cor, &shdamp1);
 		  }
-		sprintf(filename, "%s/COR_%s_%s.SAC",
-			mondir, sdb.st[jsta1].name, sdb.st[jsta2].name);
-		shdamp1.delta = sdb.rec[ine][jsta1].dt;
-		shdamp1.evla =  sdb.st[jsta1].lat;
-		shdamp1.evlo =  sdb.st[jsta1].lon;
-		shdamp1.stla =  sdb.st[jsta2].lat;
-		shdamp1.stlo =  sdb.st[jsta2].lon;
-		shdamp1.npts =  2*lag+1;
-		shdamp1.b    = -(lag)*shdamp1.delta;
-		shdamp1.unused1 = 1;
-		strncpy(shdamp1.kevnm,sdb.st[jsta1].name,7);
-		strncpy(shdamp1.kstnm,sdb.st[jsta2].name,7);
-		write_sac (filename, cor, &shdamp1);
-	      }   //loop over check
+	  }
+  }
 
-	  }    //loop over if jsta2
-	}   //loop over jsta2
-      }  //loop over if jsta1
-    }  //loop over jsta1
-  }  //loop over events
-  return 0;
+return 0;
 }
-
 
 /*--------------------------------------------------------------------------
 insert sub-dirname 'pbdir' into sac_db entry 'ft_fname';

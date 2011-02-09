@@ -168,9 +168,12 @@ def specnorm(sdb,ne,ns,upperp,lowerp,rootdir,polarity='vertical',eqband=[50,15],
         eqtar = os.path.join(eqdir,os.path.basename(src))
         tar = os.path.join(bpdir,os.path.basename(src))
         fns = [(src,tar,eqtar)]
-        
+    if DEBUG:
+        print "Starting filter_f!"    
     ### filtering and temporal normalization
     filter_f(fns,ltaper,lowerp,upperp,utaper,eqband,eqltaper,equtaper,npow,bindir)
+    if DEBUG:
+        print "Starting whitening!"
     ### whitening
     if polarity == 'vertical':
         white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin)

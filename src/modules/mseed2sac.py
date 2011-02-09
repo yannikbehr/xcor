@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env mypython
 '''
 Script to convert mseed files to sac files
 
@@ -169,31 +169,35 @@ class mSeed2Sac:
                 print "no files found for pattern: ", sp
                 continue
             for fn in files:
-                if DEBUG:
-                    print fn
+               # if DEBUG:
+                  #  print fn
                 if os.path.isfile(fn):
                     tempout = os.path.join(mseedir, outputdir)
                     if not os.path.isdir(tempout):
                         os.mkdir(tempout)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
-                          tempout+' -b 9000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
-                if DEBUG:
-                    print command
+                          tempout+' -b 900000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
                 os.system(command)
+              #  if DEBUG:
+               #     print command
                 g = self.getMsInfo(tempout)
                 for i in g.keys():
                     for j in g[i].keys():
                         if j != 'date':
                             filename = self.makeFilename(i, j, g[i]['date'], outputdir)
                             if os.path.isfile(filename):
+                                for k in g[i][j]:
+                                    os.remove(k)
                                 continue
                             if DEBUG:
                                 print "--> writing file: ", filename
                             if self.mergeSac(g[i][j], filename):
+				pass
                                # self.copyResp(i, j, filename) 
-                                
-                                for k in g[i][j]:
-                                    os.remove(k)
+                            for k in g[i][j]:
+				os.remove(k)
+                            if DEBUG:
+                                print "To remove: ", g[i][j]
                                     
 if __name__ == '__main__':
     try:

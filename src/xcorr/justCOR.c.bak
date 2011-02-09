@@ -34,9 +34,8 @@
 #define MODUS 0711
 #define STRING 300
 #define SSTRING 150
-#define INPUT_ARRAY_SIZE  2000000
 
-/* Function prototypes */
+/* Function prorotypes */
 void dcommon_(int *len, float *amp,float *phase);
 void dmultifft_(int *len,float *amp,float *phase, int *lag,float *seis_out, int *ns);
 int check_info (int ne, int ns1, int ns2 );
@@ -50,13 +49,9 @@ void make_dir(int ie, char *cordir, char *pbdir, char *daydir);
 SAC_DB sdb;
 SAC_HD shdamp1, shdph1, shdamp2, shdph2;
 
-
 /* as there are sometimes problems with very large arrays that are defined 
- within functions, we define them here
-*
-*
-*/
-float amp[INPUT_ARRAY_SIZE], phase[INPUT_ARRAY_SIZE], cor[INPUT_ARRAY_SIZE];
+within functions, we define them here*/
+float amp[900000], phase[900000], cor[900000];
 float seis_out[2000000];
 
 /*c/////////////////////////////////////////////////////////////////////////*/
@@ -162,11 +157,11 @@ int do_cor(int lag, char *cordir, char *pbdir)
         sprintf( amp_sac, "%s.am", sdb.rec[ine][jsta1].ft_fname );
         sprintf( phase_sac, "%s.ph", sdb.rec[ine][jsta1].ft_fname );
 	// read amp and phase files and read into common memory
-        if ( read_sac(amp_sac, amp, &shdamp1, INPUT_ARRAY_SIZE )==NULL ) {
+        if ( read_sac(amp_sac, amp, &shdamp1, 900000 )==NULL ) {
   	  fprintf( stderr,"file %s not found\n", amp_sac );
    	  continue;
         }
-        if ( read_sac(phase_sac, phase, &shdph1, INPUT_ARRAY_SIZE)== NULL ) {
+        if ( read_sac(phase_sac, phase, &shdph1, 900000)== NULL ) {
           fprintf( stderr,"file %s not found\n", phase_sac );
           continue;
 	  }
@@ -184,11 +179,11 @@ int do_cor(int lag, char *cordir, char *pbdir)
             sprintf(phase_sac, "%s.ph", sdb.rec[ine][jsta2].ft_fname);
 	    fprintf(stdout,"xcor: %s  %s\n", sdb.rec[ine][jsta1].ft_fname,sdb.rec[ine][jsta2].ft_fname );
             // get array of floats for amp and phase of first signal
-            if ( read_sac(amp_sac, amp, &shdamp2, INPUT_ARRAY_SIZE) ==NULL ) {
+            if ( read_sac(amp_sac, amp, &shdamp2, 900000) ==NULL ) {
               fprintf(stderr,"file %s not found\n", amp_sac );
               continue;
             }
-            if ( read_sac(phase_sac, phase, &shdph2, INPUT_ARRAY_SIZE)==NULL ) {
+            if ( read_sac(phase_sac, phase, &shdph2, 900000)==NULL ) {
               fprintf(stderr,"file %s not found\n", phase_sac );
               continue;
 	      }

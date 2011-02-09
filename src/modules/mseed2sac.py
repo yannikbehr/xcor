@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env mypython
 '''
 Script to convert mseed files to sac files
 
@@ -12,7 +12,7 @@ import subprocess as sp
 from ConfigParser import SafeConfigParser
 from obspy.sac import *
 
-DEBUG = True
+DEBUG = False
 
 class mSeed2Sac:
     def __init__(self, dataless, respdir, outputdir, bindir, rdseed):
@@ -24,7 +24,7 @@ class mSeed2Sac:
         self.monthdict = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May', \
                           6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct', \
                           11:'Nov',12:'Dec'}
-	self.flist = []        
+        self.flist = []        
 
     def __call__(self, mseedir, outputdir, spat):
         self.procMSeed(mseedir, outputdir, spat)
@@ -55,7 +55,7 @@ class mSeed2Sac:
         """
         a = glob.glob(os.path.join(dirname, sp))
         if len(a) > 0:
-		self.flist.append(a)
+            self.flist.append(a)
             
     
     
@@ -176,24 +176,28 @@ class mSeed2Sac:
                     if not os.path.isdir(tempout):
                         os.mkdir(tempout)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
-                          tempout+' -b 9000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
+                          tempout+' -b 900000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
+                os.system(command)
                 if DEBUG:
                     print command
-                os.system(command)
                 g = self.getMsInfo(tempout)
                 for i in g.keys():
                     for j in g[i].keys():
                         if j != 'date':
                             filename = self.makeFilename(i, j, g[i]['date'], outputdir)
                             if os.path.isfile(filename):
+                                for k in g[i][j]:
+                                    os.remove(k)
                                 continue
                             if DEBUG:
                                 print "--> writing file: ", filename
                             if self.mergeSac(g[i][j], filename):
-                               # self.copyResp(i, j, filename) 
-                                
-                                for k in g[i][j]:
-                                    os.remove(k)
+                                pass
+                                #self.copyResp(i, j, filename) 
+                            for k in g[i][j]:
+                                os.remove(k)
+                            if DEBUG:
+                                print "To remove: ", g[i][j]
                                     
 if __name__ == '__main__':
     try:

@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 import numpy as np
 import array as a
-import pysacio as p
+from obspy.sac import *
+#import pysacio as p
 import os.path, glob, re, sys, string
 from ConfigParser import SafeConfigParser
 from math import *
@@ -75,31 +76,43 @@ if __name__ == '__main__':
     for i in statpair.keys():
         for j in statpair[i].keys():
             if j != 'EE_s':
-                fn_ee = statpair[i][j]
-                [hfEE,hiEE,hsEE,seisEE,okEE] = p.ReadSacFile(fn_ee)
-                if not okEE:
-                    print "ERROR: cannot read in sacfile %s!" %(fn_ee)
-                fn_nn = fn_ee.replace('EE','NN')
-                [hfNN,hiNN,hsNN,seisNN,okNN] = p.ReadSacFile(fn_nn)
-                if not okNN:
-                    print "ERROR: cannot read in sacfile %s!" %(fn_nn)
-                fn_en = fn_ee.replace('EE','EN')
-                [hfEN,hiEN,hsEN,seisEN,okEN] = p.ReadSacFile(fn_en)
-                if not okEN:
-                    print "ERROR: cannot read in sacfile %s!" %(fn_en)
-                fn_ne = fn_ee.replace('EE','NE')
-                [hfNE,hiNE,hsNE,seisNE,okNE] = p.ReadSacFile(fn_ne)
-                if not okNE:
-                    print "ERROR: cannot read in sacfile %s!" %(fn_ne)
-                if DEBUG:
-                    print fn_ee
-                    print fn_nn
-                    print fn_en
-                    print fn_ne
-            st1lat = hfNN[31]
-            st1lon = hfNN[32]
-            st2lat = hfNN[35]
-            st2lon = hfNN[36]
+                try:
+                    fn_ee = statpair[i][j]
+                    #[hfEE,hiEE,hsEE,seisEE,okEE] = p.ReadSacFile(fn_ee)
+                    tr_ee = SacIO(fn_ee)
+                    #if not okEE:
+                    #    print "ERROR: cannot read in sacfile %s!" %(fn_ee)
+                    fn_nn = fn_ee.replace('EE','NN')
+                    tr_nn = SacIO(fn_nn)
+                    #[hfNN,hiNN,hsNN,seisNN,okNN] = p.ReadSacFile(fn_nn)
+                    #if not okNN:
+                    #    print "ERROR: cannot read in sacfile %s!" %(fn_nn)
+                    fn_en = fn_ee.replace('EE','EN')
+                    tr_en = SacIO(fn_en)
+                    #[hfEN,hiEN,hsEN,seisEN,okEN] = p.ReadSacFile(fn_en)
+                    #if not okEN:
+                    #    print "ERROR: cannot read in sacfile %s!" %(fn_en)
+                    fn_ne = fn_ee.replace('EE','NE')
+                    tr_ne = SacIO(fn_ne)
+                    #[hfNE,hiNE,hsNE,seisNE,okNE] = p.ReadSacFile(fn_ne)
+                    #if not okNE:
+                    #    print "ERROR: cannot read in sacfile %s!" %(fn_ne)
+                    #if DEBUG:
+                    #    print fn_ee
+                    #    print fn_nn
+                    #    print fn_en
+                    #    print fn_ne
+                except SacIOError,e:
+                    print e
+                    continue
+            #st1lat = hfNN[31]
+            #st1lon = hfNN[32]
+            #st2lat = hfNN[35]
+            #st2lon = hfNN[36]
+            st1lat = tr_nn.stla
+            st1lon = tr_nn.stlo
+            st2lat = tr_nn.evla
+            st2lon = tr_nn.evlo
             dist, az, baz = delaz.delaz(st1lat, st1lon, st2lat, st2lon, 0)
             tmp1 = ((az - 180)/180)*pi
             cos1=cos(tmp1);
@@ -112,16 +125,25 @@ if __name__ == '__main__':
                                [-1*sin1*sin2, -sin1*cos2, -cos1*cos2, -cos1*sin2],
                                [-1*cos1*sin2, -cos1*cos2, sin1*cos2, sin1*sin2],
                                [-1*sin1*cos2, sin1*sin2, cos1*sin2, -cos1*cos2]])
-            tracemat = np.array([seisEE,seisEN,seisNN,seisNE])
+            #tracemat = np.array([seisEE,seisEN,seisNN,seisNE])
+            tracemat = np.array([tr_ee.seis,tr_en.seis,tr_nn.seis,tr_ne.seis])
             resmat = np.dot(rotmat, tracemat)
             fileTT = fn_ee.replace('EE','TT')
             fileRR = fn_ee.replace('EE','RR')
             fileTR = fn_ee.replace('EE','TR')
             fileRT = fn_ee.replace('EE','RT')
-            p.WriteSacBinary(fileTT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[0]))
-            p.WriteSacBinary(fileRR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[1]))
-            p.WriteSacBinary(fileTR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[2]))
-            p.WriteSacBinary(fileRT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[3]))
+            tr_nn.seis = resmat[0,:]
+            tr_nn.WriteSacBinary(fileTT)
+            tr_nn.seis = resmat[1,:]
+            tr_nn.WriteSacBinary(fileRR)
+            tr_nn.seis = resmat[2,:]
+            tr_nn.WriteSacBinary(fileTR)
+            tr_nn.seis = resmat[3,:]
+            tr_nn.WriteSacBinary(fileRT)
+            #p.WriteSacBinary(fileTT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[0]))
+            #p.WriteSacBinary(fileRR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[1]))
+            #p.WriteSacBinary(fileTR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[2]))
+            #p.WriteSacBinary(fileRT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[3]))
             stations = i.split('_')
             stat1 = stations[0]; stat2 = stations[1]
             if DEBUG:

@@ -203,6 +203,7 @@ if __name__ == '__main__':
     cnt = 0
     for sp in spattern.split(','):
         files = mklist(sp,datdir)
+        print "Files to stack: ", len(files)
         substack(files,sp,stackdir,mylogger,stackl,shift)
         cnt = cnt + len(files)
         pbar.update(cnt)

@@ -6,7 +6,8 @@
 #%.o:%.cpp
 #	g++ -g -c $<
 ############## INSTALLER ########################
-BINDIR = ../bin/
+BINDIR = /usr/local/xcorr/xcorr_git/bin
+#BINDIR = ../bin
 
 include makeauto.macro
 VPATH = modules
@@ -36,13 +37,13 @@ xcor:
 	cd ./xcorr; make
 
 filter: filter4_driver.c module_obj
-	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I $(VPATH) ./modules/filter4.o ./modules/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I $(VPATH) /usr/local/xcorr/xcorr_git/src/modules/filter4.o /usr/local/xcorr/xcorr_git/src/modules/mysac.o -lfftw3 -lgfortran 
 
 whiteout1cmp: white_1cmp_driver.c module_obj
-	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) ./modules/white_phamp_1cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) /usr/local/xcorr/xcorr_git/src/modules/white_phamp_1cmp.o /usr/local/xcorr/xcorr_git/src/modules/mysac.o -lfftw3 -lgfortran 
 
 whiteout2cmp: white_2cmp_driver.c module_obj
-	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I $(VPATH) ./modules/white_phamp_2cmp.o ./modules/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I $(VPATH) /usr/local/xcorr/xcorr_git/src/modules/white_phamp_2cmp.o /usr/local/xcorr/xcorr_git/src/modules/mysac.o -lfftw3 -lgfortran 
 
 mergesac: merge_sac.c module_obj $(hfiles)
 	$(CC) -Wall $(CFLAGS) -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)
@@ -65,8 +66,8 @@ install:
 	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\
-	install merge_sac $(BINDIR)
-
+	install merge_sac $(BINDIR);\
+	install ./xcorr/autoCOR $(BINDIR);
 clean:
 	rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
 	white_2cmp merge_sac; \

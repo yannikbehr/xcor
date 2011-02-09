@@ -169,8 +169,8 @@ class mSeed2Sac:
                 print "no files found for pattern: ", sp
                 continue
             for fn in files:
-                if DEBUG:
-                    print fn
+               # if DEBUG:
+                  #  print fn
                 if os.path.isfile(fn):
                     tempout = os.path.join(mseedir, outputdir)
                     if not os.path.isdir(tempout):

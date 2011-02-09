@@ -15,7 +15,6 @@ FC = gfortran
 BIN1  = justCOR
 BIN2  = justCOR_EE_EN
 BIN3  = xcor_h
-BIN4 = autoCOR
 
 VPATH = ../modules
 #LPATH = /opt/intel/Compiler/11.1/072/lib/intel64
@@ -62,9 +61,6 @@ $(BIN1) : $(FOBJS) $(COBJS) $(binofiles) module_obj
 $(BIN2) : $(FOBJS) $(COBJS) $(binofiles) module_obj
 	$(CC) justCOR_EE_EN.o $(DBG) -m32 $(ofiles) $(FOBJS) -o $(BIN2) $(LDLIBS) -L $(LPATH)
 
-$(BIN4) : $(FOBJS) $(COBJS) $(binofiles) module_obj 
-	$(CC) $(DBG) -m32 autoCOR.o $(ofiles) $(FOBJS) -o $(BIN4) $(LDLIBS) -L $(LPATH)
-
 #$(BIN3) :   module_obj
 #	$(CC) -g -Wall -I $(VPATH) xcor_h.c $(ofiles) -o $(BIN3) $(LDLIBS)
 
@@ -76,7 +72,7 @@ module_obj:
 	cd $(VPATH); make objects
 
 clean ::
-	rm -f $(BIN1) $(BIN2) $(BIN4) core *.o
+	rm -f $(BIN1) $(BIN2) core *.o
 
 tilde :
 	rm ./*~

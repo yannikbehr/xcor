@@ -18,18 +18,21 @@ import os, os.path, sys, string, fnmatch
 from ConfigParser import SafeConfigParser
 from subprocess import *
 
-
+DEBUG = False
 
 def initsacdb(datdir,regex='[!^ft]*Z.SAC',
                   srchflag='0',prefix='ft',sacdbf='sac_db.out',
-                  tmpdir='./tmp/',resp_dir='./'):
-    _path = os.environ['AUTO_SRC']
+                  tmpdir='./tmp/',resp_dir='./',skipdir='XXX'):
+    _path = '/Users/home/carrizad/xcorr'
     tmpcnf = 'config_tmp.txt'
-    output = open(os.path.join(tmpdir,tmpcnf),"w")
+    if os.path.isfile(tmpcnf):
+        os.remove(tmpcnf)
+                 
+    output = open(tmpcnf,"w")
     outlines = []
     outlines.append("[init_sacdb]\n")
-    outlines.append("search_directories="+datdir+"\n")
-    outlines.append("skip_directories=\n")
+    outlines.append("search_directories="+datdir+",\n")
+    outlines.append("skip_directories="+skipdir+"\n")
     outlines.append("flag="+srchflag+"\n")
     outlines.append("search_string="+regex+"\n")
     outlines.append("resp_dir="+resp_dir+"\n")
@@ -39,20 +42,25 @@ def initsacdb(datdir,regex='[!^ft]*Z.SAC',
     output.writelines(outlines)
     output.close()
     initcmd = os.path.join(_path,'bin/initsac_db')
-    out,err = Popen([initcmd,'-c',cnf],stdout=PIPE,stderr=PIPE).communicate()
-    f = open(os.path.join(tmpdir,sacdbf),'w')
-    f.write(out)
-    f.close()
-    f = open(os.path.join(tmpdir,'initsacdb.err'),'w')
-    f.write(err)
-    f.close()
-    os.remove(output)
+    if DEBUG:
+        print initcmd, tmpcnf
+    p = call([initcmd,'-c', tmpcnf])
+
+#    out,err = Popen([initcmd,'-c',os.path.join(tmpdir,tmpcnf)],stdout=PIPE,stderr=PIPE).communicate()
+#    
+#    f = open(os.path.join(tmpdir,sacdbf),'w')
+#    f.write(out)
+#    f.close()
+#    f = open(os.path.join(tmpdir,'initsacdb.err'),'w')
+#    f.write(err)
+#    f.close()
+    os.remove(tmpcnf)
 
 
 
 
 
-def Walk(root, recurse=1, pattern='*_*_*_0_0_0', return_folders=1):
+def Walk(root, recurse=1, pattern='*_*_*_0_0_0', return_folders=1,skipdir=''):
     """
     From ActiveState.com Recipe: 52664-flexible-directory-walking/
     
@@ -67,12 +75,15 @@ def Walk(root, recurse=1, pattern='*_*_*_0_0_0', return_folders=1):
     # must have at least root folder
     try:
         names = os.listdir(root)
+        for dir in skipdir.split(','):
+            if dir in names:
+                names.remove(dir)
     except os.error:
         return result
 
     # expand pattern
     pattern = pattern or '*'
-    pat_list = string.splitfields( pattern , ';' )
+    pat_list = string.splitfields( pattern , ',' )
     
     # check each file
     for name in names:
@@ -122,5 +133,10 @@ if __name__ == "__main__":
     for day in daydirs:
         tmp = os.path.basename(day).split('_')
         tmp_dbname = dbname+'_%s_%s_%s' % (tmp[0],tmp[1],tmp[2])
-        initsacdb(day,spat,flag,prefix,tmp_dbname,tmpdir,respdir)
+
+        if DEBUG:
+            print "Initializing for: ", day
+        initsacdb(day,spat,flag,prefix,tmp_dbname,tmpdir,respdir,skipdir)
         
+
+

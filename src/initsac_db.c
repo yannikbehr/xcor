@@ -176,7 +176,7 @@ static int glob_this(const char *fpath, const struct stat *sb,
   for(i=0;i<search_opts.n3;i++){
     assert((strlen(fpath)+strlen(search_opts.search_str[i]))<STRING-1);
     sprintf(localpattern,"%s/%s",fpath, search_opts.search_str[i]);
-    //    printf("%s\n", localpattern);
+    //      printf("Local pattern: %s\n", localpattern);
 
     if(glob(localpattern, 0, NULL, &match) == 0){
       for(j=0;j<match.gl_pathc;j++){

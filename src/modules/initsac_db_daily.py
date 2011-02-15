@@ -1,17 +1,7 @@
 #!/usr/bin/env mypython
 """
 wrapper for initsac_db C-routine
-
-"""
-
-"""
-Need to make a new loop in initsacdb that will 'walk' each day directory in the structure
-and make a new dbname + execute new init_sacdb loop for each day
-
-produce dbname_year_jday
-
--> submit each one to grid processing for rest of processing steps
-
+produces daily sac_dbs
 """
 
 import os, os.path, sys, string, fnmatch
@@ -45,15 +35,6 @@ def initsacdb(datdir,regex='[!^ft]*Z.SAC',
     if DEBUG:
         print initcmd, tmpcnf
     p = call([initcmd,'-c', tmpcnf])
-
-#    out,err = Popen([initcmd,'-c',os.path.join(tmpdir,tmpcnf)],stdout=PIPE,stderr=PIPE).communicate()
-#    
-#    f = open(os.path.join(tmpdir,sacdbf),'w')
-#    f.write(out)
-#    f.close()
-#    f = open(os.path.join(tmpdir,'initsacdb.err'),'w')
-#    f.write(err)
-#    f.close()
     os.remove(tmpcnf)
 
 

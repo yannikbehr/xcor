@@ -3,10 +3,9 @@
 remove instrument response using sac and cut precisely
  Changed some things like allowing resp + paz simultaneously
 
-
 """
 
-import os, os.path, sys, glob
+import os, os.path, sys, glob, string
 from subprocess import *
 from obspy.sac import *
 import sac_db
@@ -33,9 +32,9 @@ def cut(sdb,ne,ns,t1,nos):
     fin  = sdb.rec[ne][ns].ft_fname+'_tmp'
     fout = sdb.rec[ne][ns].ft_fname
     if DEBUG:
-        print fin
-        print fout
+        print "Attemping to read in sac-file: ", fin
     p = ReadSac(fin)
+
     dt   = p.GetHvalue('delta')
     npts = p.GetHvalue('npts')
     yy   = p.GetHvalue('nzyear')
@@ -55,7 +54,8 @@ def cut(sdb,ne,ns,t1,nos):
     t1e  = t1b + (npts-1)*dt
         
     if t1b>t1 or t1e<t2 or t1e > 100000/dt:
-        print "ERROR: incompatible time limits for %s; cannot cut"%(fin)
+        print "ERROR: incompatible time limits for %s; cannot cut" % (fin)
+        os.remove(fin)
         return
     if ms > 0.:
         frac = (int((0.001*ms+dt)/dt)*dt-0.001*ms)/dt
@@ -80,6 +80,8 @@ def cut(sdb,ne,ns,t1,nos):
     p.SetHvalue("b",0.)
     p.seis = p.seis[n1:n1+n]
     p.WriteSacBinary(fout)
+    if DEBUG:
+        print "Successfully written: ", fout
     os.remove(fin)
 
 
@@ -105,24 +107,20 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
     print >>cd1, "rmean"
     print >>cd1, "rtrend"
     print >>cd1, "interpolate delta %f "%delta
-    if DEBUG:
-        print "The resp file is: %s " % sdb.rec[ne][ns].resp_fname
-        print "The PZ file is: %s " % sdb.rec[ne][ns].pz_fname
     if rminst:
         if os.path.isfile(sdb.rec[ne][ns].resp_fname):
             print >>cd1, "transfer from evalresp fname %s to vel freqlimits\
-            %f %f %f %f"%(sdb.rec[ne][ns].resp_fname,fl1,fl2,fl3,fl4)
+            %f %f %f %f" % (sdb.rec[ne][ns].resp_fname,fl1,fl2,fl3,fl4)
         #if instype == 'resp':
         elif os.path.isfile(sdb.rec[ne][ns].pz_fname):
             print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
-            %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
+            %f %f %f %f" % (sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
         else:
             print "Could not find PZ or RESP file for: ", sdb.rec[ne][ns].fname
-        #if instype == 'pz':
-        #if sdb.rec[ne][ns].pz_fname != '':
-                
+
     if filter:
-        print >>cd1,"bandpass npoles 4 corner %f %f"%(fl2,fl3)
+        print >>cd1,"bandpass npoles 4 corner %f %f" % (fl2,fl3)
+    print "writing temporary file"
     print >>cd1, "w %s"%(sdb.rec[ne][ns].ft_fname+'_tmp')
     print >>cd1, "quit"
     cd1.close()
@@ -134,15 +132,17 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
 
 if __name__ == "__main__":
     try:
-        if string.find(sys.argv[1],'-c')!=-1:
+        if string.find(sys.argv[1],'-c') != -1:
             cnffile=sys.argv[2]
         else:
             print "encountered unknown command line argument"
             raise Exception
-    except Exception:
+    except Exception, e:
         cnffile = 'config.txt' 
+        print e
 
     if not os.path.isfile(cnffile):
+        print cnffile
         print "no config file found"
         sys.exit(1)
 

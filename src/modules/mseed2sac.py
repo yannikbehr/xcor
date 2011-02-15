@@ -50,16 +50,7 @@ class mSeed2Sac:
     
     def ls(self, sp, dirname, filelist):
         """
-        List all files matching search pattern 'sp'
-        and append to global list
-        
-        
-        """
-        
-        
-        """
-        If this is a grid run, we wnat to keep a seperate file list per directory and run procmseed on that
-        Or make flist a list of lists...
+        List all files matching pattern 'sp' and append to global list
         """
         a = glob.glob(os.path.join(dirname, sp))
         if len(a) > 0:
@@ -145,6 +136,7 @@ class mSeed2Sac:
         """
         Copy response file for station(stn) channel(chan) to 
         appropriate location
+        (not used)
         """
         if len(self.respFileDict(self.respdir)[stn][chan]) > 1:
             print "WARNING: there are several response files available"
@@ -157,10 +149,7 @@ class mSeed2Sac:
             
     def procMSeed(self, mseedir, outputdir, spat):
         """
-        Edit this so that each directory walked (station directory?)
-        Is submitted as a single grid job
-        
-        
+        Main processing loop
         """
         if not os.path.isdir(mseedir):
             print "ERROR: Master directory doesn't exist!\n"
@@ -226,7 +215,6 @@ if __name__ == '__main__':
             dataless  = cp.get('mseed2sac','dataless')
             respdir   = cp.get('mseed2sac','respdir')
             spat      = cp.get('mseed2sac','search_pattern')
-            gridrun   = cp.get('mseed2sac','gridrun')
         else:
             print "encountered unknown command line argument"
             raise Exception

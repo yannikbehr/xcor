@@ -50,6 +50,6 @@ if __name__ == "__main__":
         print "no config file found"
         sys.exit(1)
 
-    _path = '/Users/home/carrizad/xcorr/'
+    _path = os.environ['AUTO_SRC']
     initcmd = os.path.join(_path,'bin/initsac_db')
     out,err = Popen([initcmd,'-c',cnffile]).communicate()

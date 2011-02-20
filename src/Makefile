@@ -6,9 +6,9 @@
 #%.o:%.cpp
 #	g++ -g -c $<
 ############## INSTALLER ########################
-BINDIR = /Users/home/carrizad/xcorr/bin
+#BINDIR = /Users/home/carrizad/xcorr/bin
 
-#BINDIR = ../bin
+BINDIR = ../bin
 
 include makeauto.macro
 VPATH = modules

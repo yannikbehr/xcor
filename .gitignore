@@ -8,9 +8,12 @@ src/white_1cmp
 src/white_2cmp
 src/xcorr/justCOR
 src/xcorr/justCOR_EE_EN
+src/xcorr/autoCOR
 bin/*
 src/FTAN/pv/ftanpv.so
 src/xcorr/xcor_h
 src/modules/fft_filter.so
 src/modules/fft_filter_c.so
 src/modules/checkerboard.input
+.project
+.pydevproject

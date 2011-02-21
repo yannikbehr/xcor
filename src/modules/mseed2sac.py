@@ -9,6 +9,7 @@ Modifed by: Adam Carrizales
 
 import os, os.path, glob, sys, string, time, shutil
 import subprocess as sp
+import tempfile as tmp
 from ConfigParser import SafeConfigParser
 from obspy.sac import *
 
@@ -177,12 +178,13 @@ class mSeed2Sac:
                     tempout = os.path.join(mseedir, outputdir)
                     if not os.path.isdir(tempout):
                         os.mkdir(tempout)
+                    tempdir = tmp.mkdtemp(prefix='mseed_',dir=tempout)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
-                          tempout+' -b 900000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
+                          tempdir+' -b 900000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
                 os.system(command)
                 if DEBUG:
                     print command
-                g = self.getMsInfo(tempout)
+                g = self.getMsInfo(tempdir)
                 for i in g.keys():
                     for j in g[i].keys():
                         if j != 'date':
@@ -196,11 +198,14 @@ class mSeed2Sac:
                             if self.mergeSac(g[i][j], filename):
                                 pass
                                 #self.copyResp(i, j, filename) 
-                            for k in g[i][j]:
+                            #for k in g[i][j]:
                                 os.remove(k)
-                            if DEBUG:
-                                print "To remove: ", g[i][j]
-                                    
+                                
+#                os.removedirs(tempdir)
+                print sys.exc_info()
+                time.sleep(10)
+                shutil.rmtree(tempdir)
+                            
 if __name__ == '__main__':
     try:
         if string.find(sys.argv[1], '-c') != -1:

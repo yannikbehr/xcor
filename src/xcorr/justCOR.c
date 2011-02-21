@@ -87,7 +87,7 @@ int main (int na, char **arg)
   fread(&sdb, sizeof(SAC_DB), 1, ff );
   fclose(ff);
   /* change ft_fname value in sdb-struct */
-  sac_db_chng(pbdir);
+  sac_db_chng_new(pbdir);
 
   /*do all the work of correlations here  */
   do_cor(lag,cordir,pbdir);  
@@ -370,7 +370,7 @@ void make_dir(int ie, char *cordir, char *pbdir, char *daydir){
   char yeardir[LINEL],mondir[LINEL],bnddir[LINEL];
   assert((strlen(cordir)+40)<LINEL);
   sprintf(bnddir,"%s/%s",cordir,pbdir);
-  sprintf(yeardir,"%s/%d",bnddir,year);
+  sprintf(yeardir,"%s/%d",pbdir,year);
   sprintf(mondir,"%s/%s",yeardir,months[month-1]);
   sprintf(daydir,"%s/%d_%d_%d_0_0_0",mondir,year,month,day);
   errno = 0;

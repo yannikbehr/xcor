@@ -7,7 +7,7 @@ import array as a
 from obspy.sac import *
 import os, os.path, glob, re, sys, string, math
 from ConfigParser import SafeConfigParser
-sys.path.append('/Users/home/carrizad/Desktop/xcorr/xcorr_git/src/modules')
+sys.path.append('/Users/home/carrizad/xcorr/src/modules/')
 #import delaz as dz
 from obspy.signal.rotate import gps2DistAzimuth
 
@@ -31,7 +31,7 @@ def find_match(par,dirname,filelist):
         for f in corfiles:
             #match = re.search('COR_(\\w*_\\w*).SAC',f)
             match = re.search(par.spattern,f)
-            #print match
+            
             if match:
                 #[hf,hi,hs,seis,ok] = p.ReadSacFile(f)
                 p = SacIO(f)
@@ -131,7 +131,7 @@ def write_stack(stackdir,par):
         t.SetHvalue('dist',dist)
         try:
             app = par.spattern.split('.SAC')[1]
-        except:
+        except: 
             app = ''
         outputfile = stackdir+'/COR_'+stat+'.SAC'+app
         #p.WriteSacBinary(outputfile, hf, hi, hs, a.array('f',seis))

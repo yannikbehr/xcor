@@ -25,8 +25,6 @@ def white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
     p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
     child1 = p1.stdin
     src, tar, eqtar = fns[0]
-    if DEBUG:
-        print src, tar, eqtar
     print >>child1, "r %s" %(eqtar+'_tmp')
     print >>child1, "abs"
     print >>child1, "smooth mean h 128"
@@ -37,7 +35,7 @@ def white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
     print >>child1, "q"
     err1 = child1.close()
     ret1 = p1.wait()
-    os.remove('a1.avg')
+    #os.remove('a1.avg') - Is overwritten by above sac command? 
     os.remove(eqtar+'_tmp')
     os.remove(tar+'_tmp')
     if err1 or ret1 != 0:
@@ -167,13 +165,9 @@ def specnorm(sdb,ne,ns,upperp,lowerp,rootdir,polarity='vertical',eqband=[50,15],
             os.makedirs(eqdir)
         eqtar = os.path.join(eqdir,os.path.basename(src))
         tar = os.path.join(bpdir,os.path.basename(src))
-        fns = [(src,tar,eqtar)]
-    if DEBUG:
-        print "Starting filter_f!"    
+        fns = [(src,tar,eqtar)]    
     ### filtering and temporal normalization
     filter_f(fns,ltaper,lowerp,upperp,utaper,eqband,eqltaper,equtaper,npow,bindir)
-    if DEBUG:
-        print "Starting whitening!"
     ### whitening
     if polarity == 'vertical':
         white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin)
@@ -192,7 +186,7 @@ if __name__ == '__main__':
             print "encountered unknown command line argument"
             raise Exception
     except Exception:
-        config = 'config.txt' 
+        config = 'config.txt'
 
     if not os.path.isfile(config):
         print "no config file found"
@@ -228,10 +222,9 @@ if __name__ == '__main__':
             bpfile = "%.1fto%.1f"%(upperp,lowerp)
             eqdir = os.path.join(rootdir,bpfile,year,month,day,'eqband')
             os.rmdir(eqdir)
-        except Exception, e:
+        except Exception:
             if DEBUG:
-                print "cannot remove %s"%eqdir
-                print e
+                print "cannot remove %s" % eqdir
             continue
     if not DEBUG:
         pbar.finish()

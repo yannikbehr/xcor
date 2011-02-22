@@ -3,6 +3,8 @@
 remove instrument response using sac and cut precisely
  Changed some things like allowing resp + paz simultaneously
 
+more comments
+
 """
 
 import os, os.path, sys, glob, string

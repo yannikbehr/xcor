@@ -276,7 +276,7 @@ void extr_sac_hd(char *sacfile, const char *pathname){
 
   /* find corresponding response file */
   
-  if(stat(search_opts.resp_dir,&fst) && S_ISDIR(fst.st_mode)){
+  if((stat(search_opts.resp_dir,&fst) != -1) && S_ISDIR(fst.st_mode)){
     assert((strlen(search_opts.resp_dir)+strlen(shd.kstnm)+strlen(shd.kcmpnm)+7)<STRING-1);
     sprintf(respattern,"%s/RESP*%s*%s",search_opts.resp_dir, shd.kstnm, shd.kcmpnm);
   }else{

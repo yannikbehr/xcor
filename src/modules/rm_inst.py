@@ -1,6 +1,7 @@
 #!/usr/bin/env mypython
 """
 Remove instrument response using sac and cut precisely.
+
 """
 
 import os, os.path, sys, glob

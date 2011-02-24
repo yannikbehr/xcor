@@ -22,19 +22,51 @@ class RmInstTestCase(unittest.TestCase):
         self.sdb.nev = 1
         self.sdb.nst = 1
         self.sdb.rec[0][0].fname = './testdata/S28.HHZ.SAC'
-        self.sdb.rec[0][0].ft_fname = './testdata/ft_test_S28.HHZ.SAC'
         self.sdb.rec[0][0].resp_fname = './testdata/miniseed/RESP.XH.S28..HHZ'
-        if os.path.isfile(self.sdb.rec[0][0].ft_fname):
-            os.remove(self.sdb.rec[0][0].ft_fname)
+        self.sdb.rec[0][0].pz_fname = './testdata/miniseed/SAC_PZs_XH_S28_HHZ'
 
-    def test_rminst(self):
+    def test_rminst_resp(self):
         sacbin='/usr/local/sac101.3b/bin/sac'
-        rm_inst.rm_inst(self.sdb,0,0,delta=0.1,rminst=False,instype='resp',\
+        self.sdb.rec[0][0].ft_fname = './testdata/ft_resp_S28.HHZ.SAC'
+        rm_inst.rm_inst(self.sdb,0,0,delta=0.1,rminst=True,instype='resp',\
                         plow=100.,phigh=0.3,sacbin=sacbin,\
                         t1=4000,nos=81000,filter=False)
-        tr1 = ReadSac('./testdata/ft_S28.HHZ.SAC')
-        tr2 = ReadSac('./testdata/ft_test_S28.HHZ.SAC')
+        tr1 = ReadSac('./testdata/ft_test_resp_S28.HHZ.SAC')
+        tr2 = ReadSac('./testdata/ft_resp_S28.HHZ.SAC')
         np.testing.assert_array_equal(tr1.seis, tr2.seis)
+
+    def test_rminst_pz(self):
+        sacbin='/usr/local/sac101.3b/bin/sac'
+        self.sdb.rec[0][0].ft_fname = './testdata/ft_pz_S28.HHZ.SAC'
+        rm_inst.rm_inst(self.sdb,0,0,delta=0.1,rminst=True,instype='pz',\
+                        plow=100.,phigh=0.3,sacbin=sacbin,\
+                        t1=4000,nos=81000,filter=False)
+        tr1 = ReadSac('./testdata/ft_test_pz_S28.HHZ.SAC')
+        tr2 = ReadSac('./testdata/ft_pz_S28.HHZ.SAC')
+        np.testing.assert_array_equal(tr1.seis, tr2.seis)
+
+    def test_pz_vs_resp(self):
+        ### It seems like the instrument response removal 
+        ### using either pole-zero or RESP-files does not
+        ### result in exactly the same trace
+        tr1 = ReadSac('./testdata/ft_test_pz_S28.HHZ.SAC')
+        tr2 = ReadSac('./testdata/ft_test_resp_S28.HHZ.SAC')
+        rms = np.sqrt(np.sum((tr1.seis - tr2.seis) ** 2) / \
+                      np.sum(tr2.seis ** 2))
+        self.assertTrue(rms<0.00289)
+                        
+    def tearDown(self):
+        if os.path.isfile('./testdata/ft_resp_S28.HHZ.SAC'):
+            os.remove('./testdata/ft_resp_S28.HHZ.SAC')
+        if os.path.isfile('./testdata/ft_pz_S28.HHZ.SAC'):
+            os.remove('./testdata/ft_pz_S28.HHZ.SAC')
+#  -0.313536.
+#  This is inconsistent with the value calculated from poles and zeros: 0.010207.
+#*CONSTANT 2.462500e+09
+#orig:CONSTANT 8.016767e+07
+
+ 
+        
 
 
 

@@ -92,10 +92,11 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
     fl4=1.0/(phigh-0.25*phigh)
     if sdb.rec[ne][ns].fname == '':return
     if os.path.isfile(sdb.rec[ne][ns].ft_fname):return
-    p = Popen(sacbin+' 2>/dev/null 1>/dev/null',shell=True,stdin=PIPE)
-    cd1 = p.stdin
     if DEBUG:
-        print "r %s"%sdb.rec[ne][ns].fname
+        p = Popen(sacbin,shell=True,stdin=PIPE)
+    else:
+        p = Popen(sacbin+' 2>/dev/null 1>/dev/null',shell=True,stdin=PIPE)
+    cd1 = p.stdin
     print >>cd1, "r %s"%sdb.rec[ne][ns].fname
     print >>cd1, "rmean"
     print >>cd1, "rtrend"
@@ -108,6 +109,7 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
             if sdb.rec[ne][ns].pz_fname != '':
                 print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
                 %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
+                print >>cd1, "mul 1.0e+9" ## needed to convert m to nm (see SAC manual)
     if filter:
         print >>cd1,"bandpass npoles 4 corner %f %f"%(fl2,fl3)
     print >>cd1, "w %s"%(sdb.rec[ne][ns].ft_fname+'_tmp')

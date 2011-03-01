@@ -11,6 +11,7 @@ from ConfigParser import SafeConfigParser
 import progressbar as pg
 from obspy.core import read
 from obspy.sac import *
+from obspy.core.util import NamedTemporaryFile
 
 DEBUG=False
 months = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',
@@ -25,12 +26,13 @@ def white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
     p1 = sp.Popen(saccmd, shell=True, bufsize=0, stdin=sp.PIPE, stdout=None)
     child1 = p1.stdin
     src, tar, eqtar = fns[0]
+    tempfile = NamedTemporaryFile().name
     print >>child1, "r %s" %(eqtar+'_tmp')
     print >>child1, "abs"
     print >>child1, "smooth mean h 128"
-    print >>child1, "w over a1.avg"
+    print >>child1, "w over %s"%tempfile
     print >>child1, "r %s" %(tar+'_tmp')
-    print >>child1, "divf a1.avg"
+    print >>child1, "divf %s"%tempfile
     print >>child1, "w over %s" %(tar)
     print >>child1, "q"
     err1 = child1.close()
@@ -48,6 +50,7 @@ def white_1_comp(fns,lowerp,upperp,utaper,ltaper,npow,bindir,sacbin):
     if err2 or ret2 != 0:
         raise RuntimeError, '%r failed with exit code %d' %(whitefilter, err2)
     os.remove(tar)
+    os.remove(tempfile)
     return 1
 
 

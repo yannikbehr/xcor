@@ -28,9 +28,6 @@ options = -g -Wall -I/usr/local/include -L/usr/local/lib
 
 all: initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter
 
-cut: 	module_obj cut_trans_mod.c
-	$(CC) $(CFLAGS) -g -I modules cut_trans_mod.c -o cut_trans_mod $(ofiles) -lm -limf
-
 initsacdb: module_obj initsac_db.c
 	$(CC) $(CFLAGS) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
@@ -59,7 +56,6 @@ module_obj:
 	cd $(VPATH); make objects
 
 install:
-	install	cut_trans_mod $(BINDIR);\
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
 	install	./xcorr/justCOR_EE_EN $(BINDIR);\
@@ -70,7 +66,7 @@ install:
 	install merge_sac $(BINDIR);\
 	install ./xcorr/autoCOR $(BINDIR);
 clean:
-	rm initsac_db cut_trans_mod justCOR filter4 white_1cmp\
+	rm initsac_db justCOR filter4 white_1cmp\
 	white_2cmp merge_sac; \
 	cd ./modules; make clean; cd ..;\
 	rm ../bin/*;\

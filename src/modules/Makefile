@@ -1,7 +1,6 @@
 include ../makeauto.macro
 
 FFLAGS = -I /usr/local/include -I /usr/include
-#CFLAGS = -m32 
 
 hfiles = \
 	iniparser.h\
@@ -9,7 +8,7 @@ hfiles = \
 
 
 ofiles = \
- 	mysac.o\
+	mysac.o\
 	white_phamp_1cmp.o\
 	white_phamp_2cmp.o\
 	filter4.o\

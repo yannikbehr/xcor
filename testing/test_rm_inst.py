@@ -16,7 +16,9 @@ os.environ['AUTO_SRC'] = os.path.dirname(os.path.realpath(os.path.dirname(__file
 sys.path.append(os.path.join(os.environ['AUTO_SRC'],'src/modules'))
 from sac_db import *
 import rm_inst
+
 class RmInstTestCase(unittest.TestCase):
+
     def which(self,program):
         def is_exe(fpath):
             return os.path.exists(fpath) and os.access(fpath, os.X_OK)

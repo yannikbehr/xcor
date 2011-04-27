@@ -12,6 +12,9 @@ from ConfigParser import SafeConfigParser
 import tempfile
 import shutil
 import sys
+os.environ['AUTO_SRC'] = os.path.dirname(os.path.realpath(os.path.dirname(__file__)))
+sys.path.append(os.path.join(os.environ['AUTO_SRC'],'src/modules'))
+from sac_from_mseed import SaFromMseed
 
 class MseedTestCase(unittest.TestCase):
     """
@@ -31,8 +34,6 @@ class MseedTestCase(unittest.TestCase):
         self.cp.set('mseed2sac','search_pattern','*.D')
 
     def test_ms2sac(self):
-        sys.path.append(os.path.join(os.environ['AUTO_SRC'],'src/modules'))
-        from sac_from_mseed import SaFromMseed
         rdseed = self.cp.get('mseed2sac','rdseed')
         bindir   = self.cp.get('mseed2sac','bindir')
         mseedir  = self.cp.get('mseed2sac','mseedir')

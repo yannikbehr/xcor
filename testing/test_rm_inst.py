@@ -12,10 +12,26 @@ from ConfigParser import SafeConfigParser
 import tempfile
 import shutil
 import sys
-sys.path.append('../src/modules')
+os.environ['AUTO_SRC'] = os.path.dirname(os.path.realpath(os.path.dirname(__file__)))
+sys.path.append(os.path.join(os.environ['AUTO_SRC'],'src/modules'))
 from sac_db import *
 import rm_inst
 class RmInstTestCase(unittest.TestCase):
+    def which(self,program):
+        def is_exe(fpath):
+            return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+        
+        fpath, fname = os.path.split(program)
+        if fpath:
+            if is_exe(program):
+                return program
+        else:
+            for path in os.environ["PATH"].split(os.pathsep):
+                exe_file = os.path.join(path, program)
+                if is_exe(exe_file):
+                    return exe_file
+                
+        return None
 
     def setUp(self):
         self.sdb = SacDb()
@@ -24,9 +40,12 @@ class RmInstTestCase(unittest.TestCase):
         self.sdb.rec[0][0].fname = './testdata/S28.HHZ.SAC'
         self.sdb.rec[0][0].resp_fname = './testdata/miniseed/RESP.XH.S28..HHZ'
         self.sdb.rec[0][0].pz_fname = './testdata/miniseed/SAC_PZs_XH_S28_HHZ'
+        if self.which('sac') is None:
+            print "Can't find SAC executable"
+            sys.exit(1)
 
     def test_rminst_resp(self):
-        sacbin='/usr/local/sac101.3b/bin/sac'
+        sacbin='sac'
         self.sdb.rec[0][0].ft_fname = './testdata/ft_resp_S28.HHZ.SAC'
         rm_inst.rm_inst(self.sdb,0,0,delta=0.1,rminst=True,instype='resp',\
                         plow=100.,phigh=0.3,sacbin=sacbin,\
@@ -36,7 +55,7 @@ class RmInstTestCase(unittest.TestCase):
         np.testing.assert_array_equal(tr1.seis, tr2.seis)
 
     def test_rminst_pz(self):
-        sacbin='/usr/local/sac101.3b/bin/sac'
+        sacbin='sac'
         self.sdb.rec[0][0].ft_fname = './testdata/ft_pz_S28.HHZ.SAC'
         rm_inst.rm_inst(self.sdb,0,0,delta=0.1,rminst=True,instype='pz',\
                         plow=100.,phigh=0.3,sacbin=sacbin,\

@@ -1,16 +1,16 @@
 ############## INSTALLER ########################
-BINDIR = ../bin
+BINDIR = ../../bin
 
 ############## COMPILER #########################
-COMPL = gcc
-CPPOMPL = g++
-FC = g77
-CFLAGS = -m32
+include ../makeauto.macro
 
-VPATH = ../src/modules
+VPATH = ../modules
 
 readsacdb: read_sac_db.c
-	$(COMPL) $(CFLAGS) -g  -I $(VPATH) read_sac_db.c -o read_sac_db
+	$(CC) $(CFLAGS) -g  -I $(VPATH) read_sac_db.c -o read_sac_db
 
 install:
 	install read_sac_db $(BINDIR)
+
+clean:
+	rm read_sac_db

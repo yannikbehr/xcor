@@ -55,6 +55,9 @@ ftan-module:
 module_obj:
 	cd $(VPATH); make objects
 
+extra:
+	cd ./extratools; make;
+
 install:
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
@@ -71,8 +74,8 @@ clean:
 	cd ./modules; make clean; cd ..;\
 	rm ../bin/*;\
 	cd ./FTAN/pv; make clean; cd -;\
-	cd ./FTAN/gv; make clean;\
-
+	cd ./FTAN/gv; make clean; cd -;\
+	cd ./extratools; make clean;
 
 tilde: 
 	-rm -f $(VPATH)/*~ 

@@ -1,4 +1,4 @@
-extratools/read_sac_db
+src/extratools/read_sac_db
 src/FTAN/gv/ftan.so
 src/cut_trans_mod
 src/filter4

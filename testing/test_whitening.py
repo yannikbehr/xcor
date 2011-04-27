@@ -17,8 +17,25 @@ sys.path.append(os.path.join(os.environ['AUTO_SRC'],'src/modules'))
 from sac_db import *
 from do_whiten_new import specnorm
 
-class WhitenTestCase(unittest.TestCase):
 
+
+class WhitenTestCase(unittest.TestCase):
+    def which(self,program):
+        def is_exe(fpath):
+            return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+        
+        fpath, fname = os.path.split(program)
+        if fpath:
+            if is_exe(program):
+                return program
+        else:
+            for path in os.environ["PATH"].split(os.pathsep):
+                exe_file = os.path.join(path, program)
+                if is_exe(exe_file):
+                    return exe_file
+                
+        return None
+    
     def setUp(self):
         self.sdb = SacDb()
         self.sdb.nev = 1
@@ -31,9 +48,12 @@ class WhitenTestCase(unittest.TestCase):
         self.sdb.ev[0].mm = 5
         self.sdb.ev[0].dd = 10
         self.tmpdir = tempfile.mkdtemp()
+        if self.which('sac') is None:
+            print "Can't find SAC executable"
+            sys.exit(1)
         
     def test_whiten_vertical(self):
-        sacbin='/usr/local/sac101.3b/bin/sac'
+        sacbin='sac'
         specnorm(self.sdb,0,0,0.4,100.0,self.tmpdir,polarity='vertical',eqband=[50,15],
                  bindir=os.path.join(os.environ['AUTO_SRC'],'bin'),sacbin=sacbin,npow=1)
         self.wt_dir = os.path.join(self.tmpdir,'0.4to100.0/2001/May/2001_5_10_0_0_0/')

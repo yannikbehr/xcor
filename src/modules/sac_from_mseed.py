@@ -198,17 +198,16 @@ class SaFromMseed:
             widgets = ['mSEED2sac: ', pg.Percentage(), ' ', pg.Bar('#'),
                             ' ', pg.ETA()]
             pbar = pg.ProgressBar(widgets=widgets, maxval=len(files)).start()
+        tempout = os.path.join(mseedir,self.outputdir)
+        if not os.path.isdir(tempout):
+            os.mkdir(tempout)
         for fn in files:
             if DEBUG:
                 print fn
             else:
                 cnt +=1
                 pbar.update(cnt)
-
             if os.path.isfile(fn):
-                tempout = os.path.join(mseedir,self.outputdir)
-		if not os.path.isdir(tempout):
-                    os.mkdir(tempout)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
                           tempout+' -b 9000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
                 if DEBUG:
@@ -219,7 +218,6 @@ class SaFromMseed:
                     for j in g[i].keys():
                         if j != 'date':
                             filename = self.mk_fn(i,j,g[i]['date'], sacdir)
-			    
                             if DEBUG:
                                 print "--> writing file ", filename
                             if self.merge_sac(g[i][j],filename):
@@ -229,6 +227,7 @@ class SaFromMseed:
 				
                             for k in g[i][j]:
                                 os.remove(k)
+
         if not DEBUG:
             pbar.finish()
 

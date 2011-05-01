@@ -12,7 +12,7 @@ from numpy import *
 from ConfigParser import SafeConfigParser
 import progressbar as pg
 
-DEBUG = False
+DEBUG = True
 
 def abs_time(yy,jday,hh,mm,ss,ms):
     nyday = 0
@@ -104,13 +104,28 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
     print >>cd1, "interpolate delta %f "%delta
     if rminst:
         if instype == 'resp':
+            if sdb.rec[ne][ns].resp_fname == '':
+                print >>cd1, "quit"
+                if DEBUG:
+                    print "response file not found"
+                return
             print >>cd1, "transfer from evalresp fname %s to vel freqlimits\
             %f %f %f %f"%(sdb.rec[ne][ns].resp_fname,fl1,fl2,fl3,fl4)
-        if instype == 'pz':
-            if sdb.rec[ne][ns].pz_fname != '':
-                print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
-                %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
-                print >>cd1, "mul 1.0e+9" ## needed to convert m to nm (see SAC manual)
+        elif instype == 'pz':
+            if sdb.rec[ne][ns].pz_fname == '':
+                print >>cd1, "quit"
+                if DEBUG:
+                    print "response file not found"
+                return
+            print >>cd1, "transfer from polezero subtype %s to vel freqlimits\
+            %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
+            print >>cd1, "mul 1.0e+9" ## needed to convert m to nm (see SAC manual)
+        else:
+            if DEBUG:
+                print "instrument type has to be either 'resp' or 'pz'"
+                return
+            else:
+                pass
     if filter:
         print >>cd1,"bandpass npoles 4 corner %f %f"%(fl2,fl3)
     print >>cd1, "w %s"%(sdb.rec[ne][ns].ft_fname+'_tmp')

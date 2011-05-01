@@ -12,7 +12,7 @@ from numpy import *
 from ConfigParser import SafeConfigParser
 import progressbar as pg
 
-DEBUG = True
+DEBUG = False
 
 def abs_time(yy,jday,hh,mm,ss,ms):
     nyday = 0

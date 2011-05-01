@@ -4,6 +4,7 @@ CC = gcc
 CPP = g++
 FC = gfortran
 F2PY = /usr/local/python2/bin/f2py2.7
+F2PYFLAGS = --f77exec=/usr/bin/gfortran --fcompiler=gfortran
 CFLAGS = -m32
 MODULES = /Users/home/carrizad/xcorr/src/modules
 

@@ -4,7 +4,7 @@
 """driver for ftan method to measure phase-velocities"""
 import os, sys, string, glob
 sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
-import pysacio as p
+from obspy.sac import *
 from numpy import *
 from pylab import *
 import ftanpv
@@ -109,7 +109,8 @@ def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
 if __name__=='__main__':
     reffn = './scalifornia_avg_phvel.dat'
     fn = './COR_GSC_R06C.SAC_s'
-    cper,aper,gv,pv,gvamp,gvsnr,ampv,amps,refper,refvel = myftan(fn,reffn)
+    tr = SacIO(fn)
+    cper,aper,gv,pv,gvamp,gvsnr,gvwdth,ampv,amps,refper,refvel = myftan(tr,reffn)
     plot(aper,pv,'k')
     plot(aper,gv,'b--')
     contourf(aper,ampv,amps,250)

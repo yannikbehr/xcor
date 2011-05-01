@@ -1,7 +1,8 @@
+#!/usr/bin/env mypython
 import os, sys, string
 from pylab import *
 sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
-import pysacio as p
+from obspy.sac import *
 import ftan
 from matplotlib.mlab import load
 
@@ -152,3 +153,18 @@ def myftan(tr, t0=0, nfin=100,npoints=3,perc=50.0,vmin=1.0,
         ampv  = array(vels)
         amps  = amp[0:len(vels),0:nfout2]
     return (cper,aper,gv,gvamp,gvsnr,ampv,amps)
+
+
+if __name__=='__main__':
+    fn = '../pv/COR_GSC_R06C.SAC_s'
+    tr = SacIO(fn)
+    cper,aper,gv,gvamp,gvsnr,ampv,amps = myftan(tr)
+    plot(aper,gv,'b')
+    contourf(aper,ampv,amps,250)
+    xlabel('Period [s]')
+    ylabel('Phase velocity [km/s]')
+    ax = gca()
+    ax.autoscale_view(tight=True)
+    xmin, xmax = xlim()
+    ymin, ymax = ylim()
+    show()

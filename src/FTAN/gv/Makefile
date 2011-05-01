@@ -15,8 +15,7 @@ ofiles = dspline.o\
 
 
 aftan4i: $(ofiles)
-	$(F2PY)  -c ftan.pyf ftan.f $(ofiles) -lfftw3
-
+	$(F2PY) $(F2PYFLAGS)  -c ftan.pyf ftan.f $(ofiles) -lfftw3
 
 clean:
 	rm -f *.o *.so

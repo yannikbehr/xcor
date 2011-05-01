@@ -15,7 +15,7 @@ ofiles = mspline.o\
 
 
 aftan4i: $(ofiles)
-	$(F2PY) -c ftanpv.pyf ftanpv.f $(ofiles) -lfftw3 
+	$(F2PY) $(F2PYFLAGS) -c ftanpv.pyf ftanpv.f $(ofiles) -lfftw3 
 
 
 clean:

@@ -9,6 +9,7 @@ import pysacio as p
 from ConfigParser import SafeConfigParser
 import progressbar as pg
 from obspy.sac import *
+import tempfile
 
 DEBUG = False
 
@@ -145,6 +146,7 @@ class SaFromMseed:
             widgets = ['mSEED2sac: ', pg.Percentage(), ' ', pg.Bar('#'),
                             ' ', pg.ETA()]
             pbar = pg.ProgressBar(widgets=widgets, maxval=len(files)).start()
+        tempout = tempfile.mkdtemp(suffix='sacfiles_local')
         for fn in files:
             if DEBUG:
                 print fn
@@ -153,9 +155,6 @@ class SaFromMseed:
                 pbar.update(cnt)
 
             if os.path.isfile(fn):
-                tempout = os.path.join(mseedir,'sacfiles_local')
-		if not os.path.isdir(tempout):
-                    os.mkdir(tempout)
                 command = self.rdseed+' -f '+fn+' -g '+self.dataless+' -q '+\
                           tempout+' -b 512000000 -o 1 -d 1 -z 3  >/dev/null 2>/dev/null'
                 if DEBUG:

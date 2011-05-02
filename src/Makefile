@@ -62,7 +62,6 @@ install:
 	install initsac_db $(BINDIR);\
 	install	./xcorr/justCOR $(BINDIR);\
 	install	./xcorr/justCOR_EE_EN $(BINDIR);\
-	install	./xcorr/xcor_h $(BINDIR);\
 	install filter4 $(BINDIR);\
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\

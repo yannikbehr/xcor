@@ -67,7 +67,7 @@ int main (int na, char **arg)
   int flags = 1;
   char str[600],fconf[STRING];
   dictionary *dd;
-  char *tmpdir, *cordir, *pbdir, *sacdbname, *prefix;
+  char *tmpdir, *cordir, *pbdir, *sacdbname;
   strncpy(fconf,"./config.txt",STRING-1);
   get_args(na, arg,fconf);
 
@@ -78,7 +78,6 @@ int main (int na, char **arg)
   lag        = iniparser_getint(dd, "xcor:lag", 3000);
   pbdir      = iniparser_getstr(dd, "xcor:pbdir");
   sacdbname  = iniparser_getstr(dd, "xcor:dbname");
-  prefix     = iniparser_getstr(dd, "xcor:prefix");
 
   /* open sac-database file and read into memory*/
   assert((strlen(tmpdir)+strlen(sacdbname)+1) < STRING);

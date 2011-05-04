@@ -369,7 +369,7 @@ void make_dir(int ie, char *cordir, char *pbdir, char *daydir){
   char yeardir[LINEL],mondir[LINEL],bnddir[LINEL];
   assert((strlen(cordir)+40)<LINEL);
   sprintf(bnddir,"%s/%s",cordir,pbdir);
-  sprintf(yeardir,"%s/%d",pbdir,year);
+  sprintf(yeardir,"%s/%d",bnddir,year);
   sprintf(mondir,"%s/%s",yeardir,months[month-1]);
   sprintf(daydir,"%s/%d_%d_%d_0_0_0",mondir,year,month,day);
   errno = 0;

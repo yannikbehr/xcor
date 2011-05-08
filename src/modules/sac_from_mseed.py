@@ -5,7 +5,6 @@ directory structure together with their corresponding response files"""
 
 import glob, os, string, sys, os.path, time, shutil
 import subprocess as sp
-import pysacio as p
 from ConfigParser import SafeConfigParser
 import progressbar as pg
 from obspy.sac import *

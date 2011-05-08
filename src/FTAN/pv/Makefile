@@ -1,4 +1,5 @@
-include ../../makeauto.macro
+### overwrite standard CFLAGS as this can mess up the F2PY compiler
+CFLAGS = 
 
 ofiles = mspline.o\
 	 fmax.o\
@@ -11,7 +12,7 @@ ofiles = mspline.o\
 	 tgauss.o
 
 %.o:%.f
-	gfortran -c -ffixed-line-length-none -fPIC  $<
+	$(FC) -c $(FFLAGS) $<
 
 
 aftan4i: $(ofiles)

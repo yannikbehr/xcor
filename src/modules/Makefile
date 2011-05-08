@@ -1,7 +1,3 @@
-include ../makeauto.macro
-
-FFLAGS = -I /usr/local/include -I /usr/include
-
 hfiles = \
 	iniparser.h\
 	mysac.h
@@ -24,13 +20,13 @@ ofiles = \
 	$(CC) -g  -c $(CFLAGS) $<  
 
 %.o:%.f 
-	$(FC) -g -c $(FFLAGS)  $<  
+	$(FC) -g -c $(INCLUDES)  $<  
 
 #%.so:%.f90
-	$(FC) -g $(FFLAGS) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
+#	$(FC) -g $(FFLAGS) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
 
 %.so:%.c
-	$(FC) -g $(FFLAGS) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
+	$(FC) -g $(INCLUDES) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
 
 objects: $(ofiles) $(hfiles) $(sofiles)
 
@@ -38,8 +34,3 @@ objects: $(ofiles) $(hfiles) $(sofiles)
 clean:
 	rm *.o *.pyc
 
-	#iniparser.o\
-	#white_phamp_2cmp.o\
-	#white_phamp_1cmp.o\
-	#mysac.o
-#

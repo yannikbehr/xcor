@@ -1,16 +1,7 @@
-# every .o file depends on the .cpp file with the same 
-# filename; the following line says what to do with 
-# the .cpp files; $< means the first dependency
-
-
-#%.o:%.cpp
-#	g++ -g -c $<
-############## INSTALLER ########################
-#BINDIR = /Users/home/carrizad/xcorr/bin
+include makeauto.macro
 
 BINDIR = ../bin
 
-include makeauto.macro
 VPATH = modules
 
 hfiles = \
@@ -26,13 +17,13 @@ options = -g -Wall -I/usr/local/include -L/usr/local/lib
 %.o:%.c
 	$(CC) $(CFLAGS) -g -c  $<  
 
-all: initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter
+all: initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter extra
 
 initsacdb: module_obj initsac_db.c
 	$(CC) $(CFLAGS) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
 
 xcor: 
-	cd ./xcorr; make
+	$(MAKE) -C xcorr
 
 filter: filter4_driver.c module_obj
 	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I $(VPATH) $(MODULES)/filter4.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
@@ -49,14 +40,14 @@ mergesac: merge_sac.c module_obj $(hfiles)
 ftan:	ftan-module
 
 ftan-module:
-	cd ./FTAN/pv; make;
-	cd ./FTAN/gv; make
+	$(MAKE) -C FTAN/pv
+	$(MAKE) -C FTAN/gv
 
 module_obj:
-	cd $(VPATH); make objects
+	$(MAKE) -C $(VPATH) objects
 
 extra:
-	cd ./extratools; make;
+	$(MAKE) -C extratools
 
 install:
 	install initsac_db $(BINDIR);\
@@ -66,15 +57,17 @@ install:
 	install white_1cmp $(BINDIR);\
 	install white_2cmp $(BINDIR);\
 	install merge_sac $(BINDIR);\
-	install ./xcorr/autoCOR $(BINDIR);
+	install ./xcorr/autoCOR $(BINDIR);\
+	install ./extratools/read_sac_db $(BINDIR);
+
 clean:
-	rm initsac_db justCOR filter4 white_1cmp\
+	rm initsac_db filter4 white_1cmp \
 	white_2cmp merge_sac; \
-	cd ./modules; make clean; cd ..;\
+	$(MAKE) -C $(VPATH) clean;\
 	rm ../bin/*;\
-	cd ./FTAN/pv; make clean; cd -;\
-	cd ./FTAN/gv; make clean; cd -;\
-	cd ./extratools; make clean;
+	$(MAKE) -C FTAN/pv clean;\
+	$(MAKE) -C FTAN/gv clean;\
+	$(MAKE) -C extratools clean;
 
 tilde: 
 	-rm -f $(VPATH)/*~ 

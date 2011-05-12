@@ -121,6 +121,7 @@ def rm_inst(sdb,ne,ns,delta=1.0,rminst=True,filter=False,instype='resp',
             %f %f %f %f"%(sdb.rec[ne][ns].pz_fname,fl1,fl2,fl3,fl4)
             print >>cd1, "mul 1.0e+9" ## needed to convert m to nm (see SAC manual)
         else:
+            print >>cd1, "quit"
             if DEBUG:
                 print "instrument type has to be either 'resp' or 'pz'"
                 return

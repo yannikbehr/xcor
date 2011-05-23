@@ -171,7 +171,7 @@ int do_cor(int lag, char *cordir, char *pbdir)
 	  }
 	len = shdamp1.npts;
         dcommon_( &len, amp, phase ); // reads amp and phase files into common memory
-	for( jsta2 = (jsta1+1); jsta2 < sdb.nst; jsta2++ ) {
+	for( jsta2 = jsta1; jsta2 < sdb.nst; jsta2++ ) {
   	  if(sdb.rec[ine][jsta2].n > 0){
 	    if(sdb.rec[ine][jsta2].n > 86400/sdb.rec[ine][jsta2].dt){
 	      fprintf(stderr,"ERROR: trace longer than 84000 s (%ld); %s\n",

@@ -23,10 +23,10 @@ sofiles = \
 	$(FC) -g -c $(INCLUDES)  $<  
 
 %.so:%.f90
-	$(FC) -g $(FFLAGS) $(CFLAGS) $(INCLUDES) -shared $< -o $@ -lfftw3 -fPIC
+	$(FC) -g $(FFLAGS) $(INCLUDES) -shared $< -o $@ -lfftw3 -fPIC
 
 %.so:%.c
-	$(CC) -g $(INCLUDES) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
+	$(CC) -g $(INCLUDES) -shared $< -o $@ -lfftw3 -fPIC
 
 objects: $(ofiles) $(hfiles) $(sofiles)
 

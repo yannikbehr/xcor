@@ -80,7 +80,7 @@ def main():
             cp = SafeConfigParser()
             cp.read(config)
             xcorfiles = cp.get('snr','xcorfiles')
-            command   = cp.get('snr','snrbin')
+            #command   = cp.get('snr','snrbin')
             spattern  = cp.get('snr','spattern')
         else:
             print "encountered unknown command line argument"

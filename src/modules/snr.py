@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env mypython
 
 """
 measure signal-to-noise ratios of cross-correlations

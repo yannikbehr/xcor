@@ -3,9 +3,12 @@
 """ plot polygon defined in contour.ctr which
 is used for 2D inversion"""
 
-from pylab import *
-from gmtpy import GMT
 import os, sys
+import numpy as np
+import socket
+if socket.gethostname() == 'sgees010.geo.vuw.ac.nz':
+        os.environ['GMTHOME'] = '/usr/local/gmt/'
+from gmtpy import GMT
 
 ### standard contour file
 #lons = [165,167,170,180,171]
@@ -63,7 +66,7 @@ def plotctr(filename, outfile):
         line = map(float,f.readline().split())
         coord.append(line)
     f.close()
-    coord = array(coord)
+    coord = np.array(coord)
     rng='%f/%f/%f/%f'%(min(coord[:,0])-1,max(coord[:,0])+1,\
                        min(coord[:,1])-1,max(coord[:,1])+1)
     sca='M9c'

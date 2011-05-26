@@ -1,13 +1,13 @@
 #!/usr/bin/env mypython
 import numpy as np
-import array as a
 from obspy.sac import *
 #import pysacio as p
 import os.path, glob, re, sys, string
 from ConfigParser import SafeConfigParser
 from math import *
 sys.path.append('/home/behrya/dev/proc-scripts/')
-import delaz
+from obspy.signal.rotate import gps2DistAzimuth
+#import delaz
 
 DEBUG = True
 
@@ -113,7 +113,9 @@ if __name__ == '__main__':
             st1lon = tr_nn.stlo
             st2lat = tr_nn.evla
             st2lon = tr_nn.evlo
-            dist, az, baz = delaz.delaz(st1lat, st1lon, st2lat, st2lon, 0)
+            #dist, az, baz = delaz.delaz(st1lat, st1lon, st2lat, st2lon, 0)
+            dist, az, baz = gps2DistAzimuth(st1lat,st1lon,st2lat,st2lon)
+            dist /= 1000.
             tmp1 = ((az - 180)/180)*pi
             cos1=cos(tmp1);
             sin1=sin(tmp1);
@@ -140,10 +142,6 @@ if __name__ == '__main__':
             tr_nn.WriteSacBinary(fileTR)
             tr_nn.seis = resmat[3,:]
             tr_nn.WriteSacBinary(fileRT)
-            #p.WriteSacBinary(fileTT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[0]))
-            #p.WriteSacBinary(fileRR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[1]))
-            #p.WriteSacBinary(fileTR, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[2]))
-            #p.WriteSacBinary(fileRT, hfNN, hiNN, hsNN, a.array('f',resmat.tolist()[3]))
             stations = i.split('_')
             stat1 = stations[0]; stat2 = stations[1]
             if DEBUG:

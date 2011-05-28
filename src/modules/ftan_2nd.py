@@ -7,7 +7,6 @@ sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/gv')
 sys.path.append(os.environ['AUTO_SRC']+'/src/FTAN/pv')
 import ftanc
 import ftangv
-import pysacio as p
 import progressbar as pg
 from pylab import *
 

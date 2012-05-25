@@ -6,7 +6,6 @@ import os, sys, string, glob
 sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 from obspy.sac import *
 from numpy import *
-from pylab import *
 import ftanpv
 
 class FtanError(Exception): pass
@@ -107,22 +106,25 @@ def myftan(tr,ref,t0=0,nfin=32,npoints=10,perc=50.0,vmin=1.,
 
 
 if __name__=='__main__':
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
     reffn = './scalifornia_avg_phvel.dat'
     fn = './COR_GSC_R06C.SAC_s'
     tr = SacIO(fn)
     cper,aper,gv,pv,gvamp,gvsnr,gvwdth,ampv,amps,refper,refvel = myftan(tr,reffn)
-    plot(aper,pv,'k')
-    plot(aper,gv,'b--')
-    contourf(aper,ampv,amps,250)
-    xlabel('Period [s]')
-    ylabel('Phase velocity [km/s]')
-    ax = gca()
+    plt.plot(aper,pv,'k')
+    plt.plot(aper,gv,'b--')
+    plt.contourf(aper,ampv,amps,250)
+    plt.xlabel('Period [s]')
+    plt.ylabel('Phase velocity [km/s]')
+    ax = plt.gca()
     ax.autoscale_view(tight=True)
-    xmin, xmax = xlim()
-    ymin, ymax = ylim()
+    xmin, xmax = plt.xlim()
+    ymin, ymax = plt.ylim()
     ############## result from fanchi's code 1st FTAN run ######
     cmpdsp = loadtxt('./COR_GSC_R06C.SAC_s_2_DISP.1')
-    plot(cmpdsp[:,2],cmpdsp[:,3],'k+')
-    xlim([xmin,xmax])
-    ylim(ymin,ymax)
-    show()
+    plt.plot(cmpdsp[:,2],cmpdsp[:,3],'k+')
+    plt.xlim([xmin,xmax])
+    plt.ylim(ymin,ymax)
+    plt.savefig('test.png')

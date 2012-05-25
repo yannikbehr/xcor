@@ -1,12 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env mypython
 
 """
 plot 2D-inversion results and the corresponding velocity measurements
 """
 
 from pylab import *
-from gmtpy import GMT, ScaleGuru, Ax
 import os
+from gmtpy import GMT, ScaleGuru, Ax
+import socket
+if socket.gethostname() == 'sgees010.geo.vuw.ac.nz':
+    os.environ['GMTHOME'] = '/usr/local/gmt/'
 import sys
 import string
 import mymkcpt

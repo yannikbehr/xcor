@@ -89,7 +89,7 @@ class Inv2D:
         different inversion parameters """
         ############## generate script to be run on the remote machine ####
         if datafile is None:
-            datafile = os.path.join(self.datadir,'%ds_%s.txt'%(period,self.name))
+            datafile = os.path.join(self.datadir,'%.1fs_%s.txt'%(period,self.name))
         if os.stat(datafile).st_size == 0:
             raise Invert2DError("file %s is empty"%datafile)
         if ray:

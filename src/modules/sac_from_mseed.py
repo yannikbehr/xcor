@@ -257,4 +257,5 @@ if __name__ == '__main__':
         print "creating SAC-file directory"
         os.makedirs(outputdir)
     t = SaFromMseed(dataless, respdir, outputdir, bindir, rdseed)
-    t(mseedir, outputdir, spat)
+    for msd in mseedir.split(','):
+        t(msd, outputdir, spat)

@@ -100,11 +100,16 @@ if __name__ == '__main__':
                     try:
                         cper,aper,gv,gvamp,gvsnr,ampv,amps = ftangv.myftan(tr,tmin=tmin,ffact=fltfact,
                                                                            extrace=refdsp,tmaxmax=30,phm=True)
-                    except ftangv.FtanError:
+                    except ftangv.FtanError,e:
+                        if DEBUG:
+                            print "tmin: ",tmin," tmax: ",tr.dist/(2.*4.0)
+                            print e
                         tmin += 1.
-                    except ftangv.FtanIOError:
+                    except ftangv.FtanIOError,e:
                         ### reset tmin to initial value
                         tmin = tmin_init
+                        if DEBUG:
+                            print e
                         break
                     else:
                         tmin = tmin_init

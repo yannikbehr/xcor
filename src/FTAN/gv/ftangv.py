@@ -26,7 +26,7 @@ def myftan(tr, t0=0, nfin=100,npoints=3,perc=50.0,vmin=1.0,
     n = tr.npts
     delta = tr.dist
     if tmin*vmin > delta:
-        raise FtanIOError("distance between stations is too small")
+        raise FtanIOError("distance between stations is too small: %f %f"%(tmin*vmin,delta))
     if tmax==None:
         tmax = delta/(2*vmax)
         if tmax > tmaxmax:

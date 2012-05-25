@@ -1,4 +1,4 @@
-include makeauto.macro
+#include makeauto.macro
 
 BINDIR = ../bin
 

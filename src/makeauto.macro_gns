@@ -6,7 +6,7 @@ export FC = gfortran
 export F2PY = /usr/bin/f2py
 export F2PYFLAGS = --f77exec=/usr/bin/gfortran --fcompiler=gfortran
 export CFLAGS = -m32
-export FFLAGS = -I /usr/local/include -I /usr/include
+export FFLAGS = -I /usr/local/include -I /usr/include -ffixed-line-length-none -fPIC
 MODULES = /Users/home/carrizad/xcorr/src/modules
 
 # Change back to python2.4 if not working

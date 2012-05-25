@@ -2,6 +2,7 @@ include makeauto.macro
 
 BINDIR = ../bin
 
+include makeauto.macro_gns
 VPATH = modules
 
 hfiles = \

@@ -22,8 +22,8 @@ sofiles = \
 %.o:%.f 
 	$(FC) -g -c $(INCLUDES)  $<  
 
-%.so:%.f90
-	$(FC) -g $(FFLAGS) $(INCLUDES) -shared $< -o $@ -lfftw3 -fPIC
+#%.so:%.f90
+#	$(FC) -g $(FFLAGS) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
 
 %.so:%.c
 	$(CC) -g $(INCLUDES) -shared $< -o $@ -lfftw3 -fPIC

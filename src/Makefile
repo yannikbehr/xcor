@@ -10,7 +10,7 @@
 
 BINDIR = ../bin
 
-include makeauto.macro
+include makeauto.macro_gns
 VPATH = modules
 
 hfiles = \

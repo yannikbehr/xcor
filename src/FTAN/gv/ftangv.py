@@ -9,15 +9,51 @@ from matplotlib.mlab import load
 class FtanError(Exception): pass
 class FtanIOError(Exception): pass
 
-def myftan(tr, t0=0, nfin=100, npoints=3, perc=50.0, vmin=1.0,
-           vmax=4., tmin=5, tmax=None, tmaxmax=35, thresh=10, ffact=1., taperl=1, snr=0.1,
-           phm=True, steps=False, extrace=None, level='strict'):
-    """wrapper function to set ftan parameters and call ftan modules
-    1st step raw ftan; 2nd step ftan with phase-matched filtering from
-    1st step prediction curve;
-    set tmax to the maximum observable (still reliable) wavelength"""
+def myftan(tr, t0=0, vmin=1.0, vmax=4., tmin=5, tmax=None, tmaxmax=35, nfin=100,
+           ffact=1., thresh=10, npoints=3, perc=50.0, taperl=1,
+           phm=True, extrace=None, steps=False, level='strict'):
+    """
+    This is a wrapper function for the FTAN module, an implementation
+    of the multiple filter technique .
+
+    Input parameters:
+    t0      - time shift of SAC file in seconds
+    vmin    - minimum group velocity [km/s]
+    vmax    - maximum group velocity [km/s]
+    tmin    - minimum period [s]
+    tmax    - maximum period [s]; if tmax is None it is computed as the maximum period for
+              which 2 wavelengths fit between the source and the receiver based on vmax
+    tmaxmax - if tmax is None this gives an upper limit to the automatically determined tmax
+    nfin    - starting number of frequencies, nfin <= 100
+    ffact   - factor to determine the shape of the gaussian filters
+              (see definition below)
+    thresh  - a discontinuity in the dispersion curve is declared if
+              thresh is exceeded [dimensionless]
+    npoints - maximum number points in at a discontinuity
+    perc    - minimum length of dispersion curve output segment
+              with respect to the period range  [%]
+    taperl  - factor for the left end seismogram tapering,
+              taper = taperl*tmax
+    phm     - if true, run ftan a second time using the result
+              from the first run as the prediction curve for a
+              phase-matched filter
+    extrace - if not None it defines the name of a file that gives a prediction
+              curve that is used as input for the phase matched filter
+              instead of the result of the first run
+    steps   - if true ftan will be run on small overlapping increments of the period
+              range defined by tmin and tmax
+    level   - can be either 'strict' or 'easy' and defines when an ftan run
+              is declared as failed; if set to 'strict' an Exception is raised if
+              any problems occured
+
+    The gaussian filters are defined as: H(w0) = exp(alpha*(w - w0)^2/w0^2)
+    with w0 being the central frequency and alpha defined as:
+    ffact*20*sqrt(distance/1000.0)
+
+    """
     stat1 = tr.kstnm.rstrip()
     stat2 = tr.kevnm.rstrip()
+    snr = 0.1
     dt = tr.delta
     trace = zeros(32768)
     for i in range(0, min(32767, len(tr.seis))):

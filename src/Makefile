@@ -17,7 +17,8 @@ options = -g -Wall -I/usr/local/include -L/usr/local/lib
 %.o:%.c
 	$(CC) $(CFLAGS) -g -c  $<  
 
-all: initsacdb whiteout1cmp whiteout2cmp xcor mergesac ftan filter extra
+all: initsacdb whiteout1cmp whiteout2cmp xcor mergesac filter extra 
+#ftan  
 
 initsacdb: module_obj initsac_db.c
 	$(CC) $(CFLAGS) -g -I$(VPATH) initsac_db.c -o initsac_db $(ofiles)
@@ -29,10 +30,10 @@ filter: filter4_driver.c module_obj
 	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I $(VPATH) $(MODULES)/filter4.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
 
 whiteout1cmp: white_1cmp_driver.c module_obj
-	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I $(VPATH) $(MODULES)/white_phamp_1cmp.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I$(VPATH) $(LIBS) $(MODULES)/white_phamp_1cmp.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
 
 whiteout2cmp: white_2cmp_driver.c module_obj
-	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I $(VPATH) $(MODULES)/white_phamp_2cmp.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I$(VPATH) $(MODULES)/white_phamp_2cmp.o $(MODULES)/mysac.o -lfftw3 -lgfortran 
 
 mergesac: merge_sac.c module_obj $(hfiles)
 	$(CC) -Wall $(CFLAGS) -g -I $(VPATH) merge_sac.c -o merge_sac $(ofiles)

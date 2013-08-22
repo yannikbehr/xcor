@@ -1,17 +1,16 @@
-# Makefile macro for compiling on RedHat with intel fortran-compiler ifort
 ############## COMPILER #########################
 export CC = gcc
 export CPP = g++
 export FC = gfortran
-export F2PY = /usr/local/python2/bin/f2py2.7
-export F2PYFLAGS = --f77exec=/usr/bin/gfortran --fcompiler=gfortran
-export CFLAGS = -m32
+export F2PY = /usr/bin/f2py2.7
+export F2PYFLAGS = --f77exec=/usr/bin/gfortran --fcompiler=gfortran --f90flags=-m32
+export CFLAGS = -m32 -DDEBUG
 export INCLUDES = -I /usr/local/include -I /usr/include
 export LIBS = 
-export FFLAGS = -ffixed-line-length-none -fPIC
+export FFLAGS = -ffixed-line-length-none -m32
 
-MODULES = /Users/home/carrizad/xcorr/src/modules
+MODULES = /home/behry/uni/xcorr_git/src/modules
 
 # Change back to python2.4 if not working
-PYTHON = /usr/include/python2.6
-NUMPY = /usr/lib/python2.6/site-packages/numpy/core/include/numpy
+PYTHON = /usr/include/python2.7
+NUMPY = /usr/lib/python2.7/site-packages/numpy/core/include/numpy

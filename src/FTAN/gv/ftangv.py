@@ -1,10 +1,9 @@
 #!/usr/bin/env mypython
 import os, sys, string
-from pylab import *
-sys.path.append(os.environ['AUTO_SRC'] + '/src/modules')
+from numpy import *
+sys.path.append(os.environ['AUTO_SRC']+'/src/modules')
 from obspy.sac import *
 import ftan
-from matplotlib.mlab import load
 
 class FtanError(Exception): pass
 class FtanIOError(Exception): pass
@@ -164,7 +163,7 @@ def myftan(tr, t0=0, vmin=1.0, vmax=4., tmin=5, tmax=None, tmaxmax=35, nfin=100,
                 pred[i][0] = arr2[1][i]
                 pred[i][1] = arr2[2][i]
             if extrace:
-                tr = load(extrace)
+                tr = loadtxt(extrace)
                 npred = len(tr)
                 pred = zeros((300, 2))
                 for i in range(npred):
@@ -191,16 +190,20 @@ def myftan(tr, t0=0, vmin=1.0, vmax=4., tmin=5, tmax=None, tmaxmax=35, nfin=100,
     return (cper, aper, gv, gvamp, gvsnr, ampv, amps)
 
 
-if __name__ == '__main__':
+if __name__=='__main__':
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
     fn = '../pv/COR_GSC_R06C.SAC_s'
     tr = SacIO(fn)
-    cper, aper, gv, gvamp, gvsnr, ampv, amps = myftan(tr)
-    plot(aper, gv, 'b')
-    contourf(aper, ampv, amps, 250)
-    xlabel('Period [s]')
-    ylabel('Phase velocity [km/s]')
-    ax = gca()
+    cper,aper,gv,gvamp,gvsnr,ampv,amps = myftan(tr)
+    plt.plot(aper,gv,'b')
+    plt.contourf(aper,ampv,amps,250)
+    plt.xlabel('Period [s]')
+    plt.ylabel('Phase velocity [km/s]')
+    ax = plt.gca()
     ax.autoscale_view(tight=True)
-    xmin, xmax = xlim()
-    ymin, ymax = ylim()
-    show()
+    xmin, xmax = plt.xlim()
+    ymin, ymax = plt.ylim()
+    plt.savefig('test.png')
+

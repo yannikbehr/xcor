@@ -20,7 +20,7 @@ sofiles = \
 	$(CC) -g -c $(CFLAGS) $<  
 
 %.o:%.f 
-	$(FC) -g -c $(INCLUDES)  $<  
+	$(FC) -g -c $(FFLAGS) $(INCLUDES)  $<  
 
 %.so:%.f90
 	$(FC) -g $(FFLAGS) $(INCLUDES) -shared $< -o $@ -lfftw3 -fPIC

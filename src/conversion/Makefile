@@ -1,36 +1,12 @@
-hfiles = \
-	iniparser.h\
-	mysac.h
+hfiles=$(COMMONDIR)/mysac.h\
+       $(COMMONDIR)/sac_db.h
+
+ofiles=$(COMMONDIR)/mysac.o
 
 
-ofiles = \
-	mysac.o\
-	white_phamp_1cmp.o\
-	white_phamp_2cmp.o\
-	filter4.o\
-	iniparser.o\
-
-
-
-sofiles = \
-	fft_filter.so\
-	fft_filter_c.so
-
-%.o:%.c 
-	$(CC) -g -c $(CFLAGS) $<  
-
-%.o:%.f 
-	$(FC) -g -c $(FFLAGS) $(INCLUDES)  $<  
-
-#%.so:%.f90
-#	$(FC) -g $(FFLAGS) $(CFLAGS) -shared $< -o $@ -lfftw3 -fPIC
-
-%.so:%.c
-	$(CC) -g $(INCLUDES) -shared $< -o $@ -lfftw3 -fPIC
-
-objects: $(ofiles) $(hfiles) $(sofiles)
-
+mergesac: merge_sac.c
+	$(CC) $(CFLAGS) -I$(COMMONDIR) merge_sac.c -o merge_sac $(ofiles)
 
 clean:
-	rm *.o *.pyc *.so
+	-rm *.pyc *~ merge_sac
 

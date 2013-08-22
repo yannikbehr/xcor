@@ -2,15 +2,10 @@
 export CC = gcc
 export CPP = g++
 export FC = gfortran
-export F2PY = /usr/bin/f2py2.7
-export F2PYFLAGS = --f77exec=/usr/bin/gfortran --fcompiler=gfortran --f90flags=-m32
-export CFLAGS = -m32 -DDEBUG
+export COMMONDIR=../common
+export BINDIR=../bin
+export CFLAGS = -m32 -DDEBUG -I$(COMMONDIR) 
+export FFLAGS = -ffixed-line-length-none -m32 
 export INCLUDES = -I /usr/local/include -I /usr/include
-export LIBS = 
-export FFLAGS = -ffixed-line-length-none -m32
-
-MODULES = /home/behry/uni/xcorr_git/src/modules
-
-# Change back to python2.4 if not working
-PYTHON = /usr/include/python2.7
-NUMPY = /usr/lib/python2.7/site-packages/numpy/core/include/numpy
+export CLIBS = -lfftw3 -lgcc -lm 
+export FLIBS = -lfftw3 -lgfortran -lm 

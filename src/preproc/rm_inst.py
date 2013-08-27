@@ -51,7 +51,8 @@ def cut(sdb, ne, ns, t1, nos):
     t1b = tb - te
     t1e = t1b + (npts - 1) * dt
     if t1b > t1 or t1e < t2 or t1e > 100000 / dt:
-        # print "ERROR: incompatible time limits for %s; cannot cut"%(fin)
+        print "ERROR: incompatible time limits for %s; cannot cut" % (fin)
+        os.remove(fin)
         return
     if ms > 0.:
         frac = (int((0.001 * ms + dt) / dt) * dt - 0.001 * ms) / dt
@@ -149,11 +150,12 @@ if __name__ == "__main__":
         else:
             print "encountered unknown command line argument"
             raise Exception
-    except Exception:
+    except Exception, e:
         cnffile = 'config.txt'
+        print e
 
     if not os.path.isfile(cnffile):
-        print "no config file found"
+        print "config file %s not found" % cnffile
         sys.exit(1)
 
     conf = SafeConfigParser()
@@ -179,7 +181,6 @@ if __name__ == "__main__":
         instype = 'resp'
         rminst = False
         filt = True
-
     if rmopt == 3:
         instype = 'resp'
         rminst = False

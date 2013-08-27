@@ -4,7 +4,11 @@ Remove instrument response using sac and cut precisely.
 
 """
 
-import os, os.path, sys, glob
+import os
+import sys
+import glob
+import string
+sys.path.append(os.path.join(os.environ['XCORSRC'], 'src', 'common'))
 from subprocess import *
 from obspy.sac import *
 import sac_db
@@ -82,7 +86,7 @@ def cut(sdb, ne, ns, t1, nos):
 
 def rm_inst(sdb, ne, ns, delta=1.0, rminst=True, filter=False, instype='resp',
             plow=160., phigh=4., sacbin='/usr/local/sac/bin/sac',
-            t1=1000, nos=84000):
+            t1=1000, nos=84000, force=False):
     """
     downsample traces, remove mean, trend, cut them to the exact same
     time window, and either remove instrument response, filter, or leave
@@ -95,7 +99,7 @@ def rm_inst(sdb, ne, ns, delta=1.0, rminst=True, filter=False, instype='resp',
     if DEBUG:
         print "f1=%.2f; f2=%.2f; f3=%.2f; f4=%.2f" % (fl1, fl2, fl3, fl4)
     if sdb.rec[ne][ns].fname == '':return
-    if os.path.isfile(sdb.rec[ne][ns].ft_fname):
+    if os.path.isfile(sdb.rec[ne][ns].ft_fname) and not force:
         sys.stderr.write("File %s already exists." % sdb.rec[ne][ns].ft_fname)
         return
     if DEBUG:
@@ -169,6 +173,7 @@ if __name__ == "__main__":
     delta = float(conf.get("rm_resp", "sampling"))
     plow = float(conf.get("rm_resp", "plow"))
     phigh = float(conf.get("rm_resp", "phigh"))
+    force = bool(conf.get("rm_resp", "force"))
     if rmopt == 0:
         instype = 'pz'
         rminst = True
@@ -202,7 +207,7 @@ if __name__ == "__main__":
         for ns in xrange(sdb.nst):
             rm_inst(sdb, ne, ns, delta=delta, rminst=rminst, instype=instype, \
                     plow=plow, phigh=phigh, sacbin=sacbin, \
-                    t1=t1, nos=nos, filter=filt)
+                    t1=t1, nos=nos, filter=filt, force=force)
     sac_db.write_db(sdb, sdbf)
     if not DEBUG:
         pbar.finish()

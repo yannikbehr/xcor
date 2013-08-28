@@ -11,6 +11,8 @@ import string
 sys.path.append(os.path.join(os.environ['XCORSRC'], 'src', 'common'))
 from subprocess import *
 from obspy.sac import *
+from obspy import read
+from obspy.signal.invsim import seisSim
 import sac_db
 from numpy import *
 from ConfigParser import SafeConfigParser
@@ -84,9 +86,8 @@ def cut(sdb, ne, ns, t1, nos):
     os.remove(fin)
 
 
-def rm_inst(sdb, ne, ns, delta=1.0, rminst=True, filter=False, instype='resp',
-            plow=160., phigh=4., sacbin='/usr/local/sac/bin/sac',
-            t1=1000, nos=84000, force=False):
+def rm_inst(sdb, ne, ns, factor=[10, 10], rminst=True, filter=False, instype='resp',
+            plow=160., phigh=4., t1=1000, nos=84000, force=False):
     """
     downsample traces, remove mean, trend, cut them to the exact same
     time window, and either remove instrument response, filter, or leave
@@ -102,46 +103,37 @@ def rm_inst(sdb, ne, ns, delta=1.0, rminst=True, filter=False, instype='resp',
     if os.path.isfile(sdb.rec[ne][ns].ft_fname) and not force:
         sys.stderr.write("File %s already exists." % sdb.rec[ne][ns].ft_fname)
         return
-    if DEBUG:
-        p = Popen(sacbin, shell=True, stdin=PIPE)
-    else:
-        p = Popen(sacbin + ' 2>/dev/null 1>/dev/null', shell=True, stdin=PIPE)
-    cd1 = p.stdin
-    print >> cd1, "r %s" % sdb.rec[ne][ns].fname
-    print >> cd1, "rmean"
-    print >> cd1, "rtrend"
-    print >> cd1, "interpolate delta %f " % delta
-    if rminst:
-        if instype == 'resp':
-            if sdb.rec[ne][ns].resp_fname == '':
-                print >> cd1, "quit"
-                if DEBUG:
-                    print "response file not found"
-                return
-            print >> cd1, "transfer from evalresp fname %s to vel freqlimits\
-            %f %f %f %f" % (sdb.rec[ne][ns].resp_fname, fl1, fl2, fl3, fl4)
-        elif instype == 'pz':
-            if sdb.rec[ne][ns].pz_fname == '':
-                print >> cd1, "quit"
-                if DEBUG:
-                    print "response file not found"
-                return
-            print >> cd1, "transfer from polezero subtype %s to vel freqlimits\
-            %f %f %f %f" % (sdb.rec[ne][ns].pz_fname, fl1, fl2, fl3, fl4)
-            print >> cd1, "mul 1.0e+9"  # # needed to convert m to nm (see SAC manual)
-        else:
-            print >> cd1, "quit"
+    tr = read(sdb.rec[ne][ns].fname)[0]
+    for _f in factor:
+        tr.decimate(_f)
+    date = tr.stats.starttime
+    if instype == 'resp':
+        if sdb.rec[ne][ns].resp_fname == '':
             if DEBUG:
-                print "instrument type has to be either 'resp' or 'pz'"
-                return
-            else:
-                pass
+                print "response file not found"
+            return
+        seedresp = {'filename': sdb.rec[ne][ns].resp_fname, 'date': date,
+                    'units': 'VEL'}
+        tr.data = seisSim(tr.data, tr.stats.sampling_rate, paz_remove=None,
+                          pre_filt=(fl1, fl2, fl3, fl4),
+                          seedresp=seedresp, taper_fraction=0.1,
+                          pitsasim=False, sacsim=True)
+        tr.data *= 1e9
+    elif instype == 'pz':
+        if sdb.rec[ne][ns].pz_fname == '':
+            if DEBUG:
+                print "response file not found"
+            return
+        attach_paz(tr, sdb.rec[ne][ns].pz_fname, tovel=True)
+        tr.data = seisSim(tr.data, tr.stats.sampling_rate,
+                          paz_remove=tr.stats.paz, remove_sensitivity=False,
+                          pre_filt=(fl1, fl2, fl3, fl4))
     if filter:
-        print >> cd1, "bandpass npoles 4 corner %f %f" % (fl2, fl3)
-    print >> cd1, "w %s" % (sdb.rec[ne][ns].ft_fname + '_tmp')
-    print >> cd1, "quit"
-    cd1.close()
-    p.wait()
+        tr.detrend('linear')
+        tr.detrenc('dmean')
+        tr.filter('bandpass', freqmin=fl2, freqmax=fl3, zerophase=True,
+                  corners=4)
+    tr.write(sdb.rec[ne][ns].ft_fname + '_tmp', format='SAC')
     cut(sdb, ne, ns, t1, nos)
     sdb.rec[ne][ns].dt = delta
     sdb.rec[ne][ns].n = int(round(nos / delta))
@@ -164,7 +156,6 @@ if __name__ == "__main__":
 
     conf = SafeConfigParser()
     conf.read(cnffile)
-    sacbin = conf.get("rm_resp", "sacbin");
     t1 = int(conf.get("rm_resp", "start_t"))
     nos = int(conf.get("rm_resp", "npts"))
     rmopt = int(conf.get("rm_resp", "rm_opt"))
@@ -191,9 +182,6 @@ if __name__ == "__main__":
         rminst = False
         filt = False
 
-    if not os.access(sacbin, os.X_OK):
-        print "Cannot find executable sac-binary"
-        sys.exit(1)
     sdbf = os.path.join(tmpdir, dbname)
     sdb = sac_db.read_db(sdbf)
     if not DEBUG:
@@ -205,9 +193,9 @@ if __name__ == "__main__":
         if not DEBUG:
             pbar.update(ne)
         for ns in xrange(sdb.nst):
-            rm_inst(sdb, ne, ns, delta=delta, rminst=rminst, instype=instype, \
-                    plow=plow, phigh=phigh, sacbin=sacbin, \
-                    t1=t1, nos=nos, filter=filt, force=force)
+            rm_inst(sdb, ne, ns, rminst=rminst, instype=instype, \
+                    plow=plow, phigh=phigh, t1=t1, nos=nos,
+                    filter=filt, force=force)
     sac_db.write_db(sdb, sdbf)
     if not DEBUG:
         pbar.finish()

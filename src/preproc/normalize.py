@@ -180,9 +180,6 @@ def specnorm(sdb, ne, ns, upperp, lowerp, rootdir, polarity='vertical', eqband=[
         white_2_comp(fns, lowerp, upperp, utaper, ltaper, npow, bindir, sacbin)
     return 1
 
-
-
-
 if __name__ == '__main__':
     try:
         if string.find(sys.argv[1], '-c') != -1:

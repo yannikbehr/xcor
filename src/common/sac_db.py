@@ -25,22 +25,22 @@ class Event(Structure):
         ('ms', c_int),
         ('jday', c_int),
         ('t0', c_double),
-        ('name', c_char*HLINE)
+        ('name', c_char * HLINE)
         ]
 
 class Station(Structure):
     _fields_ = [
         ('lat', c_float),
         ('lon', c_float),
-        ('name', c_char*SLINE)
+        ('name', c_char * SLINE)
         ]
 class Record(Structure):
     _fields_ = [
-        ('fname',c_char*HLINE),
-        ('ft_fname', c_char*HLINE),
-        ('resp_fname', c_char*HLINE),
-        ('pz_fname', c_char*HLINE),
-        ('chan', c_char*7),
+        ('fname', c_char * HLINE),
+        ('ft_fname', c_char * HLINE),
+        ('resp_fname', c_char * HLINE),
+        ('pz_fname', c_char * HLINE),
+        ('chan', c_char * 7),
         ('t0', c_double),
         ('dt', c_float),
         ('n', c_int)
@@ -48,25 +48,39 @@ class Record(Structure):
 
 class SacDb(Structure):
     _fields_ = [
-        ('ev', Event*NEVENTS),
-        ('st', Station*NSTATION),
-        ('rec', Record*NSTATION*NEVENTS),
-        ('conf', c_char*HLINE),
-        ('nev',c_int),
-        ('nst',c_int),
-        ('cntst',c_int),
-        ('cntev',c_int)
+        ('ev', Event * NEVENTS),
+        ('st', Station * NSTATION),
+        ('rec', Record * NSTATION * NEVENTS),
+        ('conf', c_char * HLINE),
+        ('nev', c_int),
+        ('nst', c_int),
+        ('cntst', c_int),
+        ('cntev', c_int)
+        ]
+
+class SacDb3(Structure):
+    _fields_ = [
+        ('ev', Event * NEVENTS),
+        ('st', Station * NSTATION),
+        ('rz', Record * NSTATION * NEVENTS),
+        ('rn', Record * NSTATION * NEVENTS),
+        ('re', Record * NSTATION * NEVENTS),
+        ('conf', c_char * HLINE),
+        ('nev', c_int),
+        ('nst', c_int),
+        ('cntst', c_int),
+        ('cntev', c_int)
         ]
 
 
 def read_db(fname):
-    f = open(fname,'rb')
+    f = open(fname, 'rb')
     a = SacDb()
     f.readinto(a)
     f.close()
     return a
 
 def write_db(sdb, fname):
-    f = open(fname,'wb')
+    f = open(fname, 'wb')
     f.write(sdb)
     f.close()

@@ -19,13 +19,13 @@ c ==========================================================
       include 'fftw3.f'
       integer*4 npow,n
       real*8    f1,f2,f3,f4,dt
-      real*4    seis_in(2000000),seis_out(2000000)
-      real*4   seis_outamp(2000000), seis_outph(2000000)
+      real*4    seis_in(4320000),seis_out(4320000)
+      real*4   seis_outamp(4320000), seis_outph(4320000)
 c ---
       integer*4 k,ns,nk,i
       real*8    plan1,plan2
       real*8    dom
-      double complex czero,s(2000000),sf(2000000)
+      double complex czero,s(8400000),sf(8400000)
 c ---
       czero = (0.0d0,0.0d0)
 
@@ -105,8 +105,8 @@ c===============================================================
       subroutine flt4(f1,f2,f3,f4,dom,nk,npow,sf)
       real*8    f1,f2,f3,f4,dom
       integer*4 nk,npow
-      double complex sf(2000000)
-      real*8    d1,d2,f,dpi,ss,s(2000000)
+      double complex sf(8400000)
+      real*8    d1,d2,f,dpi,ss,s(4320000)
       integer*4 i,j
 c ---
       dpi = datan(1.0d0)*4.0d0
@@ -149,8 +149,8 @@ c=s==============================================================
       subroutine smooth(f1,f2,f3,f4,dom,nk,sf,number)
       real*8    f1,f2,f3,f4
       integer*4 number,nk
-      double complex sf(2000000)
-      real*8    sorig(2000000), sout(2000000),dom
+      double complex sf(8400000)
+      real*8    sorig(4320000), sout(4320000),dom
       real*8   f,sum, avg
 c ---
         do i = 1,nk

@@ -9,22 +9,19 @@ c f1phase  - first input arrays phase (real*4)
 c n2    - number of samples in arrays f2, (integer*4)
 c f2amp - second input arraysamp (real*4)
 c f2phase- second input arraysphase (real*4)
-c lag   - lag the cross-correlation function, (integer*4)
-c       - lag < max(n1,n2)/2
 c output:
-c cor   - cross-correlation array with lag*2+1 samples, (real*4)
+c seis_out- cross-correlation array with lag*2+1 samples, (real*4)
 c ==========================================================
-      subroutine dmultifft(len, amp, phase, lag, seis_out,ns)
+      subroutine dmultifft(len, amp, phase, seis_out,ns)
       implicit none
       integer*4 len,ns
       real*4    amp(len),phase(len)
       include 'fftw3.h'
-      integer*4 lag, i,k
-c      real*4    cor(10001)
+      integer*4 i,k
       real*8    plan3
-      double complex temp1(2000000),temp2(2000000)
-      double complex temp3(2000000),czero
-      real*4  seis_out(2000000)
+      double complex temp1(4320000),temp2(8640000)
+      double complex temp3(8640000),czero
+      real*4  seis_out(8640000)
 
       common /core/temp1
 
@@ -51,8 +48,6 @@ c multiply to get correlation in freq domain
 c compute ifft 
       call dfftw_plan_dft_1d(plan3,ns,temp3,temp2,
      *                         FFTW_FORWARD, FFTW_ESTIMATE)
-C      call dfftw_plan_dft_1d(plan3,ns,temp3,temp2,
-C     *                         FFTW_BACKWARD, FFTW_ESTIMATE)
       call dfftw_execute(plan3)
       call dfftw_destroy_plan(plan3)
 c extract correlatio

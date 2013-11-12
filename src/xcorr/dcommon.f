@@ -10,8 +10,8 @@ c ==========================================================
       subroutine dcommon(len, amp, phase)
       implicit  none
       integer*4 i,len
-      real*4    amp(2000000),phase(2000000)
-      double    complex temp1(2000000)
+      real*4    amp(4320000),phase(4320000)
+      double    complex temp1(4320000)
       common    /core/temp1  
 
 c read amp and phase files into complex double-temp1

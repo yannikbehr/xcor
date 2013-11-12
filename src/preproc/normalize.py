@@ -144,7 +144,7 @@ def specnorm(sdb, ne, ns, upperp, lowerp, rootdir, polarity='vertical', eqband=[
         srcN = srcE.replace('E.SAC', 'N.SAC')
         if not os.path.isfile(srcE): return 1
         if not os.path.isfile(srcN): return 1
-        bpfile = "%.1fto%.1f" % (upperp, lowerp)
+        bpfile = "%.3fto%.2f" % (upperp, lowerp)
         year = str(sdb.ev[ne].yy)
         month = months[sdb.ev[ne].mm]
         day = "%s_%d_%d_0_0_0" % (year, sdb.ev[ne].mm, sdb.ev[ne].dd)
@@ -160,7 +160,7 @@ def specnorm(sdb, ne, ns, upperp, lowerp, rootdir, polarity='vertical', eqband=[
     if polarity == 'vertical':
         src = sdb.rec[ne][ns].ft_fname
         if not os.path.isfile(src): return 1
-        bpfile = "%.1fto%.1f" % (upperp, lowerp)
+        bpfile = "%.3fto%.2f" % (upperp, lowerp)
         year = str(sdb.ev[ne].yy)
         month = months[sdb.ev[ne].mm]
         day = "%s_%d_%d_0_0_0" % (year, sdb.ev[ne].mm, sdb.ev[ne].dd)
@@ -221,7 +221,7 @@ if __name__ == '__main__':
             year = str(sdb.ev[ne].yy)
             month = months[sdb.ev[ne].mm]
             day = "%s_%d_%d_0_0_0" % (year, sdb.ev[ne].mm, sdb.ev[ne].dd)
-            bpfile = "%.1fto%.1f" % (upperp, lowerp)
+            bpfile = "%.3fto%.2f" % (upperp, lowerp)
             eqdir = os.path.join(rootdir, bpfile, year, month, day, 'eqband')
             os.rmdir(eqdir)
         except Exception:

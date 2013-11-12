@@ -86,7 +86,7 @@ def cut(sdb, ne, ns, t1, nos):
     os.remove(fin)
 
 
-def rm_inst(sdb, ne, ns, factor=[10, 10], rminst=True, filter=False, instype='resp',
+def rm_inst(sdb, ne, ns, factor=[2], rminst=True, filter=False, instype='resp',
             plow=160., phigh=4., t1=1000, nos=84000, force=False):
     """
     downsample traces, remove mean, trend, cut them to the exact same
@@ -105,7 +105,7 @@ def rm_inst(sdb, ne, ns, factor=[10, 10], rminst=True, filter=False, instype='re
         return
     tr = read(sdb.rec[ne][ns].fname)[0]
     for _f in factor:
-        tr.decimate(_f)
+        tr.decimate(int(_f))
     date = tr.stats.starttime
     if instype == 'resp':
         if sdb.rec[ne][ns].resp_fname == '':
@@ -135,8 +135,8 @@ def rm_inst(sdb, ne, ns, factor=[10, 10], rminst=True, filter=False, instype='re
                   corners=4)
     tr.write(sdb.rec[ne][ns].ft_fname + '_tmp', format='SAC')
     cut(sdb, ne, ns, t1, nos)
-    sdb.rec[ne][ns].dt = delta
-    sdb.rec[ne][ns].n = int(round(nos / delta))
+    sdb.rec[ne][ns].dt = tr.stats.delta
+    sdb.rec[ne][ns].n = int(round(nos / tr.stats.delta))
 
 
 if __name__ == "__main__":
@@ -154,17 +154,17 @@ if __name__ == "__main__":
         print "config file %s not found" % cnffile
         sys.exit(1)
 
-    conf = SafeConfigParser()
+    conf = SafeConfigParser({'rm_opt':'1', 'force':'false'})
     conf.read(cnffile)
     t1 = int(conf.get("rm_resp", "start_t"))
     nos = int(conf.get("rm_resp", "npts"))
-    rmopt = int(conf.get("rm_resp", "rm_opt"))
+    rmopt = conf.getint("rm_resp", "rm_opt")
     tmpdir = conf.get("rm_resp", "tmpdir")
     dbname = conf.get("rm_resp", "dbname")
-    delta = float(conf.get("rm_resp", "sampling"))
     plow = float(conf.get("rm_resp", "plow"))
     phigh = float(conf.get("rm_resp", "phigh"))
-    force = bool(conf.get("rm_resp", "force"))
+    force = conf.getboolean("rm_resp", "force")
+    factor = eval(conf.get("rm_resp", "decimation"))
     if rmopt == 0:
         instype = 'pz'
         rminst = True
@@ -195,7 +195,7 @@ if __name__ == "__main__":
         for ns in xrange(sdb.nst):
             rm_inst(sdb, ne, ns, rminst=rminst, instype=instype, \
                     plow=plow, phigh=phigh, t1=t1, nos=nos,
-                    filter=filt, force=force)
+                    filter=filt, force=force,factor=factor)
     sac_db.write_db(sdb, sdbf)
     if not DEBUG:
         pbar.finish()

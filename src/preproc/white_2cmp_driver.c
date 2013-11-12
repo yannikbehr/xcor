@@ -6,8 +6,7 @@
 #include <math.h>
 #include "mysac.h"
 
-#define ANPTSMAX 2000000
-#define NPTSMALL 2000000
+#define ANPTSMAX 4320000
 #define SLENGTH  300
 
 /* Function prorotypes */
@@ -18,7 +17,7 @@ void filter4_(double *f1,double *f2,double *f3,double *f4,int *npow,
 
 
 /*c/////////////////////////////////////////////////////////////////////////*/
-float sig[NPTSMALL];
+float sig[ANPTSMAX];
 SAC_HD shd1;
 SAC_HD shd2; 
 
@@ -29,10 +28,10 @@ int main (int argc, char *argv[])
 {
   static int n, ns,npow;
   static double f1, f2, f3, f4, dt,dom;
-  static float seis_in_E[NPTSMALL],seis_out_E[NPTSMALL];
-  static float seis_in_N[NPTSMALL],seis_out_N[NPTSMALL];
-  static float seis_outamp_E[NPTSMALL],seis_outph_E[NPTSMALL];
-  static float seis_outamp_N[NPTSMALL],seis_outph_N[NPTSMALL];
+  static float seis_in_E[ANPTSMAX],seis_out_E[ANPTSMAX];
+  static float seis_in_N[ANPTSMAX],seis_out_N[ANPTSMAX];
+  static float seis_outamp_E[ANPTSMAX],seis_outph_E[ANPTSMAX];
+  static float seis_outamp_N[ANPTSMAX],seis_outph_N[ANPTSMAX];
 
   double t1,t2,t3,t4;
   char  name_E[SLENGTH],name_N[SLENGTH];
@@ -46,7 +45,7 @@ int main (int argc, char *argv[])
       if(nn == 0 || nn != 7) break;
       printf("Corners periods. Low: %f - %f, High: %f - %f\n",t1, t2, t3, t4);
 
-      if ( !read_sac(name_E, sig, &shd1, NPTSMALL) )
+      if ( !read_sac(name_E, sig, &shd1, ANPTSMAX) )
 	{
 	  fprintf(stderr,"ERROR: file %s not found\n",name_E );
 	  continue;
@@ -58,7 +57,7 @@ int main (int argc, char *argv[])
 	{  
 	  seis_in_E[i] = sig[i];  
 	}
-      if ( !read_sac(name_N, sig, &shd2, NPTSMALL) )
+      if ( !read_sac(name_N, sig, &shd2, ANPTSMAX) )
 	{
 	  fprintf(stderr,"file %s not found\n", name_N );
 	  continue;

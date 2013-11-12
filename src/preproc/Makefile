@@ -29,13 +29,13 @@ all: objects filter whiteout1cmp whiteout2cmp
 objects: $(ofiles) $(hfiles) $(sofiles)
 
 filter: filter4_driver.c
-	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I$(COMMONDIR) filter4.o $(COMMONDIR)/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) filter4_driver.c -o filter4 -I$(COMMONDIR) filter4.o $(COMMONDIR)/mysac.o -lfftw3 -lgfortran $(CLIBS)
 
 whiteout1cmp: white_1cmp_driver.c
-	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I$(COMMONDIR) $(LIBS) white_phamp_1cmp.o $(COMMONDIR)/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_1cmp_driver.c -o white_1cmp -I$(COMMONDIR) $(LIBS) white_phamp_1cmp.o $(COMMONDIR)/mysac.o -lfftw3 -lgfortran $(CLIBS)
 
 whiteout2cmp: white_2cmp_driver.c
-	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I$(COMMONDIR) white_phamp_2cmp.o $(COMMONDIR)/mysac.o -lfftw3 -lgfortran 
+	$(CC) $(CFLAGS) $(options) white_2cmp_driver.c -o white_2cmp -I$(COMMONDIR) white_phamp_2cmp.o $(COMMONDIR)/mysac.o -lfftw3 -lgfortran $(CLIBS)
 
 clean:
 	-rm *.o *.pyc *.so *~ white_2cmp white_1cmp filter4 

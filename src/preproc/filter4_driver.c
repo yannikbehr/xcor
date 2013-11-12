@@ -6,7 +6,7 @@
 #include <math.h>
 #include <mysac.h>
 
-#define ANPTSMAX 2000000
+#define ANPTSMAX 4320000
 #define SLENGTH 300
 
 /* Function prototypes */

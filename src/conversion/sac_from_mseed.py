@@ -12,7 +12,6 @@ import shutil
 import subprocess as sp
 from ConfigParser import SafeConfigParser
 sys.path.append(os.path.join(os.environ['XCORSRC'], 'src', 'common'))
-print sys.path
 import progressbar as pg
 from obspy.sac import *
 import tempfile

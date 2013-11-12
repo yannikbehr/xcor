@@ -2,7 +2,7 @@ BIN1  = justCOR
 BIN2  = justCOR_EE_EN
 BIN3 = autoCOR
 
-LPATH = /usr/local/lib -L /opt/intel/Compiler/11.1/072/lib/intel32
+LPATH = /usr/local/lib 
 
 FOBJS = dcommon.o dmultifft.o 
 

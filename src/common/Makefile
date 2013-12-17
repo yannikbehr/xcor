@@ -11,4 +11,4 @@ initsacdb: $(ofiles)
 	$(CC) $(CFLAGS) -g -I./ initsac_db.c -o initsac_db $(ofiles)
 
 clean:
-	-rm *.o *~ initsac_db
+	-rm *.o *~ initsac_db *.pyc

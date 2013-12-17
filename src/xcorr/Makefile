@@ -22,7 +22,7 @@ ofiles = $(COMMONDIR)/iniparser.o\
 all: $(BIN1) $(BIN2) $(BIN3)
 
 $(BIN1) : $(FOBJS) $(COBJS) $(binofiles)
-	$(CC) $(CFLAGS) -m32 justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(CLIBS) -L $(LPATH)
+	$(CC) $(CFLAGS) justCOR.o $(ofiles) $(FOBJS) -o $(BIN1) $(CLIBS) -L $(LPATH)
 
 $(BIN2) : $(FOBJS) $(COBJS) $(binofiles)
 	$(CC) justCOR_EE_EN.o $(CFLAGS) $(ofiles) $(FOBJS) -o $(BIN2) $(CLIBS) -L $(LPATH)
